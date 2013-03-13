@@ -127,7 +127,11 @@
 
   (defvar sage-install-installation-directory nil)
 
-  (sage-install-download-files
+  (unless (file-exists-p sage-install-installation-directory)
+    (make-directory sage-install-installation-directory))
+
+  (apply
+   'sage-install-download-files
    sage-install-url
    sage-install-installation-directory
    sage-install-files)
@@ -142,5 +146,7 @@
 
 
   (switch-to-buffer (get-buffer-create "*sage-shell-install*"))
-  (insert "Put the following lines to ~/.emacs.\n")
-  (sage-install-insert-config))
+  (insert ";; Put the following lines to ~/.emacs.\n")
+  (newline)
+  (sage-install-insert-config)
+  (emacs-lisp-mode))
