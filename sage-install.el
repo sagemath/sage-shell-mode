@@ -43,7 +43,7 @@
   (defun sage-install-sage-root-config ()
     (let ((r (sage-install-sage-root)))
       (when r
-        (format "(setq sage-shell:sage-root \"%s\")" r))))
+        (format "(setq sage-shell:sage-root \"%s\")\n" r))))
 
   (defmacro sage-install-print-forms (&rest body)
     `(apply
@@ -148,5 +148,5 @@
   (switch-to-buffer (get-buffer-create "*sage-shell-install*"))
   (insert ";; Put the following lines to ~/.emacs.\n")
   (newline)
-  (sage-install-insert-config)
+  (sage-install-insert-config sage-install-installation-directory)
   (emacs-lisp-mode))
