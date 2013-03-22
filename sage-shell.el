@@ -550,8 +550,7 @@ When sync is nill this return a lambda function to get the result."
 (defvar sage-shell:init-command-list
   (list
    (format "sys.path = sys.path + ['%s']" sage-shell:python-script-directory)
-   (format "import %s" sage-shell:python-module)
-   "_ip.IP.shell.autoindent = False")
+   (format "import %s" sage-shell:python-module))
   "Sage command list evaluated after loading Sage.")
 
 (defvar sage-shell:output-finished-p nil)

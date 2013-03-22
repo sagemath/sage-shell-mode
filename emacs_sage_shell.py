@@ -2,9 +2,11 @@
 
 try:
     ip = get_ipython()
-except:
+    ip.autoindent = False
+except:                         # Older versions
     import IPython.ipapi
     ip = IPython.ipapi.get()
+    ip.IP.shell.autoindent = False
 
 interfaces = ip.ev('interfaces')
 
