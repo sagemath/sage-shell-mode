@@ -146,7 +146,7 @@
 
 
   (switch-to-buffer (get-buffer-create "*sage-shell-install*"))
-  (insert ";; Put the following lines to ~/.emacs.\n")
+  (insert (format ";; Put the following lines to %s \n" user-init-file))
   (newline)
   (sage-install-insert-config sage-install-installation-directory)
   (emacs-lisp-mode))
