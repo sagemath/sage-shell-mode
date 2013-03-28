@@ -58,9 +58,11 @@
     (action . ,(append (reverse anything-sage-action-alist)
                        anything-sage-additional-action-alist))))
 
-(defvar anything-sage-candidate-regexp
-  (rx alnum (zero-or-more (or alnum "_")))
-  "Regexp used for collecting Sage attributes and functions.")
+(defcustom anything-sage-candidate-regexp (rx alnum (zero-or-more (or alnum "_")))
+  "Regexp used for collecting Sage attributes and functions."
+  :group 'sage-shell
+  :type 'regexp)
+
 (defconst anything-sage-cands-buf-name " *anything Sage*")
 
 (defun anything-sage-init ()

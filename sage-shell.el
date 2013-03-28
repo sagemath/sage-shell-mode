@@ -45,14 +45,30 @@
 
 (eval-when-compile (require 'cl))
 ;;; Global variables for users
-(defvar sage-shell:sage-root nil
-  "SAGE_ROOT directory. If Sage executable is in your PATH, then
-  it is not necessary to set this variable.")
 
-(defvar sage-shell:input-history-cache-file
+(defgroup sage-shell
+  nil "Sage"
+  :group 'languages)
+
+(defcustom sage-shell:sage-root nil
+  "SAGE_ROOT directory. If Sage executable is in your PATH, then it is not necessary to set this variable."
+  :group 'sage-shell
+  :type '(choice (directory :tag "Directory")
+                 (const :tag "Not specified" nil)))
+
+(defcustom sage-shell:input-history-cache-file
   (expand-file-name ".sage_input_history" user-emacs-directory)
-  "If non nil, after invoking `sage-shell:send-eof',
-  `comint-input-ring' is saved to this file.")
+  "If non nil, after invoking `sage-shell:send-eof',`comint-input-ring' is saved to this file."
+  :group 'sage-shell
+  :type '(choice (file :tag "file")
+                 (const :tag "Off" nil)))
+
+(defcustom sage-shell:completion-function 'completion-at-point
+  "Function used for `sage-shell:complete'."
+  :group 'sage-shell
+  :type '(choice (const :tag "default" completion-at-point)
+                 (const :tag "auto-complete" sage-shell-ac:auto-complete)
+                 (const :tag "anything" anything-sage-shell)))
 
 
 ;;;; Code
@@ -737,9 +753,6 @@ returns a lamda function with no args to obtain the result."
   (list (sage-shell:word-at-pt-beg)
         (point)
         (sage-shell-cpl:candidates-sync)))
-
-(defvar sage-shell:completion-function 'completion-at-point
-  "Function used for `sage-shell:complete'.")
 
 (defun sage-shell:complete ()
   (interactive)
