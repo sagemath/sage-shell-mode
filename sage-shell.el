@@ -1404,6 +1404,9 @@ function does not highlight the input."
     (setq sage-shell:output-finished-p nil)
     (sage-shell:output-redirect-cleanup))
 
+(defun sage-shell-update-sage-commands-p (line)
+  (string-match (rx "from" (1+ nonl) "import") line))
+
 (defun sage-shell:send-input ()
   "Send current line to Sage process.
 This function has many side effects:
@@ -1423,7 +1426,7 @@ This function has many side effects:
     ;; restore its value
     (setq sage-shell:input-ring-index comint-input-ring-index)
 
-    ;; if current line contains %gap, gap.console(), gap.interact(), %gp, ...
+    ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
     ;; then create completion buffer
     (sage:awhen (sage-shell-cpl:switch-to-another-interface-p line)
       (sage-shell-cpl:completion-init it nil t))
@@ -1444,7 +1447,10 @@ This function has many side effects:
 
      ;; send current line to indenting buffer and to process normally
      (t (sage-shell:send-line-to-indenting-buffer-and-indent line)
-        (sage-shell:comint-send-input)))))
+        (sage-shell:comint-send-input)))
+    ;; If current line contains from ... import *, then update sage commands
+    (when (sage-shell-update-sage-commands-p line)
+      (sage-shell:update-sage-commands))))
 
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
