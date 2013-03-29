@@ -83,7 +83,7 @@ You can run new Sage process by `M-x run-new-sage`.
 The major-mode of Sage process buffer is `sage-shell-mode`.
 
 When you visit a file ended with ".sage", then `sage-mode` will be
-the major-mode for the buffer. In `sage-mode`, type `C-x C-l` to load a
+the major-mode for the buffer. In `sage-mode`, type `C-c C-l` to load a
 Sage script file. To view a Sage process buffer, type `C-x C-z`.
 
 
