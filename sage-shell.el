@@ -826,21 +826,20 @@ This ring remebers the parts.")
 
 (defun sage-shell:output-filter-hook-function (string)
   "A member of `comint-output-filter-functions' in Sage buffer."
-  (let ((string (ansi-color-filter-apply string)))
-    (unless (string= string "")
-      ;; push output to `sage-shell:output-ring'
-      (ring-insert sage-shell:output-ring string)
+  (unless (string= string "")
+    ;; push output to `sage-shell:output-ring'
+    (ring-insert sage-shell:output-ring string)
 
-      (let ((output (concat (ring-ref sage-shell:output-ring 1)
-                            (ring-ref sage-shell:output-ring 0))))
-        (when (string-match sage-shell:output-finished-regexp output)
-          (setq sage-shell:output-finished-p t)))
+    (let ((output (concat (ring-ref sage-shell:output-ring 1)
+                          (ring-ref sage-shell:output-ring 0))))
+      (when (string-match sage-shell:output-finished-regexp output)
+        (setq sage-shell:output-finished-p t)))
 
-      ;; Comment out output if the syntax of a line does not looks like
-      ;; python syntax.
-      (sage-shell:comment-out-output)
+    ;; Comment out output if the syntax of a line does not looks like
+    ;; python syntax.
+    (sage-shell:comment-out-output)
 
-      (sage-shell-indent:indent-function string))))
+    (sage-shell-indent:indent-function string)))
 
 (defun sage-shell:python-syntax-output-p (line)
   "Return non nil if LINE contains a sentence with the python
