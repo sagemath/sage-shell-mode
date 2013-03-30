@@ -2227,16 +2227,21 @@ of current Sage process.")
 
 (defun sage-edit:exec-cmd-internal (command insert-command-p)
   (with-current-buffer sage-shell:process-buffer
-      (cond (insert-command-p
-             (goto-char (process-mark (get-buffer-process
-                                       sage-shell:process-buffer)))
-             (insert command)
-             (sage-shell:send-input))
-            (t (sage-shell:prepare-for-send)
-               (set-marker comint-last-input-end (point))
-               (comint-send-string (get-buffer-process
-                                    sage-shell:process-buffer)
-                                   (concat command "\n"))))))
+    (save-excursion
+      (let* ((bol (comint-line-beginning-position))
+             (eol (line-end-position))
+             (line (buffer-substring-no-properties bol eol)))
+        (delete-region bol eol)
+        (cond (insert-command-p
+               (goto-char (process-mark (get-buffer-process
+                                         sage-shell:process-buffer)))
+               (insert command)
+               (sage-shell:send-input))
+              (t (sage-shell:prepare-for-send)
+                 (comint-send-string (get-buffer-process
+                                      sage-shell:process-buffer)
+                                     (concat command "\n"))))
+        (insert line)))))
 
 (defvar sage-edit:temp-file-base-name "sage_shell_mode_temp")
 (defvar sage-edit:temp-directory
