@@ -1,3 +1,4 @@
+[[Japanese]](./README_ja.md)
 # Overview
 sage-shell-mode is an Emacs front end for [Sage](http://www.sagemath.org/).
 
