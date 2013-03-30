@@ -826,20 +826,21 @@ This ring remebers the parts.")
 
 (defun sage-shell:output-filter-hook-function (string)
   "A member of `comint-output-filter-functions' in Sage buffer."
-  (unless (string= string "")
-    ;; push output to `sage-shell:output-ring'
-    (ring-insert sage-shell:output-ring string)
+  (let ((string (ansi-color-filter-apply string)))
+    (unless (string= string "")
+      ;; push output to `sage-shell:output-ring'
+      (ring-insert sage-shell:output-ring string)
 
-    (let ((output (concat (ring-ref sage-shell:output-ring 1)
-                          (ring-ref sage-shell:output-ring 0))))
-      (when (string-match sage-shell:output-finished-regexp output)
-        (setq sage-shell:output-finished-p t)))
+      (let ((output (concat (ring-ref sage-shell:output-ring 1)
+                            (ring-ref sage-shell:output-ring 0))))
+        (when (string-match sage-shell:output-finished-regexp output)
+          (setq sage-shell:output-finished-p t)))
 
-    ;; Comment out output if the syntax of a line does not looks like
-    ;; python syntax.
-    (sage-shell:comment-out-output)
+      ;; Comment out output if the syntax of a line does not looks like
+      ;; python syntax.
+      (sage-shell:comment-out-output)
 
-    (sage-shell-indent:indent-function string)))
+      (sage-shell-indent:indent-function string))))
 
 (defun sage-shell:python-syntax-output-p (line)
   "Return non nil if LINE contains a sentence with the python
@@ -919,7 +920,8 @@ This ring remebers the parts.")
 
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process))
-        (count sage-shell:long-output-rdct-number))
+        (count sage-shell:long-output-rdct-number)
+        (string (ansi-color-filter-apply string)))
     (sage:with-current-buffer-safe (and string oprocbuf)
       (cond
        (sage-shell:redirect-long-output-p
@@ -1181,7 +1183,8 @@ Does not delete the prompt."
 
 (defun sage-shell:redirect-filter (process input-string)
   (when process
-    (let ((proc-buf (process-buffer process)))
+    (let ((proc-buf (process-buffer process))
+          (input-string (ansi-color-filter-apply input-string)))
       (with-current-buffer proc-buf
         (let ((out-buf comint-redirect-output-buffer)
               (f-regexp sage-shell:output-finished-regexp))
