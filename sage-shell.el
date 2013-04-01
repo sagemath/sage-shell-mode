@@ -2256,6 +2256,8 @@ of current Sage process.")
    (concat sage-edit:temp-file-base-name "." ext)
    sage-edit:temp-directory))
 
+(defvar sage-edit:temp-file-header "# -*- coding: utf-8 -*-\n")
+
 (defun sage-edit:make-temp-file-from-region (start end)
   "Make temp file from region and return temp file name."
   (let* ((f (sage-edit:temp-file
@@ -2268,6 +2270,7 @@ of current Sage process.")
                    (goto-char orig-start)
                    (- (point) (line-beginning-position)))))
     (with-temp-buffer
+      (insert sage-edit:temp-file-header)
       (insert (make-string offset (string-to-char " ")))
       (insert buf-str)
       (goto-char (point-min))
