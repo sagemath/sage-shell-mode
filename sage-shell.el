@@ -695,7 +695,9 @@ argument."
   (sage-edit:exec-command-base
    :command command
    :switch-p nil
-   :display-function nil)
+   :display-function nil
+   :pre-message "Loading the file to the Sage process..."
+   :post-message "Loading the file to the Sage process... Done.")
   (sage-shell:clear-command-cache))
 
 (defun sage-shell:load-file (filename)
