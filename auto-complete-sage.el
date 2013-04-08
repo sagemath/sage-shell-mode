@@ -65,11 +65,13 @@
    (equal this-command 'auto-complete)))
 
 (defun sage-shell-ac:candidates ()
-  (let* ((keywords (if (and (not (sage-shell-cpl:get 'var-base-name))
-                            (equal (sage-shell-cpl:get 'interface) "sage"))
-                       sage-shell-ac:python-kwds
-                     nil)))
-    (append keywords (sage-shell-cpl:candidates))))
+  (when (and (sage-shell:redirect-finished-p)
+             (sage-shell:output-finished-p))
+    (let* ((keywords (if (and (not (sage-shell-cpl:get 'var-base-name))
+                              (equal (sage-shell-cpl:get 'interface) "sage"))
+                         sage-shell-ac:python-kwds
+                       nil)))
+      (append keywords (sage-shell-cpl:candidates)))))
 
 (defvar ac-source-sage-shell
   '((init . sage-shell-ac:init)
@@ -329,6 +331,8 @@ returns a document help as a string."
 (defun sage-edit-ac:candidates ()
   (append
    (and sage-shell:process-buffer
+        (and (sage-shell:redirect-finished-p)
+             (sage-shell:output-finished-p))
         (or sage-edit-ac:sage-commands
             (setq sage-edit-ac:sage-commands
                   (sage:awhen (get-buffer sage-shell:process-buffer)
@@ -338,7 +342,7 @@ returns a document help as a string."
    sage-shell-ac:python-kwds))
 
 (defvar ac-source-sage-commands
-  '((init . (lambda () (sage-edit:set-sage-proc-buf-internal nil)))
+  '((init . (lambda () (sage-edit:set-sage-proc-buf-internal nil nil)))
     (candidates . sage-edit-ac:candidates)
     (cache)))
 

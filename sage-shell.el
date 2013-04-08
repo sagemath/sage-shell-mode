@@ -2177,7 +2177,7 @@ of current Sage process.")
             if (string-match "\\<sage\\>" proc-name)
             collect (cons proc-name proc))))
 
-(defun* sage-edit:set-sage-proc-buf-internal (&optional (start-p t))
+(defun* sage-edit:set-sage-proc-buf-internal (&optional (start-p t) (verbose t))
   "Set `sage-shell:process-buffer'"
   (or (get-buffer-process sage-shell:process-buffer)
       (let ((proc-alist (sage-edit:process-alist))
@@ -2193,7 +2193,7 @@ of current Sage process.")
                   (setq sage-shell:process-buffer proc-buf)))))
          ((null proc-alist) t)
          ;; if there are multiple processes
-         ((consp (cdr proc-alist))
+         ((and verbose (consp (cdr proc-alist)))
           (let* ((proc-name
                   (completing-read
                    (concat "There are multiple Sage processes. "
@@ -2203,8 +2203,8 @@ of current Sage process.")
                  (proc (cdr (assoc proc-name proc-alist))))
             (setq sage-shell:process-buffer (process-buffer proc))))
          ;; if there is exactly one process
-         (t (setq sage-shell:process-buffer
-                  (process-buffer (cdar proc-alist))))))))
+         (verbose (setq sage-shell:process-buffer
+                        (process-buffer (cdar proc-alist))))))))
 
 (defvar sage-edit:display-function nil)
 (defun* sage-edit:exec-command-base
