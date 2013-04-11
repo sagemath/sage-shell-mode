@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import re
 try:
     ip = get_ipython()
     ip.autoindent = False
@@ -12,7 +12,9 @@ interfaces = ip.ev('interfaces')
 
 def print_all_commands (interface):
     if interface == 'sage':
+        p = re.compile("_sage_const_")
         l = ip.ev('dir()')
+        l = [a for a in l if p.match(a) is None]
         for a in l:
             print a
     else:
