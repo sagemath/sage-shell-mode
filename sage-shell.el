@@ -1954,8 +1954,7 @@ is the buffer for the candidates of attribute."
                                                    (lambda (x) (concat i x))
                                                    (list ".eval" ""))
                                       if (sage-shell:in-this-func-p func)
-                                      do (return-from interfaces i))))))
-           pfx)
+                                      do (return-from interfaces i)))))))
       (cond
        ;; when the word at point is an attribute
        ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
@@ -1966,10 +1965,11 @@ is the buffer for the candidates of attribute."
         (sage-shell-cpl:set 'prefix att-beg))
        ;; when current interface is not sage or the point is
        ;; in a function one of gp.eval, gp, gap.eval, ...
-       ((and intf (sage-shell-cpl:set 'interface intf)
-             (setq pfx (sage-shell-interfaces:looking-back-var intf)))
-        (sage-shell-cpl:set 'var-base-name nil
-                            'prefix  pfx))
+       (intf
+        (sage-shell-cpl:set 'interface intf)
+        (sage-shell-cpl:set
+         'var-base-name nil
+         'prefix (sage-shell-interfaces:looking-back-var intf)))
        ;; when current interface is sage
        ((equal cur-intf "sage")
         (sage-shell-cpl:set
