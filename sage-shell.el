@@ -919,10 +919,14 @@ This ring remebers the parts.")
 
 (defvar sage-shell:redirect-long-output-p nil)
 
+(defun sage-shell:ansi-color-filter-apply (string)
+  (let ((ansi-color-context nil))
+    (ansi-color-filter-apply string)))
+
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process))
         (count sage-shell:long-output-rdct-number)
-        (string (ansi-color-filter-apply string)))
+        (string (sage-shell:ansi-color-filter-apply string)))
     (sage:with-current-buffer-safe (and string oprocbuf)
       (cond
        (sage-shell:redirect-long-output-p
@@ -1185,7 +1189,7 @@ Does not delete the prompt."
 (defun sage-shell:redirect-filter (process input-string)
   (when process
     (let ((proc-buf (process-buffer process))
-          (input-string (ansi-color-filter-apply input-string)))
+          (input-string (sage-shell:ansi-color-filter-apply input-string)))
       (with-current-buffer proc-buf
         (let ((out-buf comint-redirect-output-buffer)
               (f-regexp sage-shell:output-finished-regexp))
