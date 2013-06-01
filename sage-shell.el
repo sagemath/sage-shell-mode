@@ -1031,7 +1031,7 @@ This ring remebers the parts.")
            (1- prompt-start) prompt-start 'read-only 'fence))
       (add-text-properties
        prompt-start (point)
-       '(read-only t rear-nonsticky t front-sticky (read-only))))
+       '(read-only t rear-nonsticky t front-sticky (read-only) field output)))
     (unless (and (bolp) (null comint-last-prompt-overlay))
       ;; Need to create or move the prompt overlay (in the case
       ;; where there is no prompt ((bolp) == t), we still do
