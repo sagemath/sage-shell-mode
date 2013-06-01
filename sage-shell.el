@@ -396,9 +396,6 @@ returned from the function, otherwise, this returns it self. "
   (set (make-local-variable 'comint-use-prompt-regexp) t)
   (set (make-local-variable 'comment-start) "# ")
   (set (make-local-variable 'comment-start-skip) "^[ \t]*#+ *")
-  (add-hook 'comint-output-filter-functions
-            'sage-shell:output-filter-hook-function nil t)
-
   (add-hook 'completion-at-point-functions
             'sage-shell:completion-at-point-func nil t)
   (unless sage-shell:menu-defined-p
@@ -826,22 +823,7 @@ This ring remebers the parts.")
 
 
 
-(defun sage-shell:output-filter-hook-function (string)
-  "A member of `comint-output-filter-functions' in Sage buffer."
-  (unless (string= string "")
-    ;; push output to `sage-shell:output-ring'
-    (ring-insert sage-shell:output-ring string)
 
-    (let ((output (concat (ring-ref sage-shell:output-ring 1)
-                          (ring-ref sage-shell:output-ring 0))))
-      (when (string-match sage-shell:output-finished-regexp output)
-        (setq sage-shell:output-finished-p t)))
-
-    ;; Comment out output if the syntax of a line does not looks like
-    ;; python syntax.
-    (sage-shell:comment-out-output)
-
-    (sage-shell-indent:indent-function string)))
 
 (defun sage-shell:python-syntax-output-p (line)
   "Return non nil if LINE contains a sentence with the python
@@ -862,12 +844,6 @@ This ring remebers the parts.")
   (let ((inhibit-read-only t)
         (inhibit-modification-hooks t)
         (case-fold-search nil))
-    (add-text-properties comint-last-output-start (point)
-                         '(front-sticky
-                           (field inhibit-line-move-field-capture)
-                           rear-nonsticky t
-                           field output
-                           inhibit-line-move-field-capture t))
     (save-excursion
       (when comint-last-output-start
         (loop initially
@@ -1005,6 +981,27 @@ This ring remebers the parts.")
 
       ;; Run these hooks with point where the user had it.
       (goto-char saved-point)
+      (unless (string= string "")
+        ;; push output to `sage-shell:output-ring'
+        (ring-insert sage-shell:output-ring string)
+
+        (let ((output (concat (ring-ref sage-shell:output-ring 1)
+                              (ring-ref sage-shell:output-ring 0))))
+          (when (string-match sage-shell:output-finished-regexp output)
+            (setq sage-shell:output-finished-p t)))
+
+        (add-text-properties comint-last-output-start
+                             (process-mark process)
+                             '(front-sticky
+                               (field inhibit-line-move-field-capture)
+                               rear-nonsticky t
+                               field output
+                               inhibit-line-move-field-capture t))
+        ;; Comment out output if the syntax of a line does not looks like
+        ;; python syntax.
+        (sage-shell:comment-out-output)
+
+        (sage-shell-indent:indent-function string))
       (run-hook-with-args 'comint-output-filter-functions string)
       (set-marker saved-point (point))
 
@@ -1012,6 +1009,7 @@ This ring remebers the parts.")
 
       (when sage-shell:output-finished-p
         (let ((lbp (sage:line-beginning-position)))
+          ;; Delete duplicate propmpt
           (when (get-text-property lbp 'read-only)
             (delete-region lbp comint-last-output-start))
           ;; Highlight the prompt
