@@ -396,6 +396,9 @@ returned from the function, otherwise, this returns it self. "
   (set (make-local-variable 'comint-use-prompt-regexp) t)
   (set (make-local-variable 'comment-start) "# ")
   (set (make-local-variable 'comment-start-skip) "^[ \t]*#+ *")
+  (set (make-local-variable 'comint-output-filter-functions)
+       (remove 'comint-postoutput-scroll-to-bottom
+               comint-output-filter-functions))
   (add-hook 'completion-at-point-functions
             'sage-shell:completion-at-point-func nil t)
   (unless sage-shell:menu-defined-p
@@ -1016,7 +1019,8 @@ This ring remebers the parts.")
           (sage-shell:highlight-prompt lbp)
 
           (sage-shell:run-hook-and-remove
-           'sage-shell:output-filter-finished-hook)))
+           'sage-shell:output-filter-finished-hook)
+          (comint-postoutput-scroll-to-bottom string)))
       (goto-char saved-point))))
 
 (defun sage-shell:highlight-prompt (prompt-start)
