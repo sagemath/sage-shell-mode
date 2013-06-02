@@ -783,6 +783,34 @@ returns a lamda function with no args to obtain the result."
                    nil nil (sage-shell:word-at-point)
                    sage-shell:minibuffer-history))
 
+
+;; Copied from sage-mode.el
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar sage-shell:site-packages-regexp
+  "\\(local/lib/python[0-9.]*/site-packages.*?\\)/sage"
+  "Regexp to match sage site-packages files.
+
+Match group 1 will be replaced with devel/sage-branch")
+
+(defun sage-shell:development-version (filename)
+  "If FILENAME is in site-packages, current branch version, else FILENAME."
+  (save-match-data
+    (let* ((match (string-match sage-shell:site-packages-regexp filename)))
+      (if (and filename match)
+          ;; handle current branch somewhat intelligiently
+          (let* ((base (concat (substring filename 0 (match-beginning 1)) "devel/"))
+                 (branch (or (file-symlink-p (concat base "sage")) "sage")))
+            (concat base branch (substring filename (match-end 1))))
+        filename))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defcustom sage-shell:prefer-development-file-p t
+  "If non nil, prefer a source file in devel directory rather than site-packages directory."
+  :group 'sage-shell
+  :type 'boolean)
+
+
 (defun sage-shell:source-file-and-line-num (obj)
   "Return (cons sourcefile line-number)"
   (let ((str (sage-shell:send-command-to-string
@@ -795,8 +823,11 @@ returns a lamda function with no args to obtain the result."
                             (1+ " ") "*" (1+ " ")
                             (group (1+ num)))
                         str)
-      (cons (match-string 1 str)
-            (string-to-number (match-string 2 str))))))
+      (let ((src-file (match-string 1 str)))
+        (cons (if sage-shell:prefer-development-file-p
+                  (sage-shell:development-version src-file)
+                src-file)
+              (string-to-number (match-string 2 str)))))))
 
 (defun* sage-shell:find-source-in-view-mode
     (obj &optional (find-funct 'find-file-read-only-other-window) (offset 0))
