@@ -2238,6 +2238,8 @@ of current Sage process.")
 (defun sage-edit:exec-cmd-internal (command insert-command-p)
   (with-current-buffer sage-shell:process-buffer
     (save-excursion
+      (goto-char (process-mark
+                  (get-buffer-process (current-buffer))))
       (end-of-line)
       (let* ((bol (comint-line-beginning-position))
              (eol (line-end-position))
