@@ -93,11 +93,6 @@
    :input (sage-shell:word-at-point)
    :buffer "*anything Sage*"))
 
-(setq sage-shell:completion-function
-      'anything-sage-shell
-      sage-shell:help-completion-function
-      'anything-sage-shell-describe-object-at-point)
-
 (defun anything-sage-show-doc (can)
   (if (sage-shell:at-top-level-p)
       (sage-shell-help:describe-symbol
