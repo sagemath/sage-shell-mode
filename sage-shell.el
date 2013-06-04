@@ -285,7 +285,7 @@ returned from the function, otherwise, this returns it self. "
                      (or "sage:" "sage0:" ">>>" "....:"
                          "(Pdb)" "ipdb>" "(gdb)")
                      " "line-end))
-          "\\|\\("
+          "\\|^\\("
           (regexp-opt sage-shell-interfaces:other-interfaces)
           ": $\\)"))
 
