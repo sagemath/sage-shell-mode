@@ -44,7 +44,9 @@
     (candidates-in-buffer)))
 
 (defvar anything-sage-additional-action-alist
-  '(("View Source File" . sage-shell:find-source-in-view-mode)))
+  '(("View Source File" . (lambda (can)
+                            (sage-shell:find-source-in-view-mode
+                             (sage-shell-cpl:to-objname-to-send can))))))
 
 (defvar anything-c-source-sage-objects
   `(,@anything-sage-common-alist
