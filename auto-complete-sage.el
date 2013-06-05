@@ -42,6 +42,11 @@
   (add-to-list 'ac-sources 'ac-source-sage-shell)
   (add-to-list 'ac-sources 'ac-source-words-in-sage-buffers t))
 
+(defcustom sage-shell-ac:use-quick-help nil
+  "If non nil, use quick help in Sage process buffers."
+  :group 'sage-shell
+  :type 'boolean)
+
 (defvar sage-shell-ac:python-kwds
     '("abs" "all" "and" "any" "apply" "as" "assert" "basestring" "bin"
       "bool" "break" "buffer" "bytearray" "callable" "chr" "class"
@@ -148,7 +153,7 @@ returns a document help as a string."
   (when (sage-shell:at-top-level-p)
     (cond ((eq last-command 'ac-help)
            (sage-shell-ac:popup-help nil))
-          (t
+          (sage-shell-ac:use-quick-help
            (sage-shell-ac:popup-help t)))))
 
 (defadvice ac-help (around sage-quick-help)
