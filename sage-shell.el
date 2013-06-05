@@ -2215,6 +2215,13 @@ of current Sage process.")
             if (string-match "\\<sage\\>" proc-name)
             collect (cons proc-name proc))))
 
+(defun sage-set-process-buffer ()
+  (interactive)
+  (sage-edit:set-sage-proc-buf-internal t t)
+  (sage:aif (get-buffer sage-shell:process-buffer)
+      (message (format "Set the process buffer to buffer %s."
+                       (buffer-name it)))))
+
 (defun* sage-edit:set-sage-proc-buf-internal (&optional (start-p t) (verbose t))
   "Set `sage-shell:process-buffer'"
   (or (get-buffer-process sage-shell:process-buffer)
