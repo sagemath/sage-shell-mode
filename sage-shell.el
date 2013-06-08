@@ -68,7 +68,15 @@
   :group 'sage-shell
   :type '(choice (const :tag "default" completion-at-point)
                  (const :tag "auto-complete" sage-shell-ac:auto-complete)
-                 (const :tag "anything" anything-sage-shell)))
+                 (const :tag "anything" anything-sage-shell)
+                 (const :tag "helm" helm-sage-shell)))
+
+(defcustom sage-shell:help-completion-function 'sage-shell:help1
+  "Completion function used for `sage-shell:help'."
+  :group 'sage-shell
+  :type '(choice (const :tag "default" sage-shell:help1)
+                 (const :tag "anything" anything-sage-shell-describe-object-at-point)
+                 (const :tag "helm" helm-sage-shell-describe-object-at-point)))
 
 
 ;;;; Code
@@ -764,9 +772,6 @@ returns a lamda function with no args to obtain the result."
      (funcall sage-shell:completion-function))
      (t (let ((minibuffer-history nil))
           (completion-at-point))))))
-
-(defvar sage-shell:help-completion-function 'sage-shell:help1
-  "Completion function used for `sage-shell:help'.")
 
 (defun sage-shell:help ()
   (interactive)

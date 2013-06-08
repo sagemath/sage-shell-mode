@@ -3,8 +3,9 @@
 ;;; Code:
 
 
-;;;### (autoloads (anything-sage-shell-describe-object-at-point anything-sage-shell)
-;;;;;;  "anything-sage" "anything-sage.el" (20782 2566))
+;;;### (autoloads (anything-sage-command-history anything-sage-shell-describe-object-at-point
+;;;;;;  anything-sage-shell) "anything-sage" "anything-sage.el" (20915
+;;;;;;  7427))
 ;;; Generated autoloads from anything-sage.el
 
 (autoload 'anything-sage-shell "anything-sage" "\
@@ -17,10 +18,15 @@
 
 \(fn)" t nil)
 
+(autoload 'anything-sage-command-history "anything-sage" "\
+
+
+\(fn)" t nil)
+
 ;;;***
 
 ;;;### (autoloads (sage-edit-ac:add-sources sage-shell-ac:add-sources)
-;;;;;;  "auto-complete-sage" "auto-complete-sage.el" (20782 2566))
+;;;;;;  "auto-complete-sage" "auto-complete-sage.el" (20910 33188))
 ;;; Generated autoloads from auto-complete-sage.el
 
 (autoload 'sage-shell-ac:add-sources "auto-complete-sage" "\
@@ -35,8 +41,29 @@
 
 ;;;***
 
+;;;### (autoloads (helm-sage-command-history helm-sage-shell-describe-object-at-point
+;;;;;;  helm-sage-shell) "helm-sage" "helm-sage.el" (20915 7439))
+;;; Generated autoloads from helm-sage.el
+
+(autoload 'helm-sage-shell "helm-sage" "\
+
+
+\(fn)" t nil)
+
+(autoload 'helm-sage-shell-describe-object-at-point "helm-sage" "\
+
+
+\(fn)" t nil)
+
+(autoload 'helm-sage-command-history "helm-sage" "\
+
+
+\(fn)" t nil)
+
+;;;***
+
 ;;;### (autoloads (sage-mode sage-shell:run-new-sage sage-shell:run-sage)
-;;;;;;  "sage-shell" "sage-shell.el" (20782 2566))
+;;;;;;  "sage-shell" "sage-shell.el" (20915 7996))
 ;;; Generated autoloads from sage-shell.el
 
 (autoload 'sage-shell:run-sage "sage-shell" "\
@@ -60,7 +87,7 @@
 
 ;;;***
 
-;;;### (autoloads nil nil ("sage-install.el") (20782 5531 39895))
+;;;### (autoloads nil nil ("sage-install.el") (20915 8154 368166))
 
 ;;;***
 
