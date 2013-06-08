@@ -101,5 +101,31 @@
        (sage-shell-cpl:to-objname-to-send can))
     (message "Document help is not available here.")))
 
+
+
+(defvar anything-sage-commnd-list-cached nil)
+
+(defvar anything-sage-candidates-number-limit 100)
+
+(defvar anything-c-source-sage-command-history
+  `((name . "Sage Command History")
+    (init . anything-sage-make-command-list)
+    (action . (("Insert" . anything-sage-objcts-insert-action)))
+    (candidates . (lambda () anything-sage-commnd-list-cached))
+    (candidate-number-limit . ,anything-sage-candidates-number-limit)))
+
+(defun anything-sage-make-command-list ()
+  (setq anything-sage-commnd-list-cached
+        (loop for i from 0 to (ring-size comint-input-ring)
+              collect (ring-ref comint-input-ring i))))
+
+;;;###autoload
+(defun anything-sage-command-history ()
+  (interactive)
+  (anything
+   :sources '(anything-c-source-sage-command-history)
+   :buffer "*anything Sage*"))
+
+
 (provide 'anything-sage)
 ;;; anything-sage.el ends here
