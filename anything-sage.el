@@ -50,13 +50,13 @@
 
 (defvar anything-c-source-sage-objects
   `(,@anything-sage-common-alist
-    (name . "Sage Complete")
+    (name . "Sage Objects")
     (action . ,(append anything-sage-action-alist
                        anything-sage-additional-action-alist))))
 
 (defvar anything-c-source-sage-help
   `(,@anything-sage-common-alist
-    (name . "Sage Help")
+    (name . "Sage Documents")
     (action . ,(append (reverse anything-sage-action-alist)
                        anything-sage-additional-action-alist))))
 
