@@ -77,7 +77,15 @@
              (setq sage-shell:completion-function
                    'anything-sage-shell)
              (setq sage-shell:help-completion-function
-                   'anything-sage-shell-describe-object-at-point))))))
+                   'anything-sage-shell-describe-object-at-point))))
+          ((featurep 'helm-match-plugin)
+           (concat
+            ";; Use helm for completion\n"
+            (sage-install-print-forms
+             (setq sage-shell:completion-function
+                   'helm-sage-shell)
+             (setq sage-shell:help-completion-function
+                   'helm-sage-shell-describe-object-at-point))))))
 
   (defun sage-install-insert-forms (&rest xs)
     (loop for x in xs
@@ -115,6 +123,7 @@
   (defvar sage-install-files
     '("sage-shell.el"
       "anything-sage.el"
+      "helm-sage.el"
       "auto-complete-sage.el"
       "sage-shell-autoloads.el"
       "emacs_sage_shell.py"))
