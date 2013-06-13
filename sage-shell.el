@@ -2327,9 +2327,11 @@ of current Sage process.")
     (with-temp-buffer
       (insert sage-edit:temp-file-header)
       (insert (make-string offset (string-to-char " ")))
-      (insert buf-str)
-      (goto-char (point-min))
-      (when (> (current-indentation) 0) ; need dummy block
+      (save-excursion
+        (insert buf-str))
+      (re-search-forward (rx (not whitespace)) nil t)
+      (beginning-of-line)
+      (when (looking-at " +") ; need dummy block
         (insert "if True:\n"))
       (write-region nil nil  f nil 'nomsg))
     ;; return temp file name
