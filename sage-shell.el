@@ -859,10 +859,7 @@ Match group 1 will be replaced with devel/sage-branch")
   (sage-shell:nullify-ring (make-ring 2))
   "An output from a Sage process is decomposed into parts.
 This ring remebers the parts.")
-
-
-
-
+(make-variable-buffer-local 'sage-shell:output-ring)
 
 (defun sage-shell:python-syntax-output-p (line)
   "Return non nil if LINE contains a sentence with the python
@@ -1453,15 +1450,17 @@ function does not highlight the input."
 (defun sage-shell-update-sage-commands-p (line)
   (string-match (rx "from" (1+ nonl) "import") line))
 
+
+;; This function has many side effects:
+;; * Set `sage-shell:input-ring-index'.
+;; * Set `sage-shell:output-finished-p'.
+;; * Fill sage-shell:output-ring with nil.
+;; * If current line is like '****?' then pop to the help buffer.
+;; * Send current line to indenting buffer.
+;; * (comint-send-input)
+;; * change default-directory
 (defun sage-shell:send-input ()
-  "Send current line to Sage process.
-This function has many side effects:
-* Set `sage-shell:input-ring-index'.
-* Set `sage-shell:output-finished-p'.
-* Fill sage-shell:output-ring with nil.
-* If current line is like '****?' then pop to the help buffer.
-* Send current line to indenting buffer.
-* (comint-send-input)"
+  "Send current line to Sage process. "
   (interactive)
   (let ((line (buffer-substring (point-at-bol) (line-end-position)))
         (inhibit-read-only t)
@@ -1496,7 +1495,25 @@ This function has many side effects:
         (sage-shell:comint-send-input)))
     ;; If current line contains from ... import *, then update sage commands
     (when (sage-shell-update-sage-commands-p line)
-      (sage-shell:update-sage-commands))))
+      (sage-shell:update-sage-commands))
+    ;; change default-directory if needed
+    (cond  ((and at-tl-in-sage-p
+                 (string-match (rx bol (zero-or-more blank)
+                                   (zero-or-one "%")
+                                   "cd" (zero-or-more blank)
+                                   (group (one-or-more (regexp "[^\n \t]"))))
+                               line)
+                 (file-exists-p (match-string 1 line)))
+            (setq default-directory (let ((dir (match-string 1 line)))
+                                      (if (string-match "/$" dir)
+                                          dir
+                                        (concat dir "/")))))
+           ((and at-tl-in-sage-p
+                 (string-match (rx bol (zero-or-more blank)
+                                   (zero-or-one "%")
+                                   "cd" (zero-or-more blank)
+                                   eol) line))
+            (setq default-directory "~/")))))
 
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
