@@ -1450,6 +1450,8 @@ function does not highlight the input."
 (defun sage-shell-update-sage-commands-p (line)
   (string-match (rx "from" (1+ nonl) "import") line))
 
+(defvar sage-shell:clear-commands-regexp
+  (rx bol "clear" (zero-or-more space) eol))
 
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
@@ -1496,24 +1498,26 @@ function does not highlight the input."
     ;; If current line contains from ... import *, then update sage commands
     (when (sage-shell-update-sage-commands-p line)
       (sage-shell:update-sage-commands))
-    ;; change default-directory if needed
-    (cond  ((and at-tl-in-sage-p
-                 (string-match (rx bol (zero-or-more blank)
-                                   (zero-or-one "%")
-                                   "cd" (zero-or-more blank)
-                                   (group (one-or-more (regexp "[^\n \t]"))))
-                               line)
-                 (file-exists-p (match-string 1 line)))
-            (setq default-directory (let ((dir (match-string 1 line)))
-                                      (if (string-match "/$" dir)
-                                          dir
-                                        (concat dir "/")))))
-           ((and at-tl-in-sage-p
-                 (string-match (rx bol (zero-or-more blank)
-                                   (zero-or-one "%")
-                                   "cd" (zero-or-more blank)
-                                   eol) line))
-            (setq default-directory "~/")))))
+    (when at-tl-in-sage-p
+      ;; change default-directory if needed
+      (cond ((and
+              (string-match (rx bol (zero-or-more blank)
+                                (zero-or-one "%")
+                                "cd" (zero-or-more blank)
+                                (group (one-or-more (regexp "[^\n \t]"))))
+                            line)
+              (file-exists-p (match-string 1 line)))
+             (ignore-errors
+               (cd (match-string 1 line))))
+            ((string-match (rx bol (zero-or-more blank)
+                               (zero-or-one "%")
+                               "cd" (zero-or-more blank)
+                               eol) line)
+             (cd "~")))
+
+      (when (string-match sage-shell:clear-commands-regexp line)
+        (sage-shell:clear-current-buffer)))))
+
 
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
