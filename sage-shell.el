@@ -252,6 +252,13 @@ returned from the function, otherwise, this returns it self. "
   (goto-char (point-min))
   (forward-line (1- n)))
 
+(defmacro sage:labels (bindings &rest body)
+  (let ((labels-sym (if (string< emacs-version "24.3")
+                        'labels
+                      'cl-labels)))
+    `(,labels-sym ,bindings
+                  ,@body)))
+
 (defvar sage:sage-modes '(sage-mode sage-shell-mode))
 
 (require 'compile)
@@ -1679,7 +1686,7 @@ python-mode"
 (defun sage-shell-help:make-forward-back-button ()
   (let ((len (length sage-shell-help:help-contents-list))
         (idx sage-shell-help:help-contents-list-index))
-    (labels ((insert-btn
+    (sage:labels ((insert-btn
               (text arg)
               (insert-text-button
                text
@@ -2184,14 +2191,14 @@ of current Sage process.")
 
 (defun sage-shell-cpl:candidates (&optional regexp proc-buf)
   (with-current-buffer (or proc-buf sage-shell:process-buffer)
-    (labels ((collect-cands
-              (buf rgp)
-              (when (get-buffer buf)
-                (with-current-buffer buf
-                  (loop initially
-                        (goto-char (point-min))
-                        while (re-search-forward (concat "^" rgp) nil t)
-                        collect (match-string 0))))))
+    (sage:labels ((collect-cands
+                   (buf rgp)
+                   (when (get-buffer buf)
+                     (with-current-buffer buf
+                       (loop initially
+                             (goto-char (point-min))
+                             while (re-search-forward (concat "^" rgp) nil t)
+                             collect (match-string 0))))))
       (loop with candidates
             for (buf . intf) in (sage-shell-cpl:completion-buffer-alist
                                  (sage-shell-cpl:get 'interface)
