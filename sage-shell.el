@@ -942,6 +942,10 @@ This ring remebers the parts.")
   (let ((ansi-color-context nil))
     (ansi-color-filter-apply string)))
 
+;; In recent version comint.el,
+;; `comint-redirect-original-filter-function` is removed.
+(defvar comint-redirect-original-filter-function nil)
+
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process))
         (count sage-shell:long-output-rdct-number)
