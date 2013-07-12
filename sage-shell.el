@@ -1263,7 +1263,7 @@ Does not delete the prompt."
           (setq sage-shell:redirect-last-point (point)))))))
 
 (defun sage-shell:prepare-for-redirect (proc  output-buffer
-                                             &optional filter)
+                                              &optional filter)
   "Assumes evaluated in process buffer of PROC"
   ;; Make sure there's a prompt in the current process buffer
   (and comint-redirect-perform-sanity-check
@@ -1274,11 +1274,12 @@ Does not delete the prompt."
 
   ;; Set up for redirection
   (setq sage-shell:redirect-last-point nil)
-  (comint-redirect-setup
-   output-buffer
-   (current-buffer)                     ; Comint Buffer
-   comint-redirect-finished-regexp      ; Finished Regexp
-   nil)                                 ; Echo input
+
+  (setq comint-redirect-original-mode-line-process mode-line-process
+        comint-redirect-output-buffer output-buffer
+        comint-redirect-echo-input nil
+        comint-redirect-completed nil
+        comint-redirect-previous-input-string "")
 
   (when filter
     ;; Set the filter
@@ -1290,8 +1291,7 @@ Does not delete the prompt."
   (when sage-shell:redirect-restore-filter-p
     (set-process-filter (get-buffer-process (current-buffer))
                         comint-redirect-original-filter-function))
-  ;; Restore the mode line
-  (setq mode-line-process comint-redirect-original-mode-line-process)
+
   ;; Set the completed flag
   (setq comint-redirect-completed t))
 
