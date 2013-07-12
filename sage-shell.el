@@ -1274,13 +1274,13 @@ Does not delete the prompt."
 
   ;; Set up for redirection
   (setq sage-shell:redirect-last-point nil)
-
-  (setq comint-redirect-original-mode-line-process mode-line-process
-        comint-redirect-output-buffer output-buffer
-        comint-redirect-echo-input nil
-        comint-redirect-completed nil
-        comint-redirect-previous-input-string "")
-
+  (let ((mode-line-process mode-line-process))
+    (comint-redirect-setup
+     output-buffer
+     (current-buffer)                   ; Comint Buffer
+     comint-redirect-finished-regexp    ; Finished Regexp
+     nil))                              ; Echo input
+  
   (when filter
     ;; Set the filter
     (setq comint-redirect-original-filter-function ; Save the old filter
