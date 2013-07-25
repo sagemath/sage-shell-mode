@@ -1625,23 +1625,37 @@ python-mode"
 
 ;;; sage-shell-help
 (defvar sage-shell-help:fontlock-keyword-regexp
-  (rx (group bow (or "Base Class"
-                     "Definition"
-                     "Docstring"
-                     "EXAMPLES"
-                     "EXAMPLE"
-                     "File"
-                     "Loaded File"
-                     "Source File"
-                     "OUTPUT"
-                     "INPUT"
-                     "Namespace"
-                     "String Form"
-                     "TESTS"
-                     "Type"
-                     "sage"
-                     "Class Docstring"
-                     "Constructor Docstring") ":")))
+  (rx (group (or (and bow (or "Base Class"
+                              "Definition"
+                              "DEFINITION"
+                              "IMPLEMENTATION"
+                              "Docstring"
+                              "EXAMPLES"
+                              "EXAMPLE"
+                              "File"
+                              "Loaded File"
+                              "Source File"
+                              "OUTPUT"
+                              "INPUT"
+                              "Namespace"
+                              "String Form"
+                              "TESTS"
+                              "Methods defined here"
+                              "AUTHORS"
+                              "AUTHOR"
+                              "Type"
+                              "Class Docstring"
+                              "Constructor Docstring")
+                      ":")
+                 (and bol (or "NAME"
+                              "FILE"
+                              "DATA"
+                              "DESCRIPTION"
+                              "PACKAGE CONTENTS"
+                              "FUNCTIONS"
+                              "CLASSES")
+                      eol)
+                 (and bow "sage: ")))))
 
 (defvar sage-shell-help:help-buffer-name "*Sage help*")
 
@@ -1663,17 +1677,19 @@ python-mode"
 (defun sage-shell-help:help-buffer-init (symbol)
   (let* ((case-fold-search t)
          (linenum (sage-shell-help:find-symbols-line-num
-           symbol sage-shell:process-buffer)))
+                   symbol sage-shell:process-buffer)))
     (goto-char (point-min))
     (save-excursion
       (while (re-search-forward (rx bow "sage: ") nil t)
         (replace-match (propertize "sage: " 'read-only t))))
     ;; make button for source file
     (save-excursion
-      (while (and (re-search-forward (rx bol (or "Source File"
-                                                 "Loaded File"
-                                                 "File") ":"
-                                                 (1+ blank)) nil t)
+      (while (and (re-search-forward (rx (or (and bol (or "Source File"
+                                                          "Loaded File"
+                                                          "File") ":"
+                                                          (1+ blank))
+                                             (and bol "FILE" eol)))
+                                     nil t)
                   (re-search-forward "[^ \n\t]+" nil t))
         (sage-shell-help:file-type-make-button
          0 (match-string 0) linenum)))))
