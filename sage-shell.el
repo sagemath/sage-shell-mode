@@ -1289,7 +1289,7 @@ Does not delete the prompt."
      (current-buffer)                   ; Comint Buffer
      comint-redirect-finished-regexp    ; Finished Regexp
      nil))                              ; Echo input
-  
+
   (when filter
     ;; Set the filter
     (setq comint-redirect-original-filter-function ; Save the old filter
@@ -1513,6 +1513,17 @@ function does not highlight the input."
         (if (> (length (match-string 2 line)) 1)
             (sage-shell:find-source-in-view-mode (match-string 1 line))
           (sage-shell-help:describe-symbol (match-string 1 line)))
+        (sage-shell:send-blank-line))
+       ((and at-tl-in-sage-p
+             (string-match (rx bol (zero-or-more blank)
+                               "help"
+                               (zero-or-more blank)
+                               "("
+                               (group (1+ nonl))
+                               (zero-or-more blank) ")"
+                               (zero-or-more blank)
+                               eol) line))
+        (sage-shell-help:describe-symbol (match-string 1 line) "help(%s)")
         (sage-shell:send-blank-line))
 
        ;; send current line to indenting buffer and to process normally
@@ -1757,11 +1768,12 @@ python-mode"
   [remap help-go-forward] 'sage-shell-help:forward-history)
 
 
-(defun sage-shell-help:describe-symbol (symbol)
-  "Describe symbol and pop to help buffer"
-  (let ((buf (get-buffer-create sage-shell-help:help-buffer-name))
-        (str (sage-shell:send-magic-cmd-base "pinfo" symbol))
-        (proc (current-buffer)))
+(defun* sage-shell-help:describe-symbol (symbol &optional (cmd "%%pinfo %s"))
+  "Describe symbol and pop to help buffer."
+  (let* ((buf (get-buffer-create sage-shell-help:help-buffer-name))
+         (cmd-str (format cmd symbol))
+         (str (sage-shell:send-command-to-string cmd-str))
+         (proc (current-buffer)))
     (when (string-match sage-shell-help:symbol-not-found-regexp str)
       (error (format "Object %s not found." symbol)))
 
