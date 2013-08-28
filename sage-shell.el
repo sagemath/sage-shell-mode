@@ -675,17 +675,6 @@ argument."
           (setq sage-shell:sage-version
                 (string-to-number (match-string 1 str)))))))
 
-(defun sage-shell:in-this-func-p (funcname &optional pt)
-  (let ((pt (or pt (point)))
-        (regexp (concat "\\<" (regexp-opt (list funcname)) " *("))
-        (cmbol (save-excursion (comint-bol))))
-    (save-excursion
-      (goto-char pt)
-      (or (looking-back (concat regexp " *"))
-          (when (re-search-backward regexp nil cmbol)
-            (or (null (ignore-errors (forward-list)))
-                (< pt (point))))))))
-
 (defvar sage-shell:print-all-att-sage-fn
   (sage-shell:py-mod-func "print_all_attributes"))
 
@@ -2064,12 +2053,15 @@ is the buffer for the candidates of attribute."
            (itfcs sage-shell-interfaces:other-interfaces)
            (intf (unless att-beg
                    (or (sage:in cur-intf itfcs)
-                       (loop named interfaces for i in itfcs
-                             do (loop for func in (mapcar
-                                                   (lambda (x) (concat i x))
-                                                   (list ".eval" ""))
-                                      if (sage-shell:in-this-func-p func)
-                                      do (return-from interfaces i)))))))
+                       (save-excursion
+                         (let ((pt (point)))
+                           (forward-line 0)
+                           (sage:awhen (re-search-forward
+                                        (format "%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
+                                                (regexp-opt itfcs 1)) nil t)
+                             (when (and (<= (match-end 2) pt)
+                                        (<= pt it))
+                               (match-string 1)))))))))
       (cond
        ;; when the word at point is an attribute
        ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
@@ -2167,20 +2159,20 @@ is the buffer for the candidates of attribute."
 
 (defvar sage-shell-cpl:doc-mssg-time-dur 10)
 
-(defun sage-shell-cpl:show-doc-message-p ()
-  (let ((objname (sage-shell-cpl:get 'last-cmpl-obj))
-        (last-time (sage-shell-cpl:get 'last-cmpl-time)))
-    (and (eq major-mode 'sage-shell-mode)
-         (get-buffer-process (current-buffer))
-         (or
-          ;; if 'objname pt ...'
-          (looking-back
-           (concat (regexp-opt (list objname)) " *"))
-          ;; if 'objname (... pt ...' or 'objname (... pt ...)'
-          (sage-shell:in-this-func-p objname))
-         (< (nth 1 (current-time))
-            (+ sage-shell-cpl:doc-mssg-time-dur
-               last-time)))))
+;; (defun sage-shell-cpl:show-doc-message-p ()
+;;   (let ((objname (sage-shell-cpl:get 'last-cmpl-obj))
+;;         (last-time (sage-shell-cpl:get 'last-cmpl-time)))
+;;     (and (eq major-mode 'sage-shell-mode)
+;;          (get-buffer-process (current-buffer))
+;;          (or
+;;           ;; if 'objname pt ...'
+;;           (looking-back
+;;            (concat (regexp-opt (list objname)) " *"))
+;;           ;; if 'objname (... pt ...' or 'objname (... pt ...)'
+;;           (sage-shell:in-this-func-p objname))
+;;          (< (nth 1 (current-time))
+;;             (+ sage-shell-cpl:doc-mssg-time-dur
+;;                last-time)))))
 
 (defun sage-shell-cpl:switch-to-another-interface-p (line)
   "Returns non nil when LINE contains %gp, gp.console(), gp.interact(), ..."
