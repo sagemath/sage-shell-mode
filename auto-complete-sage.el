@@ -163,22 +163,6 @@ returns a document help as a string."
 (ad-enable-advice 'ac-help 'around 'sage-quick-help)
 (ad-activate 'ac-help)
 
-(defun sage-shell-ac:auto-complete ()
-  (interactive)
-  (let ((init-word (buffer-substring (sage-shell:word-at-pt-beg)
-                                     (point)))
-        (completion-ignore-case nil))
-
-    (try-completion init-word (sage-shell-cpl:candidates-sync))
-    (unless (string= (try-completion init-word (sage-shell-cpl:candidates-sync))
-                     init-word)
-      (completion-at-point)))
-  (auto-complete))
-
-(define-key sage-shell-mode-map
-  [remap auto-complete]
-  'sage-shell-ac:auto-complete)
-
 (defun sage-shell-ac:ac-help ()
   (interactive)
   (when ac-menu
