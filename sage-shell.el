@@ -1473,71 +1473,71 @@ function does not highlight the input."
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
+  (when (sage-shell:output-finished-p)
+    (let ((line (buffer-substring (point-at-bol) (line-end-position)))
+          (inhibit-read-only t)
+          (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
 
-  (let ((line (buffer-substring (point-at-bol) (line-end-position)))
-        (inhibit-read-only t)
-        (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
+      (sage-shell:prepare-for-send)
+      ;; Since comint-send-input sets comint-input-ring-index to nil,
+      ;; restore its value
+      (setq sage-shell:input-ring-index comint-input-ring-index)
 
-    (sage-shell:prepare-for-send)
-    ;; Since comint-send-input sets comint-input-ring-index to nil,
-    ;; restore its value
-    (setq sage-shell:input-ring-index comint-input-ring-index)
+      ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
+      ;; then create completion buffer
+      (sage:awhen (sage-shell-cpl:switch-to-another-interface-p line)
+        (sage-shell-cpl:completion-init it nil t))
 
-    ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
-    ;; then create completion buffer
-    (sage:awhen (sage-shell-cpl:switch-to-another-interface-p line)
-      (sage-shell-cpl:completion-init it nil t))
+      ;; if current line is ***? and current interface is sage then
+      ;; show help or find-file-read-only source file.
+      (cond
+       ((and at-tl-in-sage-p
+             (string-match (rx bol (zero-or-more blank)
+                               (group (1+ (or alnum "_" "." "[" "]")))
+                               (zero-or-more blank)
+                               (group (1+ "?"))
+                               (zero-or-more blank) eol) line))
+        (if (> (length (match-string 2 line)) 1)
+            (sage-shell:find-source-in-view-mode (match-string 1 line))
+          (sage-shell-help:describe-symbol (match-string 1 line)))
+        (sage-shell:send-blank-line))
+       ((and at-tl-in-sage-p
+             (string-match (rx bol (zero-or-more blank)
+                               "help"
+                               (zero-or-more blank)
+                               "("
+                               (group (1+ nonl))
+                               (zero-or-more blank) ")"
+                               (zero-or-more blank)
+                               eol) line))
+        (sage-shell-help:describe-symbol (match-string 1 line) "help(%s)")
+        (sage-shell:send-blank-line))
 
-    ;; if current line is ***? and current interface is sage then
-    ;; show help or find-file-read-only source file.
-    (cond
-     ((and at-tl-in-sage-p
-           (string-match (rx bol (zero-or-more blank)
-                             (group (1+ (or alnum "_" "." "[" "]")))
-                             (zero-or-more blank)
-                             (group (1+ "?"))
-                             (zero-or-more blank) eol) line))
-      (if (> (length (match-string 2 line)) 1)
-          (sage-shell:find-source-in-view-mode (match-string 1 line))
-        (sage-shell-help:describe-symbol (match-string 1 line)))
-      (sage-shell:send-blank-line))
-     ((and at-tl-in-sage-p
-           (string-match (rx bol (zero-or-more blank)
-                             "help"
-                             (zero-or-more blank)
-                             "("
-                             (group (1+ nonl))
-                             (zero-or-more blank) ")"
-                             (zero-or-more blank)
-                             eol) line))
-      (sage-shell-help:describe-symbol (match-string 1 line) "help(%s)")
-      (sage-shell:send-blank-line))
+       ;; send current line to indenting buffer and to process normally
+       (t (sage-shell:send-line-to-indenting-buffer-and-indent line)
+          (sage-shell:comint-send-input)))
+      ;; If current line contains from ... import *, then update sage commands
+      (when (sage-shell-update-sage-commands-p line)
+        (sage-shell:update-sage-commands))
+      (when at-tl-in-sage-p
+        ;; change default-directory if needed
+        (cond ((and
+                (string-match (rx bol (zero-or-more blank)
+                                  (zero-or-one "%")
+                                  "cd" (zero-or-more blank)
+                                  (group (one-or-more (regexp "[^\n \t]"))))
+                              line)
+                (file-exists-p (match-string 1 line)))
+               (ignore-errors
+                 (cd (match-string 1 line))))
+              ((string-match (rx bol (zero-or-more blank)
+                                 (zero-or-one "%")
+                                 "cd" (zero-or-more blank)
+                                 eol) line)
+               (cd "~")))
 
-     ;; send current line to indenting buffer and to process normally
-     (t (sage-shell:send-line-to-indenting-buffer-and-indent line)
-        (sage-shell:comint-send-input)))
-    ;; If current line contains from ... import *, then update sage commands
-    (when (sage-shell-update-sage-commands-p line)
-      (sage-shell:update-sage-commands))
-    (when at-tl-in-sage-p
-      ;; change default-directory if needed
-      (cond ((and
-              (string-match (rx bol (zero-or-more blank)
-                                (zero-or-one "%")
-                                "cd" (zero-or-more blank)
-                                (group (one-or-more (regexp "[^\n \t]"))))
-                            line)
-              (file-exists-p (match-string 1 line)))
-             (ignore-errors
-               (cd (match-string 1 line))))
-            ((string-match (rx bol (zero-or-more blank)
-                               (zero-or-one "%")
-                               "cd" (zero-or-more blank)
-                               eol) line)
-             (cd "~")))
-
-      (when (string-match sage-shell:clear-commands-regexp line)
-        (sage-shell:clear-current-buffer)))))
+        (when (string-match sage-shell:clear-commands-regexp line)
+          (sage-shell:clear-current-buffer))))))
 
 
 (defun sage-shell:send-blank-line ()
