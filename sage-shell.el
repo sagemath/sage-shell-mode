@@ -2486,6 +2486,16 @@ of current Sage process.")
                   (sage:awhen (buffer-file-name) it)))
 
 
+(defun sage-edit:send-line* ()
+  "Like sage-edit:send-line, but insert the line in the process buffer."
+  (interactive)
+  (sage-edit:exec-command-base :command (buffer-substring
+                                         (line-beginning-position)
+                                         (line-end-position))
+                               :insert-command-p t
+                               :display-function 'display-buffer))
+
+
 (defun* sage-edit:load-file-base
   (&key command switch-p (display-function nil))
   (sage-edit:exec-command-base
