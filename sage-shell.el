@@ -2055,7 +2055,7 @@ is the buffer for the candidates of attribute."
                          (let ((pt (point)))
                            (forward-line 0)
                            (sage:awhen (re-search-forward
-                                        (format "%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
+                                        (format "\\<%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
                                                 (regexp-opt itfcs 1)) nil t)
                              (when (and (<= (match-end 2) pt)
                                         (<= pt it))
