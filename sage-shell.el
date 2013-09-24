@@ -604,10 +604,14 @@ When sync is nill this return a lambda function to get the result."
     (apply 'make-comint-in-buffer "Sage" buffer
            (car cmdlist) nil (cdr cmdlist))))
 
+(defvar sage-shell:init-finished-p nil)
+(make-variable-buffer-local 'sage-shell:init-finished-p)
+
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:send-command
-   (mapconcat 'identity sage-shell:init-command-list "; ") buffer))
+   (mapconcat 'identity sage-shell:init-command-list "; ") buffer)
+  (setq sage-shell:init-finished-p t))
 
 (defun sage-shell:get-branch-buffer (new)
   (let* ((buffer-base-name
@@ -1470,10 +1474,11 @@ function does not highlight the input."
 ;; * Send current line to indenting buffer.
 ;; * (comint-send-input)
 ;; * change default-directory
+
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
-  (when (sage-shell:output-finished-p)
+  (when sage-shell:init-finished-p
     (let ((line (buffer-substring (point-at-bol) (line-end-position)))
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
