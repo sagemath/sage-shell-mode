@@ -1893,7 +1893,7 @@ send current line to Sage process buffer."
                                     (format " *sage-%s-compeltion*" itf)))
 
 ;; set verbose message and cache-file name
-(loop for itf in '("maple" "maxima" "r")
+(loop for itf in '("maple" "maxima")
       do
       (sage-shell-interfaces:set
        itf
