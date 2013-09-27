@@ -2490,11 +2490,18 @@ of current Sage process.")
 
 (sage-edit:defun-exec-commands)
 
-(defun sage-edit:read-script-file ()
-  (read-file-name "Load Sage file: "
-                  nil
-                  (sage:awhen (buffer-file-name) it)))
+(defvar sage:file-extensions '("sage" "py" "spyx" "pyx"))
 
+(defun sage-edit:read-script-file ()
+  (read-file-name
+   "Load Sage file: "
+   nil
+   (sage:awhen (buffer-file-name) it)
+   nil
+   nil
+   (lambda (name)
+     (string-match
+      (concat "\\." (regexp-opt sage:file-extensions) "$") name))))
 
 (defun sage-edit:send-line* ()
   "Like sage-edit:send-line, but insert the line in the process buffer."
