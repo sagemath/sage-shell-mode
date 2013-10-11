@@ -940,9 +940,13 @@ This ring remebers the parts.")
 
 (defvar sage-shell:redirect-long-output-p nil)
 
-(defun sage-shell:ansi-color-filter-apply (string)
-  (let ((ansi-color-context nil))
-    (ansi-color-filter-apply string)))
+(defsubst sage-shell:ansi-color-filter-apply (string)
+  (let* ((ansi-color-context nil)
+         (res (ansi-color-filter-apply string)))
+    (cond ((not (or sage-shell:init-finished-p
+                    (= (char-width ?─) (char-width ?-))))
+           (replace-regexp-in-string "─" "-" res))
+          (t res))))
 
 ;; In recent version comint.el,
 ;; `comint-redirect-original-filter-function` is removed.
@@ -950,26 +954,26 @@ This ring remebers the parts.")
 
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process))
-        (count sage-shell:long-output-rdct-number)
-        (string (sage-shell:ansi-color-filter-apply string)))
+        (count sage-shell:long-output-rdct-number))
     (sage:with-current-buffer-safe (and string oprocbuf)
-      (cond
-       (sage-shell:redirect-long-output-p
-        (incf sage-shell:output-filter-count)
+      (let ((string (sage-shell:ansi-color-filter-apply string)))
         (cond
-         ((< sage-shell:output-filter-count count)
-          (sage-shell:output-filter-no-rdct process string))
+         (sage-shell:redirect-long-output-p
+          (incf sage-shell:output-filter-count)
+          (cond
+           ((< sage-shell:output-filter-count count)
+            (sage-shell:output-filter-no-rdct process string))
 
-         ((equal sage-shell:output-filter-count count)
-          (sage-shell:output-filter-rdct-lop-setup process)
-          (sage-shell:output-filter-rdct-lop process string))
+           ((equal sage-shell:output-filter-count count)
+            (sage-shell:output-filter-rdct-lop-setup process)
+            (sage-shell:output-filter-rdct-lop process string))
 
-         ((> sage-shell:output-filter-count count)
-          ;; (when (sage-shell:redirect-finished-p)
-          ;;   ;; FIXME
-          ;;   (message "THE OUTPUT MAY NOT BE CORRECT."))
-          (sage-shell:output-filter-rdct-lop process string))))
-       (t (sage-shell:output-filter-no-rdct process string))))))
+           ((> sage-shell:output-filter-count count)
+            ;; (when (sage-shell:redirect-finished-p)
+            ;;   ;; FIXME
+            ;;   (message "THE OUTPUT MAY NOT BE CORRECT."))
+            (sage-shell:output-filter-rdct-lop process string))))
+         (t (sage-shell:output-filter-no-rdct process string)))))))
 
 (defun sage-shell:output-filter-rdct-lop-setup (process)
   (let ((o-buf (get-buffer-create sage-shell:output-redirect-buffer))
