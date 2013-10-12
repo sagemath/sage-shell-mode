@@ -150,8 +150,9 @@
   ;; Bytecompile files
   (loop for f in sage-install-files
         unless (member f sage-install-dont-bytecompile-files)
-        do (byte-compile-file
-            (expand-file-name f sage-install-installation-directory)))
+        do (ignore-errors
+             (byte-compile-file
+              (expand-file-name f sage-install-installation-directory))))
 
 
   (switch-to-buffer (get-buffer-create "*sage-shell-install*"))
