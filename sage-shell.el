@@ -778,7 +778,10 @@ returns a lamda function with no args to obtain the result."
   (sage:when-process-alive
    (cond
     ((functionp sage-shell:completion-function)
-     (funcall sage-shell:completion-function))
+     (if (eq sage-shell:completion-function 'auto-complete)
+         (let ((this-command 'auto-complete))
+           (funcall sage-shell:completion-function))
+       (funcall sage-shell:completion-function)))
      (t (let ((minibuffer-history nil))
           (completion-at-point))))))
 
