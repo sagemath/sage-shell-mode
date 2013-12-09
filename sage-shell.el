@@ -2341,21 +2341,22 @@ of current Sage process.")
 
   (lexical-let ((command command)
                 (post-message post-message)
-                (insert-command-p insert-command-p))
+                (insert-command-p insert-command-p)
+                (display-function display-function))
 
     (sage:as-soon-as (sage-shell:output-finished-p)
       (sage-edit:exec-cmd-internal command insert-command-p)
       (when post-message
         (sage-shell:after-output-finished
-          (message post-message))))
-    ;; display buffer
-    (when display-function
-      (let ((win (funcall display-function sage-shell:process-buffer)))
-        (when (and (windowp win)
-                   (window-live-p win))
-          (with-selected-window win
-            (goto-char (process-mark
-                        (get-buffer-process sage-shell:process-buffer)))))))
+          (message post-message)))
+      ;; display buffer
+      (when display-function
+        (let ((win (funcall display-function sage-shell:process-buffer)))
+          (when (and (windowp win)
+                     (window-live-p win))
+            (with-selected-window win
+              (goto-char (process-mark
+                          (get-buffer-process sage-shell:process-buffer))))))))
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
 (defun sage-edit:exec-cmd-internal (command insert-command-p)
