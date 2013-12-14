@@ -297,12 +297,13 @@ returned from the function, otherwise, this returns it self. "
 
 (defvar sage-shell:output-finished-regexp
   (concat (rx (group line-start
-                     (or "sage:" "sage0:" ">>>" "....:"
-                         "(Pdb)" "ipdb>" "(gdb)")
-                     " "line-end))
-          "\\|^\\("
-          (regexp-opt sage-shell-interfaces:other-interfaces)
-          ": $\\)"))
+                   (1+ (and (or "sage:" "sage0:" ">>>" "....:"
+                             "(Pdb)" "ipdb>" "(gdb)")
+                         " "))
+                   line-end))
+        "\\|^\\("
+        (regexp-opt sage-shell-interfaces:other-interfaces)
+        ": $\\)"))
 
 (defvar sage-shell:process-buffer nil)
 (make-variable-buffer-local 'sage-shell:process-buffer)
