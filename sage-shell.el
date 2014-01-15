@@ -259,6 +259,13 @@ returned from the function, otherwise, this returns it self. "
     `(,labels-sym ,bindings
                   ,@body)))
 
+(defmacro sage:->> (x form &rest forms)
+  (if (not forms)
+      (if (sequencep form)
+          (append form (list x))
+        (list form x))
+    `(sage:->> (sage:->> ,x ,form) ,@forms)))
+
 (defvar sage:sage-modes '(sage-mode sage-shell-mode))
 
 (require 'compile)
@@ -286,6 +293,14 @@ returned from the function, otherwise, this returns it self. "
     "singular"))
 
 (defvar sage-shell:command nil)
+
+(defun sage-shell:sage-root ()
+  (sage:aif sage-shell:sage-root
+      it
+    (sage:aif (executable-find (sage-shell:command))
+        (sage:->>  it
+                   file-truename
+                   file-name-directory))))
 
 (defun sage-shell:command ()
   (or sage-shell:command
@@ -629,7 +644,7 @@ When sync is nill this return a lambda function to get the result."
               (read-from-minibuffer "Run sage (like this): "
                                     "sage" nil nil 'sage-shell:run-history
                                     "sage") " ")))
-    (concat (sage:aif sage-shell:sage-root
+    (concat (sage:aif (sage-shell:sage-root)
                 (expand-file-name (car lst) it)
               "sage")
             " "
