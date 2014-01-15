@@ -582,13 +582,6 @@ When sync is nill this return a lambda function to get the result."
   "Send process to command and return output as string."
   (sage-shell:send-command-sync command process-buffer nil t))
 
-(defun sage-shell:current-branch-link ()
-  "Return the current Sage branch link, i.e., the target of devel/sage."
-  (let ((lst (split-string
-              (shell-command-to-string
-               (concat (sage-shell:command) " -branch")))))
-    (if (= 1 (length lst)) (nth 0 lst) "main")))
-
 (defvar sage-shell:run-history nil "sage command history.")
 
 (defvar sage-shell:python-module "emacs_sage_shell"
@@ -629,12 +622,8 @@ When sync is nill this return a lambda function to get the result."
    (mapconcat 'identity sage-shell:init-command-list "; ") buffer)
   (setq sage-shell:init-finished-p t))
 
-(defun sage-shell:get-branch-buffer (new)
-  (let* ((buffer-base-name
-          (sage:if-let* ((str (format "*Sage-%s*"
-                                      (sage-shell:current-branch-link))))
-              (string= str "*Sage-main*")
-              "*Sage*" str)))
+(defun sage-shell:shell-buffer-name (new)
+  (let* ((buffer-base-name "*Sage*"))
     (if new (generate-new-buffer buffer-base-name)
       (sage:aif (get-buffer buffer-base-name) it
                 (generate-new-buffer buffer-base-name)))))
@@ -655,7 +644,7 @@ When sync is nill this return a lambda function to get the result."
   "Running Sage function internal.
 SIWTCH-FUNCTION is 'no-switch, or a function with one
 argument."
-  (let ((buf (sage-shell:get-branch-buffer new)))
+  (let ((buf (sage-shell:shell-buffer-name new)))
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
