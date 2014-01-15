@@ -956,7 +956,7 @@ This ring remebers the parts.")
          (res (ansi-color-filter-apply string)))
     (cond ((not (or sage-shell:init-finished-p
                     (= (char-width ?─) (char-width ?-))))
-           (replace-regexp-in-string "─" "-" res))
+           (replace-regexp-in-string (rx (or "─" "━")) "-" res))
           (t res))))
 
 ;; In recent version comint.el,
