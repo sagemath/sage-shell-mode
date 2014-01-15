@@ -824,19 +824,22 @@ returns a lamda function with no args to obtain the result."
   "Regexp to match sage site-packages files.
 
 Match group 1 will be replaced with devel/sage-branch")
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun sage-shell:development-version (filename)
   "If FILENAME is in site-packages, current branch version, else FILENAME."
   (save-match-data
     (let* ((match (string-match sage-shell:site-packages-regexp filename)))
-      (if (and filename match)
-          ;; handle current branch somewhat intelligiently
-          (let* ((base (concat (substring filename 0 (match-beginning 1)) "devel/"))
-                 (branch (or (file-symlink-p (concat base "sage")) "sage")))
-            (concat base branch (substring filename (match-end 1))))
-        filename))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+           (sage:aif (and filename match
+                          (loop for a in '("devel" "src")
+                                if (file-exists-p (expand-file-name a (sage-shell:sage-root)))
+                                return a))
+               (let* ((base (concat (substring filename 0 (match-beginning 1)) it "/"))
+                      (branch (cond ((string= "devel" it)
+                                     (or (file-symlink-p (concat base "sage")) "sage"))
+                                    (t ""))))
+                 (concat base branch (substring filename (match-end 1))))
+             filename))))
 
 (defcustom sage-shell:prefer-development-file-p t
   "If non nil, prefer a source file in devel directory rather than site-packages directory."
