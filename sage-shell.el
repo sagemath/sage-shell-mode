@@ -1,6 +1,6 @@
 ;;; sage.el Sage front-end for GNU Emacs
 
-;; Copyright (C) 2012, 2013 Sho Takemori
+;; Copyright (C) 2012 ~ 2014 Sho Takemori
 ;; Author: Sho Takemori
 ;; Keywords: sage math
 ;; Created: 2012
