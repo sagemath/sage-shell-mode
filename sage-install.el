@@ -129,8 +129,15 @@
       "emacs_sage_shell.py"))
 
   (defvar sage-install-dont-bytecompile-files
-    '("sage-shell-autoloads.el"
-      "emacs_sage_shell.py"))
+    (append
+     (unless (require 'auto-complete nil t)
+       '("auto-complete-sage.el"))
+     (unless (require 'anything nil t)
+       '("anything-sage.el"))
+     (unless (require 'helm nil t)
+       '("helm-sage.el"))
+     '("sage-shell-autoloads.el"
+       "emacs_sage_shell.py")))
 
   (defvar sage-install-url nil)
 
