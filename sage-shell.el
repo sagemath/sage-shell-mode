@@ -67,7 +67,7 @@
   "Function used for `sage-shell:complete'."
   :group 'sage-shell
   :type '(choice (const :tag "default" completion-at-point)
-                 (const :tag "auto-complete" sage-shell-ac:auto-complete)
+                 (const :tag "auto-complete" auto-complete)
                  (const :tag "anything" anything-sage-shell)
                  (const :tag "helm" helm-sage-shell)))
 
