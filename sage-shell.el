@@ -2359,12 +2359,13 @@ of current Sage process.")
           (message post-message)))
       ;; display buffer
       (when display-function
-        (let ((win (funcall display-function sage-shell:process-buffer)))
-          (when (and (windowp win)
-                     (window-live-p win))
-            (with-selected-window win
-              (goto-char (process-mark
-                          (get-buffer-process sage-shell:process-buffer))))))))
+        (sage-shell:after-output-finished
+          (let ((win (funcall display-function sage-shell:process-buffer)))
+            (when (and (windowp win)
+                       (window-live-p win))
+              (with-selected-window win
+                (goto-char (process-mark
+                            (get-buffer-process sage-shell:process-buffer)))))))))
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
 (defun sage-edit:exec-cmd-internal (command insert-command-p)
