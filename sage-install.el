@@ -1,44 +1,31 @@
 (with-no-warnings (require 'cl))
 (progn
   (with-no-warnings (require 'cl))
+
+  (defun sage-install-read-sage-root ()
+    (let ((d nil))
+      (while (not (progn
+                    (setq d (read-directory-name "Please specify Sage's root directory: "))
+                    (file-executable-p
+                     (expand-file-name "sage" d)))))
+      d))
+
   (defun sage-install-sage-root ()
     (cond
      ((executable-find "sage") nil)
-     ((yes-or-no-p "Cannot find command 'sage'. Guess Sage root directory?: ")
-      (sage-install-guess-sage-root))
-     (t (read-directory-name "Sage root directory: "))))
+     ((and (eq system-type 'darwin)
+           (yes-or-no-p "Cannot find command 'sage'. Guess Sage's root directory?: "))
+      (or (sage-install-guess-sage-root)
+          (sage-install-read-sage-root)))
+     (t (sage-install-read-sage-root))))
 
   (defun sage-install-guess-sage-root ()
-    (cond
-     ((eq system-type 'darwin) (sage-install-guess-sage-root-darwin))
-     (t (sage-install-guess-sage-root1))))
-
-  (defun sage-install-guess-sage-root1 ()
-    (let ((file-list
-           (remove
-            nil (mapcar
-                 (lambda (x) (when (and (not (equal "" x))
-                                        (file-executable-p x))
-                               x))
-                 (split-string
-                  (replace-regexp-in-string
-                   "\n" " "
-                   (shell-command-to-string
-                    (format "find ~/ -type f -name 'sage'")))
-                  " ")))))
-      (unless file-list
-        (error "Cannot find Sage."))
-      (file-name-directory
-       (car (sort file-list 'string<)))))
-
-  (defun sage-install-guess-sage-root-darwin ()
     (let ((sage-app (loop for f in (directory-files "/Applications/")
                           if (string-match (rx "Sage" (1+ nonl) ".app") f)
                           return f)))
-      (cond
-       (sage-app (expand-file-name "Contents/Resources/sage/"
-                                   (expand-file-name sage-app "/Applications")))
-       (t (sage-install-guess-sage-root1)))))
+      (when sage-app
+        (expand-file-name "Contents/Resources/sage/"
+                          (expand-file-name sage-app "/Applications")))))
 
   (defun sage-install-sage-root-config ()
     (let ((r (sage-install-sage-root)))
