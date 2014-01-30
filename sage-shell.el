@@ -403,7 +403,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:menu-defined-p nil)
 
 (define-derived-mode sage-shell-mode comint-mode
-  "Sage Interactive Shell" "Execute Sage commands interactively."
+  "Sage-repl" "Execute Sage commands interactively."
 
   (setq font-lock-defaults '(sage-shell:font-lock-keywords
                              nil nil nil beginning-of-line))
@@ -1664,9 +1664,9 @@ python-mode"
                       eol)
                  (and bow "sage: ")))))
 
-(defvar sage-shell-help:help-buffer-name "*Sage help*")
+(defvar sage-shell-help:help-buffer-name "*Sage Document*")
 
-(define-derived-mode sage-help-mode help-mode "Sage help"
+(define-derived-mode sage-help-mode help-mode "Sage-doc"
   "Help mode for Sage"
   (font-lock-mode 1)
   (view-mode 1)
