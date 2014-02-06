@@ -402,6 +402,12 @@ returned from the function, otherwise, this returns it self. "
 
 (defvar sage-shell:menu-defined-p nil)
 
+(defvar sage-shell:output-finished-p nil)
+(make-variable-buffer-local 'sage-shell:output-finished-p)
+(defun* sage-shell:output-finished-p
+    (&optional (buffer sage-shell:process-buffer))
+  (buffer-local-value 'sage-shell:output-finished-p buffer))
+
 (define-derived-mode sage-shell-mode comint-mode
   "Sage-repl" "Execute Sage commands interactively."
 
@@ -453,6 +459,7 @@ returned from the function, otherwise, this returns it self. "
                (lambda () (sage-shell:after-init-function
                            sage-shell:process-buffer))))
 
+
 (setq sage-shell-mode-syntax-table
       (let ((table (make-syntax-table)))
         ;; Give punctuation syntax to ASCII that normally has symbol
@@ -475,6 +482,12 @@ returned from the function, otherwise, this returns it self. "
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
+(defun sage-shell:interrupt-subjob ()
+  (interactive)
+  (comint-interrupt-subjob)
+  (setq comint-redirect-completed t
+        sage-shell:output-finished-p t))
+
 (sage:define-keys sage-shell-mode-map
   "TAB" 'sage-shell-tab-command
   "C-d" 'sage-shell:delchar-or-maybe-eof
@@ -486,8 +499,12 @@ returned from the function, otherwise, this returns it self. "
 
 (define-key sage-shell-mode-map [remap comint-next-input]
   'sage-shell:next-input)
+
 (define-key sage-shell-mode-map [remap comint-delete-output]
   'sage-shell:delete-output)
+
+(define-key sage-shell-mode-map [remap comint-interrupt-subjob]
+  'sage-shell:interrupt-subjob)
 
 (defun sage-shell:delchar-or-maybe-eof (arg)
   "Delete ARG characters forward or send an EOF to Sage process.
@@ -601,12 +618,6 @@ When sync is nill this return a lambda function to get the result."
    (format "sys.path = sys.path + ['%s']" sage-shell:python-script-directory)
    (format "import %s" sage-shell:python-module))
   "Sage command list evaluated after loading Sage.")
-
-(defvar sage-shell:output-finished-p nil)
-(make-variable-buffer-local 'sage-shell:output-finished-p)
-(defun* sage-shell:output-finished-p
-    (&optional (buffer sage-shell:process-buffer))
-  (buffer-local-value 'sage-shell:output-finished-p buffer))
 
 (defun sage-shell:start-sage-process (cmd buffer)
   (let ((cmdlist (split-string cmd)))
