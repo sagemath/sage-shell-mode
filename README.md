@@ -77,6 +77,28 @@ This requires `anything.el` and `anything-match-plugin.el`.
           sage-shell:help-completion-function
           'anything-sage-shell-describe-object-at-point)
     ```
+Or you may change the key binding directory.
+    ```lisp
+    (define-key sage-shell-mode-map (kbd "C-c C-i") 'anything-sage-shell)
+    (define-key sage-shell-mode-map (kbd "C-c C-h") 'anything-sage-shell-describe-object-at-point)
+    ```
+
+1. (Optional) If you want to complete Sage commands by helm,
+add the following lines to "~/.emacs".
+This requires `helm.el` and `helm-match-plugin.el`.
+
+    ```lisp
+    (setq sage-shell:completion-function
+          'helm-sage-shell
+          sage-shell:help-completion-function
+          'helm-sage-shell-describe-object-at-point)
+    ```
+Or you may change the key binding directory.
+    ```lisp
+    (define-key sage-shell-mode-map (kbd "C-c C-i") 'helm-sage-shell)
+    (define-key sage-shell-mode-map (kbd "C-c C-h") 'helm-sage-shell-describe-object-at-point)
+    ```
+
 
 # Basic Usage
 You can run Sage by `M-x run-sage`.

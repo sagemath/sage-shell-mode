@@ -67,7 +67,7 @@
   "Function used for `sage-shell:complete'."
   :group 'sage-shell
   :type '(choice (const :tag "default" completion-at-point)
-                 (const :tag "auto-complete" sage-shell-ac:auto-complete)
+                 (const :tag "auto-complete" auto-complete)
                  (const :tag "anything" anything-sage-shell)
                  (const :tag "helm" helm-sage-shell)))
 
@@ -403,7 +403,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:menu-defined-p nil)
 
 (define-derived-mode sage-shell-mode comint-mode
-  "Sage Interactive Shell" "Execute Sage commands interactively."
+  "Sage-repl" "Execute Sage commands interactively."
 
   (setq font-lock-defaults '(sage-shell:font-lock-keywords
                              nil nil nil beginning-of-line))
@@ -1664,9 +1664,9 @@ python-mode"
                       eol)
                  (and bow "sage: ")))))
 
-(defvar sage-shell-help:help-buffer-name "*Sage help*")
+(defvar sage-shell-help:help-buffer-name "*Sage Document*")
 
-(define-derived-mode sage-help-mode help-mode "Sage help"
+(define-derived-mode sage-help-mode help-mode "Sage-doc"
   "Help mode for Sage"
   (font-lock-mode 1)
   (view-mode 1)
@@ -2359,12 +2359,13 @@ of current Sage process.")
           (message post-message)))
       ;; display buffer
       (when display-function
-        (let ((win (funcall display-function sage-shell:process-buffer)))
-          (when (and (windowp win)
-                     (window-live-p win))
-            (with-selected-window win
-              (goto-char (process-mark
-                          (get-buffer-process sage-shell:process-buffer))))))))
+        (sage-shell:after-output-finished
+          (let ((win (funcall display-function sage-shell:process-buffer)))
+            (when (and (windowp win)
+                       (window-live-p win))
+              (with-selected-window win
+                (goto-char (process-mark
+                            (get-buffer-process sage-shell:process-buffer)))))))))
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
 (defun sage-edit:exec-cmd-internal (command insert-command-p)
