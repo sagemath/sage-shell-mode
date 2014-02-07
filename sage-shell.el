@@ -2350,11 +2350,26 @@ of current Sage process.")
                         (process-buffer (cdar proc-alist))))))))
 
 (defvar sage-edit:display-function nil)
+(defvar sage-shell:original-mode-line-process nil)
+
+
+(defun sage-shell:change-mode-line-process (on)
+  (cond (on
+         (setq sage-shell:original-mode-line-process mode-line-process)
+         (setq mode-line-process
+               (if mode-line-process
+                   (list (concat (elt mode-line-process 0) " load"))
+                 (list ":%s load"))))
+        (t (setq mode-line-process sage-shell:original-mode-line-process))))
+
 (defun* sage-edit:exec-command-base
     (&key command pre-message post-message switch-p
           (display-function nil) (insert-command-p nil))
   ;; set sage process buffer
   (sage-edit:set-sage-proc-buf-internal)
+
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell:change-mode-line-process t))
 
   (sage:awhen pre-message (message it))
 
@@ -2376,7 +2391,10 @@ of current Sage process.")
                        (window-live-p win))
               (with-selected-window win
                 (goto-char (process-mark
-                            (get-buffer-process sage-shell:process-buffer)))))))))
+                            (get-buffer-process sage-shell:process-buffer))))))))
+      (sage-shell:after-output-finished
+        (with-current-buffer sage-shell:process-buffer
+          (sage-shell:change-mode-line-process nil))))
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
 (defun sage-edit:exec-cmd-internal (command insert-command-p)
