@@ -2352,13 +2352,13 @@ of current Sage process.")
 (defvar sage-edit:display-function nil)
 (defvar sage-shell:original-mode-line-process nil)
 
-
 (defun sage-shell:change-mode-line-process (on)
   (cond (on
-         (setq sage-shell:original-mode-line-process mode-line-process)
+         (unless sage-shell:original-mode-line-process
+           (setq sage-shell:original-mode-line-process mode-line-process))
          (setq mode-line-process
-               (if mode-line-process
-                   (list (concat (elt mode-line-process 0) " load"))
+               (sage:aif mode-line-process
+                   (list (concat (car it) " load"))
                  (list ":%s load"))))
         (t (setq mode-line-process sage-shell:original-mode-line-process))))
 
