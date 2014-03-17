@@ -20,12 +20,18 @@
      (t (sage-install-read-sage-root))))
 
   (defun sage-install-guess-sage-root ()
-    (let ((sage-app (loop for f in (directory-files "/Applications/")
-                          if (string-match (rx "Sage" (1+ nonl) ".app") f)
-                          return f)))
+    (let* ((case-fold-search nil)
+           (sage-app (loop for f in (directory-files "/Applications/")
+                           if (string-match (rx bos "Sage" (1+ nonl) ".app") f)
+                           return f)))
       (when sage-app
-        (expand-file-name "Contents/Resources/sage/"
-                          (expand-file-name sage-app "/Applications")))))
+        (let* ((dir-maybe
+                (expand-file-name "Contents/Resources/sage/"
+                                  (expand-file-name sage-app "/Applications")))
+               (exec-maybe (expand-file-name "sage" dir-maybe)))
+          (and (file-exists-p exec-maybe)
+               (file-executable-p exec-maybe)
+               dir-maybe)))))
 
   (defun sage-install-sage-root-config ()
     (let ((r (sage-install-sage-root)))
@@ -150,7 +156,7 @@
 
 
   (switch-to-buffer (get-buffer-create "*sage-shell-install*"))
-  (insert (format ";; Put the following lines to %s \n" user-init-file))
+  (insert (format ";; Put the following lines to %s\n" user-init-file))
   (newline)
   (sage-install-insert-config sage-install-installation-directory)
   (emacs-lisp-mode))
