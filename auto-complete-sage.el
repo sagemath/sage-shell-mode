@@ -64,10 +64,11 @@
       "while" "with" "xrange" "yield" "zip" "__import__"))
 
 (defun sage-shell-ac:init ()
-  (sage-shell-cpl:completion-init
-   (sage-shell-cpl:get 'interface)
-   (sage-shell-cpl:get 'var-base-name)
-   (equal this-command 'auto-complete)))
+  (when (sage-shell:output-finished-p)
+    (sage-shell-cpl:completion-init
+     (sage-shell-cpl:get 'interface)
+     (sage-shell-cpl:get 'var-base-name)
+     (equal this-command 'auto-complete))))
 
 (defun sage-shell-ac:candidates ()
   (when (and (sage-shell:redirect-finished-p)
