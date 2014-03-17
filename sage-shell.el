@@ -78,6 +78,11 @@
                  (const :tag "anything" anything-sage-shell-describe-object-at-point)
                  (const :tag "helm" helm-sage-shell-describe-object-at-point)))
 
+
+(defcustom sage-shell:use-unicode-banner t
+  "Non-nil means use unicode character in Sage's banner."
+  :type 'boolean
+  :group 'sage-shell)
 
 ;;;; Code
 ;;; Anaphoric macros
@@ -962,12 +967,18 @@ This ring remebers the parts.")
 
 (defvar sage-shell:redirect-long-output-p nil)
 
-(defsubst sage-shell:ansi-color-filter-apply (string)
+(defun sage-shell:ansi-color-filter-apply (string)
   (let* ((ansi-color-context nil)
          (res (ansi-color-filter-apply string)))
     (cond ((not (or sage-shell:init-finished-p
+                    sage-shell:use-unicode-banner
                     (= (char-width ?─) (char-width ?-))))
-           (replace-regexp-in-string (rx (or "─" "━")) "-" res))
+           (sage:->> res
+                     (replace-regexp-in-string (rx (or "─" "━"
+                                                       "└" "┌"
+                                                       "┐" "┘"))
+                                               "-")
+                     (replace-regexp-in-string (rx "│") "|")))
           (t res))))
 
 ;; In recent version comint.el,
