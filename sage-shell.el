@@ -57,7 +57,7 @@
                  (const :tag "Not specified" nil)))
 
 (defcustom sage-shell:input-history-cache-file
-  (expand-file-name ".sage_input_history" user-emacs-directory)
+  nil
   "If non nil, after invoking `sage-shell:send-eof',`comint-input-ring' is saved to this file."
   :group 'sage-shell
   :type '(choice (file :tag "file")
