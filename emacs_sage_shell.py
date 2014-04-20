@@ -8,6 +8,9 @@ except:                         # Older versions
     ip = IPython.ipapi.get()
     ip.IP.shell.autoindent = False
 
+# Disable color.
+ip.run_line_magic('colors', 'NoColor')
+
 interfaces = ip.ev('interfaces')
 
 
