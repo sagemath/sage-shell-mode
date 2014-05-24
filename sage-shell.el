@@ -294,6 +294,7 @@ returned from the function, otherwise, this returns it self. "
     "mathematica"
     "mwrank"
     "octave"
+    "pari"
     "r"
     "singular"))
 
@@ -1868,22 +1869,27 @@ send current line to Sage process buffer."
     "giac")
   "Interfaces not installed by default.")
 
+(defun sage-shell-cpl:interface-trans (interface)
+  (cond ((string= interface "pari") "gp")
+        (t interface)))
+
 (defun sage-shell-interfaces:current-interface ()
   (save-excursion
     ;; goto last prompt
     (goto-char (process-mark (get-buffer-process (current-buffer))))
     (forward-line 0)
-    (sage:aif (loop for str in sage-shell-interfaces:other-interfaces
-                    if (looking-at (concat str ": ")) return str)
-        it
-      (if (looking-at sage-shell:prompt-regexp)
-          "sage"
-        ;; otherwise
-        (let ((lstline (ring-ref comint-input-ring 0)))
-          (when (string-match
-                 (rx (group (1+ alnum)) (or "." "_") "console")
-                 lstline)
-            (match-string-no-properties 1 lstline)))))))
+    (sage:->> (sage:aif (loop for str in sage-shell-interfaces:other-interfaces
+                              if (looking-at (concat str ": ")) return str)
+                  it
+                (if (looking-at sage-shell:prompt-regexp)
+                    "sage"
+                  ;; otherwise
+                  (let ((lstline (ring-ref comint-input-ring 0)))
+                    (when (string-match
+                           (rx (group (1+ alnum)) (or "." "_") "console")
+                           lstline)
+                      (match-string-no-properties 1 lstline)))))
+              sage-shell-cpl:interface-trans)))
 
 ;; Define many global variables
 (loop for i in (append sage-shell-interfaces:other-interfaces '("sage"))
