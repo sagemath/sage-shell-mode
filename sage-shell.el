@@ -972,8 +972,7 @@ This ring remebers the parts.")
   (let* ((ansi-color-context nil)
          (res (ansi-color-filter-apply string)))
     (cond ((not (or sage-shell:init-finished-p
-                    sage-shell:use-unicode-banner
-                    (= (char-width ?─) (char-width ?-))))
+                    sage-shell:use-unicode-banner))
            (sage:->> res
                      (replace-regexp-in-string (rx (or "─" "━"
                                                        "└" "┌"
