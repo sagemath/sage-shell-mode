@@ -4,8 +4,8 @@
 
 
 ;;;### (autoloads (anything-sage-command-history anything-sage-shell-describe-object-at-point
-;;;;;;  anything-sage-shell) "anything-sage" "anything-sage.el" (20915
-;;;;;;  7427))
+;;;;;;  anything-sage-shell) "anything-sage" "anything-sage.el" (21428
+;;;;;;  10776))
 ;;; Generated autoloads from anything-sage.el
 
 (autoload 'anything-sage-shell "anything-sage" "\
@@ -26,7 +26,7 @@
 ;;;***
 
 ;;;### (autoloads (sage-edit-ac:add-sources sage-shell-ac:add-sources)
-;;;;;;  "auto-complete-sage" "auto-complete-sage.el" (20910 33188))
+;;;;;;  "auto-complete-sage" "auto-complete-sage.el" (21428 10776))
 ;;; Generated autoloads from auto-complete-sage.el
 
 (autoload 'sage-shell-ac:add-sources "auto-complete-sage" "\
@@ -42,7 +42,7 @@
 ;;;***
 
 ;;;### (autoloads (helm-sage-command-history helm-sage-shell-describe-object-at-point
-;;;;;;  helm-sage-shell) "helm-sage" "helm-sage.el" (20915 7439))
+;;;;;;  helm-sage-shell) "helm-sage" "helm-sage.el" (21428 10776))
 ;;; Generated autoloads from helm-sage.el
 
 (autoload 'helm-sage-shell "helm-sage" "\
@@ -62,8 +62,9 @@
 
 ;;;***
 
-;;;### (autoloads (sage-mode sage-shell:run-new-sage sage-shell:run-sage)
-;;;;;;  "sage-shell" "sage-shell.el" (20915 7996))
+;;;### (autoloads (sagetex-load-file sage-mode sage-shell:run-new-sage
+;;;;;;  sage-shell:run-sage) "sage-shell" "sage-shell.el" (21429
+;;;;;;  5895))
 ;;; Generated autoloads from sage-shell.el
 
 (autoload 'sage-shell:run-sage "sage-shell" "\
@@ -85,9 +86,14 @@
 
 \(fn)" t nil)
 
+(autoload 'sagetex-load-file "sage-shell" "\
+Compile a TeX file, execute this command and compile the TeX file again.
+
+\(fn FILENAME)" t nil)
+
 ;;;***
 
-;;;### (autoloads nil nil ("sage-install.el") (20915 8154 368166))
+;;;### (autoloads nil nil ("sage-install.el") (21429 5899 69139))
 
 ;;;***
 

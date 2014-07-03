@@ -2634,6 +2634,35 @@ of current Sage process.")
 
 (defvar sage-mode-hook nil "Hook run when entering Sage mode.")
 
+;; Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS.
+(sage:awhen (sage-shell:sage-root)
+  (let ((texinputs (getenv "TEXINPUTS"))
+        (sagetexdir (expand-file-name
+                     "local/share/texmf/tex/generic/sagetex/:"
+                     it)))
+    (setenv "TEXINPUTS" (concat texinputs sagetexdir))))
+
+
+;;; sagetex
+;;;###autoload
+(defun sagetex-load-file (filename)
+  "Compile a TeX file, execute this command and compile the TeX file again."
+  (interactive (list (let ((dflt (expand-file-name
+                                  (concat
+                                   (if (fboundp 'TeX-master-file)
+                                       (TeX-master-file)
+                                     (sage:->>
+                                      (buffer-file-name)
+                                      file-name-nondirectory
+                                      file-name-sans-extension))
+                                    ".sagetex.sage")
+                                  default-directory)))
+                       (read-file-name "Sage TeX file: " nil dflt nil
+                                       (file-name-nondirectory dflt)
+                        (lambda (name)
+                          (string-match (rx (or ".sage" ".py") eol) name))))))
+  (sage-edit:load-file filename))
+
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
