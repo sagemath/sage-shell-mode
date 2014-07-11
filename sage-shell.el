@@ -1117,18 +1117,9 @@ This ring remebers the parts.")
       (add-text-properties
        prompt-start (point)
        '(read-only t rear-nonsticky t front-sticky (read-only) field output)))
-    (unless (and (bolp) (null comint-last-prompt-overlay))
-      ;; Need to create or move the prompt overlay (in the case
-      ;; where there is no prompt ((bolp) == t), we still do
-      ;; this if there's already an existing overlay).
-      (if comint-last-prompt-overlay
-          ;; Just move an existing overlay
-          (move-overlay comint-last-prompt-overlay
-                        prompt-start (point))
-        ;; Need to create the overlay
-        (setq comint-last-prompt-overlay
-              (make-overlay prompt-start (point)))
-        (overlay-put comint-last-prompt-overlay
+    (unless (bolp)
+      (let ((ov (make-overlay prompt-start (point))))
+        (overlay-put ov
                      'font-lock-face 'comint-highlight-prompt)))))
 
 (defun sage-shell:delete-output ()
