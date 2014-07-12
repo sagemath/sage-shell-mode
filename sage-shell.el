@@ -1665,7 +1665,10 @@ python-mode"
                               "AUTHOR"
                               "Type"
                               "Class Docstring"
-                              "Constructor Docstring")
+                              "Constructor Docstring"
+                              "Constructor information"
+                              "Call def"
+                              "Call docstring")
                       ":")
                  (and bol (or "NAME"
                               "FILE"
