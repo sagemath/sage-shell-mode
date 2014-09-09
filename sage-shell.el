@@ -1671,7 +1671,8 @@ python-mode"
                               "Constructor information"
                               "Call def"
                               "Call docstring"
-                              "Init definition")
+                              "Init definition"
+                              "Init docstring")
                       ":")
                  (and bol (or "NAME"
                               "FILE"
@@ -2464,6 +2465,9 @@ of current Sage process.")
       (beginning-of-line)
       (when (looking-at " +") ; need dummy block
         (insert "if True:\n"))
+      (goto-char (point-max))
+      (unless (bolp)
+        (newline))
       (write-region nil nil  f nil 'nomsg))
     ;; return temp file name
     f))
