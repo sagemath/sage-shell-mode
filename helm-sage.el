@@ -33,10 +33,7 @@
 ;;       sage-shell:help-completion-function
 ;;       'helm-sage-shell-describe-object-at-point)
 
-
-
-
-;;; Code
+;;; Code:
 (eval-when-compile (require 'cl))
 (require 'helm)
 (require 'helm-match-plugin)

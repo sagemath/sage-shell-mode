@@ -41,10 +41,7 @@
 ;; it is like
 ;; "/Applications/Sage-*.*-OSX-64bit-**.*.app/Contents/Resources/sage".
 
-
-
-
-
+;;; Code:
 (eval-when-compile (require 'cl))
 ;;; Global variables for users
 
@@ -86,7 +83,6 @@
   :type 'boolean
   :group 'sage-shell)
 
-;;;; Code
 ;;; Anaphoric macros
 (defmacro sage:ansetq (&rest rest)
   "Anaphoric setq. REST is a list of sym val sym1 val1... `it' is

@@ -32,8 +32,7 @@
 ;; (add-hook 'sage-shell-mode-hook 'sage-shell-ac:add-sources)
 ;; (add-hook 'sage-mode-hook 'sage-edit-ac:add-sources)
 
-
-;;; Code
+;;; Code:
 (require 'auto-complete)
 (require 'sage-shell)
 (eval-when-compile (require 'cl))
