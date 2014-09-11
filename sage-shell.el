@@ -2159,7 +2159,8 @@ is the buffer for the candidates of attribute."
         ;; `sage-shell-cpl:attribute-completion-buffer'
         (unless (get-buffer att-cmp-bufn) (get-buffer-create att-cmp-bufn))
         (cond ((boundp 'ac-auto-start)  ; case when auto-complete.el is loaded
-               (when (or (null ac-auto-start)
+               (when (or sync
+                         (null ac-auto-start)
                          (and (integerp ac-auto-start)
                               (<= (- (point) (sage-shell-cpl:get 'prefix))
                                   ac-auto-start)))
