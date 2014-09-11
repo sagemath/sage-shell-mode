@@ -2050,12 +2050,17 @@ is the buffer for the candidates of attribute."
           (setq base-end (point)))
         (sage:awhen (sage-shell-cpl:base-name-att-beg-rec var-chars)
           (let ((base-name (buffer-substring-no-properties it base-end)))
-            ;; when base-name does not call any functions
-            (unless (string-match (rx (or (group (or alnum "_")
-                                                 (0+ whitespace)
-                                                 "(")
-                                          "%"))
-                                  base-name)
+            (unless (or (string= base-name "")
+                        ;; when base-name does not call any functions
+                        (string-match (rx (or (group (or alnum "_")
+                                                     (0+ whitespace)
+                                                     "(")
+                                              "%"
+                                              ;; There exists a possibility
+                                              ;; that base-name contains '..'.
+                                              (and "." (0+ whitespace)
+                                                   ".")))
+                                      base-name))
               (cons base-name att-beg))))))))
 
 (defun sage-shell-cpl:base-name-att-beg-rec (var-chars)
