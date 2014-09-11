@@ -1,9 +1,11 @@
-;;; sage.el Sage front-end for GNU Emacs
+;;; sage-shell.el --- A front-end for Sage Math
 
-;; Copyright (C) 2012 ~ 2014 Sho Takemori
-;; Author: Sho Takemori
-;; Keywords: sage math
+;; Copyright (C) 2012 - 2014 Sho Takemori.
+;; Author: Sho Takemori <stakemorii@gmail.com>
+;; URL: https://github.com/stakemori/sage-shell-mode
+;; Keywords: Sage, math
 ;; Created: 2012
+;; Version: 0.0.1
 
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify

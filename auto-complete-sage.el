@@ -1,7 +1,12 @@
-;; Copyright (C) 2012, 2013 Sho Takemori
-;; Author: Sho Takemori
-;; Keywords: sage math
+;;; auto-complete-sage.el --- An auto-complete source for sage-shell.
+;; Copyright (C) 2012-2014 Sho Takemori.
+
+;; Author: Sho Takemori <stakemorii@gmail.com>
+;; URL: https://github.com/stakemori/auto-complete-sage
+;; Keywords: Sage, math, auto-complete
 ;; Created: 2012
+;; Version: 0.0.1
+;; Package-Requires: ((auto-complete "1.4.0") (sage-shell "0.0.1"))
 
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify
@@ -31,6 +36,7 @@
 ;;; Code
 (require 'auto-complete)
 (require 'sage-shell)
+(eval-when-compile (require 'cl))
 
 
 ;;; sage-shell-ac

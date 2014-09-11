@@ -1,7 +1,13 @@
-;; Copyright (C) 2012, 2013 Sho Takemori
-;; Author: Sho Takemori
-;; Keywords: sage math
+;;; anything-sage.el --- An anything extension for sage-shell.
+
+;; Copyright (C) 2012-2014 Sho Takemori.
+;; Author: Sho Takemori <stakemorii@gmail.com>
+;; URL: https://github.com/stakemori/anything-sage
+;; Keywords: Sage, math, anything
 ;; Created: 2012
+;; Version: 0.0.1
+;; Package-Requires: ((anything "20130605.1746") (sage-shell "0.0.1"))
+
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,6 +37,7 @@
 
 
 ;;; Code
+(eval-when-compile (require 'cl))
 (require 'anything)
 (require 'anything-match-plugin)
 (require 'sage-shell)

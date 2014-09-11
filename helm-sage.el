@@ -1,7 +1,13 @@
-;; Copyright (C) 2012, 2013 Sho Takemori
-;; Author: Sho Takemori
-;; Keywords: sage math
+;;; helm-sage.el --- A helm extension for sage-shell.
+
+;; Copyright (C) 2012-2014 Sho Takemori.
+;; Author: Sho Takemori <stakemorii@gmail.com>
+;; URL: https://github.com/stakemori/helm-sage
+;; Keywords: Sage, math, helm
 ;; Created: 2012
+;; Version: 0.0.1
+;; Package-Requires: ((helm "20140901.59") (sage-shell "0.0.1"))
+
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,6 +37,7 @@
 
 
 ;;; Code
+(eval-when-compile (require 'cl))
 (require 'helm)
 (require 'helm-match-plugin)
 (require 'sage-shell)
