@@ -1,4 +1,4 @@
-;;; sage-shell.el --- A front-end for Sage Math
+;;; sage-shell-mode.el --- A front-end for Sage Math
 
 ;; Copyright (C) 2012 - 2014 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
@@ -22,9 +22,9 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Installation
-;; 1. Put sage-shell.el, emacs_sage_shell.py and
+;; 1. Put sage-shell-mode.el, emacs_sage_shell.py and
 ;; sage-shell-autoloads.el into your load-path and bytecompile
-;; sage-shell.el.
+;; sage-shell-mode.el.
 ;;
 ;; 2. Put the following lines to ~/.emacs.
 ;; (require 'sage-shell-autoloads)
@@ -2678,5 +2678,5 @@ of current Sage process.")
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
-(provide 'sage-shell)
-;;; sage-shell.el ends here
+(provide 'sage-shell-mode)
+;;; sage-shell-mode.el ends here
