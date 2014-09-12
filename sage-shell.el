@@ -50,10 +50,17 @@
   :group 'languages)
 
 (defcustom sage-shell:sage-root nil
-  "SAGE_ROOT directory. If Sage executable is in your PATH, then it is not necessary to set this variable."
+  "SAGE_ROOT directory. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
   :group 'sage-shell
   :type '(choice (directory :tag "Directory")
                  (const :tag "Not specified" nil)))
+
+(defcustom sage-shell:sage-executable "sage"
+  "Name of the Sage executable. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
+  :group 'sage-shell
+  :type 'string)
+
+(defvaralias 'sage-shell:command 'sage-shell:sage-executable)
 
 (defcustom sage-shell:input-history-cache-file
   nil
@@ -296,22 +303,19 @@ returned from the function, otherwise, this returns it self. "
     "r"
     "singular"))
 
-(defvar sage-shell:command nil)
+
 
 (defun sage-shell:sage-root ()
-  (sage:aif sage-shell:sage-root
-      it
-    (sage:aif (executable-find (sage-shell:command))
+  (or sage-shell:sage-root
+      (sage:awhen (executable-find (sage-shell:sage-executable))
         (sage:->>  it
                    file-truename
                    file-name-directory))))
 
-(defun sage-shell:command ()
-  (or sage-shell:command
-      (setq sage-shell:command
-            (if (stringp sage-shell:sage-root)
-                (expand-file-name "sage" sage-shell:sage-root)
-              "sage"))))
+(defun sage-shell:sage-executable ()
+  (or sage-shell:sage-executable
+      (when (stringp sage-shell:sage-root)
+        (expand-file-name "sage" sage-shell:sage-root))))
 
 
 (defvar sage-shell:output-finished-regexp
@@ -2194,7 +2198,8 @@ is the buffer for the candidates of attribute."
           (message verbose)
           (lexical-let ((time (cadr (current-time)))
                         (proc (start-process proc-name nil
-                                             (sage-shell:command) tmp-file)))
+                                             (sage-shell:sage-executable)
+                                             tmp-file)))
             (set-process-sentinel
              proc
              (lambda (proc event)
