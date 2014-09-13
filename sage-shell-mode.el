@@ -2702,6 +2702,8 @@ of current Sage process.")
                (defalias alas org)
              (defvaralias alas org))))
 
+(add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
+
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
 (provide 'sage-shell-mode)
