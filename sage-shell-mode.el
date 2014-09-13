@@ -4,7 +4,6 @@
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/stakemori/sage-shell-mode
 ;; Keywords: Sage, math
-;; Created: 2012
 ;; Version: 0.0.1
 
 ;;; License
