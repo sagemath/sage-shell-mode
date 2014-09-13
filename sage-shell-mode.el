@@ -679,15 +679,11 @@ argument."
 (defun sage-shell:run-sage (cmd)
   (interactive (list (sage-shell:read-command)))
   (sage-shell:run cmd nil))
-;;;###autoload
-(defalias 'run-sage 'sage-shell:run-sage)
 
 ;;;###autoload
 (defun sage-shell:run-new-sage (cmd)
   (interactive (list (sage-shell:read-command)))
   (sage-shell:run cmd t))
-;;;###autoload
-(defalias 'run-new-sage 'sage-shell:run-new-sage)
 
 (defun sage-shell-tab-command ()
   (interactive)
@@ -2676,6 +2672,36 @@ of current Sage process.")
   (sage-shell-edit:load-file filename))
 
 
+;;; alias
+(defvar sage-shell:alias-list
+  '((sage-shell:sage-mode sage-mode func)
+    (sage-shell:sage-mode-map sage-mode-map var)
+    (sage-shell:sage-mode-hook sage-mode-hook var)
+    (sage-shell:sage-mode-syntax-table sage-mode-syntax-table var)
+    (sage-shell:sage-mode-abbrev-table sage-mode-abbrev-table var)
+    (sage-shell:run-sage run-sage func)
+    (sage-shell:run-new-sage run-new-sage func)))
+
+;;;###autoload
+(defun sage-shell:define-alias ()
+  "Define aliases as follows:
+| Original name                     | Alias                  |
+|-----------------------------------+------------------------|
+| sage-shell:sage-mode              | sage-mode              |
+| sage-shell:sage-mode-map          | sage-mode-map          |
+| sage-shell:sage-mode-hook         | sage-mode-hook         |
+| sage-shell:sage-mode-syntax-table | sage-mode-syntax-table |
+| sage-shell:sage-mode-abbrev-table | sage-mode-abbrev-table |
+| sage-shell:run-sage               | run-sage               |
+| sage-shell:run-new-sage           | run-new-sage           |
+|-----------------------------------+------------------------|
+"
+  (interactive)
+  (loop for (org alas type) in sage-shell:alias-list
+        do (if (eq type 'func)
+               (defalias alas org)
+             (defvaralias alas org))))
+
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
 (provide 'sage-shell-mode)
