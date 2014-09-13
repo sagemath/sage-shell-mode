@@ -21,25 +21,19 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Installation
-;; 1. Put sage-shell-mode.el, emacs_sage_shell.py and
-;; sage-shell-autoloads.el into your load-path and bytecompile
-;; sage-shell-mode.el.
-;;
-;; 2. Put the following lines to ~/.emacs.
-;; (require 'sage-shell-autoloads)
-;; (add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
-;;
-;; 3. Add the location of the Sage executable to your PATH or
-;; put the following line to ~/.emacs.
+;;; Setting
+;; If (executable-find "sage") is non-nil, you do not need the setting below.
+;; If (executable-find "sage") is nil,
+;; put the following line to ~/.emacs.d/init.el
 ;; (setq sage-shell:sage-root "/path/to/sage_root_directory")
-;;
+
 ;; Here /path/to/sage_root_directory is the location of Sage's root directory.
-;; If you use Linux and install Sage from binary,
-;; it is the path to the directory of the extracted Sage tarball.
 ;; If you use Mac OS X and install Sage as a Mac OS X application,
-;; it is like
+;; it is like as follows:
 ;; "/Applications/Sage-*.*-OSX-64bit-**.*.app/Contents/Resources/sage".
+
+;; Instead of the line above, you may put the following line to ~/.emacs.d/init.el
+;; (setq sage-shell:sage-executable "paht/to/sage/executable")
 
 ;;; Code:
 (eval-when-compile (require 'cl))
