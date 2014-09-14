@@ -123,8 +123,8 @@ The basic key-bidings in `sage-shell:sage-mode` are as follows:
 |---------|---------------------------------------|-----------------------------------------|
 | C-c C-c | sage-shell-edit:send-buffer           | Send the current buffer to the process. |
 | C-c C-r | sage-shell-edit:send-region           | Send the region to the process.         |
-| C-c C-l | sage-shell-edit:load-file             | Send the file to the process.           |
 | C-c C-j | sage-shell-edit:send-line             | Send the current line to the process.   |
+| C-c C-l | sage-shell-edit:load-file             | Send the file to the process.           |
 | C-c C-z | sage-shell-edit:pop-to-process-buffer | Pop to the process buffer.              |
 
 If you run multiple Sage processes, you can choose which process to send
@@ -157,7 +157,6 @@ Completion with [helm-sage](https://github.com/stakemori/helm-sage).
 ![alt text](./images/helm1.png "helm-sage")
 
 # License
-Copyright &copy; 2014 Sho Takemori
 
 Licensed under the [GPL Version 3][GPL]
 [GPL]: http://www.gnu.org/licenses/gpl.html
