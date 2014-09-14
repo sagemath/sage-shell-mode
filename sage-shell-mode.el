@@ -23,9 +23,8 @@
 ;;; Setting
 ;; If (executable-find "sage") is non-nil, you do not need the setting below.
 ;; If (executable-find "sage") is nil,
-;; put the following lines to ~/.emacs.d/init.el
+;; put the followin line to ~/.emacs.d/init.el
 ;; (setq sage-shell:sage-root "/path/to/sage_root_directory")
-;; (add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
 
 ;; Here /path/to/sage_root_directory is the location of Sage's root directory.
 ;; If you use Mac OS X and install Sage as a Mac OS X application,
@@ -2704,6 +2703,10 @@ of current Sage process.")
         do (if (eq type 'func)
                (defalias alas org)
              (defvaralias alas org))))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
+
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
