@@ -651,7 +651,8 @@ When sync is nill this return a lambda function to get the result."
                 (generate-new-buffer buffer-base-name)))))
 
 (defun sage-shell:read-command ()
-  (unless (executable-find (sage-shell:sage-executable))
+  (unless (and (sage-shell:sage-executable)
+               (executable-find (sage-shell:sage-executable)))
     (error sage-shell:exec-path-error-msg))
   (let ((lst (split-string
               (read-from-minibuffer "Run sage (like this): "
