@@ -78,7 +78,7 @@
                  (const :tag "helm" helm-sage-shell-describe-object-at-point)))
 
 
-(defcustom sage-shell:use-unicode-banner t
+(defcustom sage-shell:use-unicode-banner nil
   "Non-nil means use unicode character in Sage's banner."
   :type 'boolean
   :group 'sage-shell)
