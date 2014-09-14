@@ -41,7 +41,7 @@
 
 ;;; Global variables for users
 (defgroup sage-shell
-  nil "Sage"
+  nil "Run Sage process in a buffer."
   :group 'languages)
 
 (defcustom sage-shell:sage-root nil
