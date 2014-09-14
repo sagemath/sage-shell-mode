@@ -1,129 +1,163 @@
-[[Japanese]](./README_ja.md)
 # Overview
-sage-shell-mode is an Emacs front end for [Sage](http://www.sagemath.org/).
+`sage-shell-mode` is an elisp package and
+provides an Emacs front end for [Sage](http://www.sagemath.org/).
 
-By sage-shell-mode, you can run Sage process in GNU Emacs and send
-buffer contents or a file you edit to the process.
-sage-shell-mode also provides sources for auto-complete and anything.
+By `sage-shell-mode`, you can run Sage process in GNU Emacs and send
+contents of a buffer or a file to the Sage process.
+
+This package also provides a major-mode derived from `python-mode`.
+
+There are extensions for this package,
+[auto-complete-sage](https://github.com/stakemori/auto-complete-sage),
+[helm-sage](https://github.com/stakemori/helm-sage) and
+[anything-sage](https://github.com/stakemori/anything-sage).
+
 
 # Installation
-You can install sage-shell-mode by elisp script or manually.
-## Automatic Installation
-To install sage-shell-mode, copy and paste
-the following code in \*scratch\* buffer, evaluate it and follow the
-instruction.  You can evaluate the elisp code in \*scratch\* buffer by
-hitting C-j if the cursor is at the end of code.
-By default,
-sage-shell-mode will be installed in "~/.emacs.d/sage-shell". If you
-want to change the installation directory, change the characters between
-double quotes at the third line of the code.
+You will be able to install `sage-shell-mode` from
+[MELPA](https://github.com/milkypostman/melpa.git) by package.el
+(`M-x package-install sage-shell-mode`).
+
+If `M-: (executable-find "sage")` is non-nil, you do not need the setting below.
+
+If `M-: (executable-find "sage")` is nil,
+put the following line to `~/.emacs.d/init.el`.
+```lisp
+(setq sage-shell:sage-root "/path/to/sage/root_directory")
+```
+And replace `"/path/to/sage_root_directory"` by the root directory of Sage,
+i.e. `$SAGE_ROOT`.
+
+
+
+If you do not know the root directory of Sage,
+1. In the Sage notebook, open a worksheet.
+2. Change the interface to `sh` and evaluate `echo $SAGE_ROOT` as follows:
+![alt text](./images/examine_sage_root.png "SAGE_ROOT")
+
+
+Alternatively, instead of setting `sage-shell:sage-root`,
+you may set the variable `sage-shell:sage-executable`.
 
 ```lisp
-(progn
-  (setq sage-install-url "https://raw.github.com/stakemori/sage-shell-mode/master/"
-        sage-install-installation-directory "~/.emacs.d/sage-shell")
-  (url-retrieve
-   (concat sage-install-url "sage-install.el")
-   (lambda (s)
-     (goto-char (point-max))
-     (eval-print-last-sexp))))
+(setq sage-shell:sage-executable "/path/to/sage/executable")
 ```
+Here `"/path/to/sage/executable"` is the path of the executable file of Sage.
+This may be a symbolic link.
 
-## Manual Installation
-You can install sage-shell-mode manually as follows.
+# Aliases
+The major mode `sage-mode` and the command `run-sage` are provided by
+[sage-mode](https://bitbucket.org/gvol/sage-mode/src)
+(the official `sage-mode`).
+To avoid name conflicts, `sage-shell-mode` uses redundant names.
+By putting the following line in `~/.emacs.d/init.el`,
+```lisp
+(sage-shell:define-alias)
+```
+`sage-shell-mode` defines aliases as follows:
 
-1. Clone the repository or download all files.
 
-    ```sh
-    git clone git://github.com/stakemori/sage-shell-mode.git
-    cd sage-shell-mode
-    ```
+| Original name                     | Alias                  |
+|-----------------------------------|------------------------|
+| sage-shell:run-sage               | run-sage               |
+| sage-shell:run-new-sage           | run-new-sage           |
+| sage-shell:sage-mode              | sage-mode              |
+| sage-shell:sage-mode-map          | sage-mode-map          |
+| sage-shell:sage-mode-hook         | sage-mode-hook         |
 
-1. Copy elisp and python files.
-
-    ```sh
-    mkdir ~/.emacs.d/sage-shell
-    cp *.el *.py ~/.emacs.d/sage-shell
-    ```
-1. Add the following lines to "~/.emacs", edit the last line and
-evaluate the following code or restart Emacs.
-If Sage executable is not in your PATH or Emacs cannot find it,
-you have to specify the Sage root directory.
-
-    ```lisp
-    (add-to-list 'load-path "~/.emacs.d/sage-shell")
-    (require 'sage-shell-autoloads)
-    (add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-mode))
-    ;; You do not need the following line if Sage executable is in your PATH.
-    (setq sage-shell:sage-root "/path/to/SAGE_ROOT/")
-    ```
-1. Byte-compile elisp files.
-1. (Optional) If you want to use auto-complete-mode in Sage buffers,
-add the following lines to "~/.emacs". This requires `auto-complete.el`.
-
-    ```lisp
-    (setq ac-modes (append '(sage-mode sage-shell-mode) ac-modes))
-    (add-hook 'sage-shell-mode-hook 'sage-shell-ac:add-sources)
-    (add-hook 'sage-mode-hook 'sage-edit-ac:add-sources)
-    ```
-
-1. (Optional) If you want to complete Sage commands by anything,
-add the following lines to "~/.emacs".
-This requires `anything.el` and `anything-match-plugin.el`.
-
-    ```lisp
-    (setq sage-shell:completion-function
-          'anything-sage-shell
-          sage-shell:help-completion-function
-          'anything-sage-shell-describe-object-at-point)
-    ```
-Or you may change the key binding directory.
-    ```lisp
-    (define-key sage-shell-mode-map (kbd "C-c C-i") 'anything-sage-shell)
-    (define-key sage-shell-mode-map (kbd "C-c C-h") 'anything-sage-shell-describe-object-at-point)
-    ```
-
-1. (Optional) If you want to complete Sage commands by helm,
-add the following lines to "~/.emacs".
-This requires `helm.el` and `helm-match-plugin.el`.
-
-    ```lisp
-    (setq sage-shell:completion-function
-          'helm-sage-shell
-          sage-shell:help-completion-function
-          'helm-sage-shell-describe-object-at-point)
-    ```
-Or you may change the key binding directory.
-    ```lisp
-    (define-key sage-shell-mode-map (kbd "C-c C-i") 'helm-sage-shell)
-    (define-key sage-shell-mode-map (kbd "C-c C-h") 'helm-sage-shell-describe-object-at-point)
-    ```
-
+Then you can run Sage by `M-x run-sage` instead of `M-x sage-shell:run-sage`
+with these aliases.
 
 # Basic Usage
-You can run Sage by `M-x run-sage`.
-You can run new Sage process by `M-x run-new-sage`.
-The major-mode of Sage process buffer is `sage-shell-mode`.
+## Running a Sage process
+You can run Sage by `M-x sage-shell:run-sage`.
+You can run new Sage process by `M-x sage-shell:run-new-sage`.
 
-When you visit a file ended with ".sage", then `sage-mode` will be
-the major-mode for the buffer. In `sage-mode`, type `C-c C-l` to load a
-Sage script file. To view a Sage process buffer, type `C-x C-z`.
+| Command                 | Alias        | Description              |
+|-------------------------------------------------------------------|
+| sage-shell:run-sage     | run-sage     | Run a Sage process.      |
+| sage-shell:run-new-sage | run-new-sage | Run a new Sage process.  |
 
+The major-mode of the Sage process buffer is `sage-shell-mode`.
+The basic key-bidings in `sage-shell-mode` are as follows:
+
+| Key     | Command                         | Description                                                                    |
+|---------|---------------------------------|--------------------------------------------------------------------------------|
+| RET     | sage-shell:send-input           | Send the current input to the Sage process.                                     |
+| TAB     | sage-shell-tab-command          | Complete words at the point or indent a line.                                  |
+| C-d     | sage-shell:delchar-or-maybe-eof | Delete backward a character or send EOF if there are no inputs.                |
+| C-c C-c | sage-shell:interrupt-subjob     | Interrupt the current subjob.                                                  |
+| M-p     | comint-previous-input           | Go backward through input history.                                         |
+| M-n     | sage-shell:next-input           | Go forward through input history.                                          |
+| C-c C-o | sage-shell:delete-output        | Delete all outputs since last input.                           |
+| C-c M-o | sage-shell:clear-current-buffer | Delete all outputs in the current buffer. This does not delete the last prompt. |
+| C-c C-l | sage-shell:load-file            | Send contents of a file to the Sage process.                                   |
+| C-c C-h | sage-shell:help                 | Show a document string of a Sage object.                                       |
+
+For more commands and key-bindings see the help by `M-x describle-mode sage-shell-mode`.
+
+
+## Editing a Sage file
+When you visit a file ended with ``".sage"``,
+then `sage-shell:sage-mode` will be the major-mode of the buffer
+automatically.
+If you want to edit a file ended with `".py"` in `sage-shell:sage-mode`,
+then use the following magic comment at the first line of the file:
+```python
+# -*- mode: sage-shell:sage -*-
+```
+With aliases above, instead of the line above you can use the following magic
+comment:
+```python
+# -*- mode: sage -*-
+```
+
+
+The major mode `sage-shell:sage-mode` is almost same as `python-mode`
+you use.
+The differences are some of key-bidings.
+
+The basic key-bidings in `sage-shell:sage-mode` are as follows:
+
+| Key     | Command                               | Description                             |
+|---------|---------------------------------------|-----------------------------------------|
+| C-c C-c | sage-shell-edit:send-buffer           | Send the current buffer to the process. |
+| C-c C-r | sage-shell-edit:send-region           | Send the region to the process.         |
+| C-c C-l | sage-shell-edit:load-file             | Send the file to the process.           |
+| C-c C-j | sage-shell-edit:send-line             | Send the current line to the process.   |
+| C-c C-z | sage-shell-edit:pop-to-process-buffer | Pop to the process buffer.              |
+
+If you run multiple Sage processes, you can choose which process to send
+by `M-x sage-shell:set-process-buffer`.
+
+# Extensions
+* [auto-complete-sage](https://github.com/stakemori/auto-complete-sage) provides an
+  [auto-complete](https://github.com/auto-complete/auto-complete)
+  source for `sage-shell-mode`.
+* [helm-sage](https://github.com/stakemori/helm-sage) provides a
+  [helm](https://github.com/emacs-helm/helm) source for `sage-shell-mode`.
+
+* [anything-sage](https://github.com/stakemori/anything-sage)
+  provides an [anything](http://www.emacswiki.org/Anything)
+  source for `sage-shell-mode`.
 
 # Screenshots
-Completion with auto-complete
-
-![alt text](./images/ac-sample.png "auto-complete-sage")
-
-Completion with anything
-
-![alt text](./images/anything-sample.png "anything")
-
 Automatic indentation and syntax highlighting work.
 
-![alt text](./images/indent-sample.png "Auto indentation and syntax highlighting")
+![alt text](./images/indent.png "Auto indentation and syntax highlighting")
+
+Completion with [auto-complete-sage](https://github.com/stakemori/auto-complete-sage).
+
+![alt text](./images/ac.png "auto-complete-sage")
+
+Completion with [helm-sage](https://github.com/stakemori/helm-sage).
+
+![alt text](./images/helm.png "helm-sage")
+
+![alt text](./images/helm1.png "helm-sage")
+
 # License
-Copyright &copy; 2013 Sho Takemori
+Copyright &copy; 2014 Sho Takemori
 
 Licensed under the [GPL Version 3][GPL]
 [GPL]: http://www.gnu.org/licenses/gpl.html
