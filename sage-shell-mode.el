@@ -491,6 +491,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
 (defun sage-shell:interrupt-subjob ()
+  "Interrupt the current subjob."
   (interactive)
   (comint-interrupt-subjob)
   (setq comint-redirect-completed t
@@ -710,6 +711,7 @@ argument."
 (defvar sage-shell:dot-sage "~/.sage" "DOT_SAGE directory.")
 
 (defun sage-shell:clear-current-buffer ()
+  "Delete all output in the current buffer. This does not delete the last prompt."
   (interactive)
   (let ((inhibit-read-only t))
     (delete-region (point-min) (sage-shell:line-beginning-position))))
