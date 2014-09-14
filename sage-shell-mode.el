@@ -48,7 +48,7 @@
   :type '(choice (directory :tag "Directory")
                  (const :tag "Not specified" nil)))
 
-(defcustom sage-shell:sage-executable "sage"
+(defcustom sage-shell:sage-executable nil
   "Name of the Sage executable. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
   :group 'sage-shell
   :type 'string)
@@ -297,18 +297,25 @@ returned from the function, otherwise, this returns it self. "
     "singular"))
 
 
+(defvar sage-shell:exec-path-error-msg
+  (concat "Please set `sage-shell:sage-root' or"
+          " `sage-shell:sage-executable' correctly."))
+
 
 (defun sage-shell:sage-root ()
   (or sage-shell:sage-root
-      (sage-shell:awhen (executable-find (sage-shell:sage-executable))
-        (sage-shell:->>  it
-                   file-truename
-                   file-name-directory))))
+      (sage-shell:aif (executable-find (sage-shell:sage-executable))
+          (sage-shell:->>  it
+                           file-truename
+                           file-name-directory)
+        (error sage-shell:exec-path-error-msg))))
 
 (defun sage-shell:sage-executable ()
   (or sage-shell:sage-executable
-      (when (stringp sage-shell:sage-root)
-        (expand-file-name "sage" sage-shell:sage-root))))
+      (sage-shell:acond
+       ((stringp sage-shell:sage-root)
+        (expand-file-name "sage" sage-shell:sage-root))
+       ((executable-find "sage") (file-truename it)))))
 
 
 (defvar sage-shell:output-finished-regexp
@@ -642,7 +649,7 @@ When sync is nill this return a lambda function to get the result."
 
 (defun sage-shell:read-command ()
   (unless (executable-find (sage-shell:sage-executable))
-    (error "Please set `sage-shell:sage-executable' correctly."))
+    (error sage-shell:exec-path-error-msg))
   (let ((lst (split-string
               (read-from-minibuffer "Run sage (like this): "
                                     "sage" nil nil 'sage-shell:run-history
