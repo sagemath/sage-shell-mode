@@ -14,7 +14,7 @@ There are extensions for this package,
 
 
 # Installation
-You will be able to install `sage-shell-mode` from
+You can install `sage-shell-mode` from
 [MELPA](https://github.com/milkypostman/melpa.git) by package.el
 (`M-x package-install sage-shell-mode`).
 
