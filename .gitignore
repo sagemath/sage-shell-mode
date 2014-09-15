@@ -1,3 +1,4 @@
 /emacs_sage_shell.pyc
 *.elc
 /.ropeproject/*
+/sage-shell-autoloads.el
