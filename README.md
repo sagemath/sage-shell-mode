@@ -76,25 +76,25 @@ You can run Sage by `M-x sage-shell:run-sage`.
 You can run new Sage process by `M-x sage-shell:run-new-sage`.
 
 | Command                 | Alias        | Description              |
-|-------------------------------------------------------------------|
+|-------------------------|--------------|--------------------------|
 | sage-shell:run-sage     | run-sage     | Run a Sage process.      |
 | sage-shell:run-new-sage | run-new-sage | Run a new Sage process.  |
 
 The major-mode of the Sage process buffer is `sage-shell-mode`.
 The basic key-bidings in `sage-shell-mode` are as follows:
 
-| Key     | Command                         | Description                                                                    |
-|---------|---------------------------------|--------------------------------------------------------------------------------|
-| RET     | sage-shell:send-input           | Send the current input to the Sage process.                                     |
-| TAB     | sage-shell-tab-command          | Complete words at the point or indent a line.                                  |
-| C-d     | sage-shell:delchar-or-maybe-eof | Delete backward a character or send EOF if there are no inputs.                |
-| C-c C-c | sage-shell:interrupt-subjob     | Interrupt the current subjob.                                                  |
-| M-p     | comint-previous-input           | Go backward through input history.                                         |
-| M-n     | sage-shell:next-input           | Go forward through input history.                                          |
-| C-c C-o | sage-shell:delete-output        | Delete all outputs since last input.                           |
-| C-c M-o | sage-shell:clear-current-buffer | Delete all outputs in the current buffer. This does not delete the last prompt. |
-| C-c C-l | sage-shell:load-file            | Send contents of a file to the Sage process.                                   |
-| C-c C-h | sage-shell:help                 | Show a document string of a Sage object.                                       |
+| Key Stroke | Command                         | Description                                                                     |
+|------------|---------------------------------|---------------------------------------------------------------------------------|
+| RET        | sage-shell:send-input           | Send the current input to the Sage process.                                     |
+| TAB        | sage-shell-tab-command          | Complete words at the point or indent a line.                                   |
+| C-d        | sage-shell:delchar-or-maybe-eof | Delete backward a character or send EOF if there are no inputs.                 |
+| C-c C-c    | sage-shell:interrupt-subjob     | Interrupt the current subjob.                                                   |
+| M-p        | comint-previous-input           | Go backward through input history.                                              |
+| M-n        | sage-shell:next-input           | Go forward through input history.                                               |
+| C-c C-o    | sage-shell:delete-output        | Delete all outputs since last input.                                            |
+| C-c M-o    | sage-shell:clear-current-buffer | Delete all outputs in the current buffer. This does not delete the last prompt. |
+| C-c C-l    | sage-shell:load-file            | Send contents of a file to the Sage process.                                    |
+| C-c C-h    | sage-shell:help                 | Show a document string of a Sage object.                                        |
 
 For more commands and key-bindings see the help by `M-x describle-mode sage-shell-mode`.
 
