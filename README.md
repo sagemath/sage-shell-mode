@@ -31,8 +31,10 @@ i.e. `$SAGE_ROOT`.
 
 
 If you do not know the root directory of Sage,
+
 1. In the Sage notebook, open a worksheet.
 2. Change the interface to `sh` and evaluate `echo $SAGE_ROOT` as follows:
+
 ![alt text](./images/examine_sage_root.png "SAGE_ROOT")
 
 
