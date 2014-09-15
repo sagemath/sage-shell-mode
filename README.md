@@ -158,6 +158,29 @@ Completion with [helm-sage](https://github.com/stakemori/helm-sage).
 
 ![alt text](./images/helm1.png "helm-sage")
 
+# Workaround for `flycheck`
+To use `flycheck-mode` in a `sage-shell:sage-mode` buffer, try the
+following code.
+
+```lisp
+(defun sage-shell:flycheck-add-mode (checker mode)
+  "Add `mode' to `checker'."
+  (let ((modes (get checker 'flycheck-modes)))
+    (unless (memq mode modes)
+      (put checker 'flycheck-modes (cons mode modes)))))
+
+(dolist (ckr '(python-pylint python-flake8))
+  (sage-shell:flycheck-add-mode ckr 'sage-shell:sage-mode))
+
+(defun sage-shell:flycheck ()
+  "Enable flycheck-mode only in a file ended with py."
+  (when (let ((bfn (buffer-file-name)))
+          (and bfn (string-match (rx ".py" eol) bfn)))
+    (flycheck-mode 1)))
+
+(add-hook 'sage-shell:sage-mode-hook 'sage-shell:flycheck)
+```
+
 # License
 
 Licensed under the [GPL Version 3][GPL]
