@@ -306,11 +306,11 @@ returned from the function, otherwise, this returns it self. "
 
 (defun sage-shell:sage-root ()
   (or sage-shell:sage-root
-      (sage-shell:aif (executable-find (sage-shell:sage-executable))
+      (sage-shell:aif (and (sage-shell:sage-executable)
+                           (executable-find (sage-shell:sage-executable)))
           (sage-shell:->>  it
                            file-truename
-                           file-name-directory)
-        (error sage-shell:exec-path-error-msg))))
+                           file-name-directory))))
 
 (defun sage-shell:sage-executable ()
   (or sage-shell:sage-executable
