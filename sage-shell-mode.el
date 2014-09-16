@@ -2677,15 +2677,19 @@ of current Sage process.")
   (sage-shell-edit:load-file filename))
 
 
-;;; alias
-(defvar sage-shell:alias-list
-  '((sage-shell:sage-mode sage-mode func)
-    (sage-shell:sage-mode-map sage-mode-map var)
-    (sage-shell:sage-mode-hook sage-mode-hook var)
-    (sage-shell:sage-mode-syntax-table sage-mode-syntax-table var)
-    (sage-shell:sage-mode-abbrev-table sage-mode-abbrev-table var)
-    (sage-shell:run-sage run-sage func)
-    (sage-shell:run-new-sage run-new-sage func)))
+;;; Alias
+;;;###autoload
+(defvar sage-shell:func-alias-alist
+  '((sage-shell:sage-mode . sage-mode)
+    (sage-shell:run-sage . run-sage)
+    (sage-shell:run-new-sage . run-new-sage)))
+
+;;;###autoload
+(defvar sage-shell:var-alias-alist
+  '((sage-shell:sage-mode-map . sage-mode-map)
+    (sage-shell:sage-mode-hook . sage-mode-hook)
+    (sage-shell:sage-mode-syntax-table . sage-mode-syntax-table)
+    (sage-shell:sage-mode-abbrev-table . sage-mode-abbrev-table)))
 
 ;;;###autoload
 (defun sage-shell:define-alias ()
@@ -2702,10 +2706,10 @@ of current Sage process.")
 |-----------------------------------+------------------------|
 "
   (interactive)
-  (cl-loop for (org alas type) in sage-shell:alias-list
-        do (if (eq type 'func)
-               (defalias alas org)
-             (defvaralias alas org))))
+  (dolist (c sage-shell:func-alias-alist)
+    (defalias (cdr c) (car c)))
+  (dolist (c sage-shell:var-alias-alist)
+    (defvaralias (cdr c) (car c))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
