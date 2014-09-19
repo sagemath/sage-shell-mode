@@ -783,18 +783,6 @@ returns a lamda function with no args to obtain the result."
    (sage-shell-cpl:to-objname-to-send
     (sage-shell:completing-read-commands))))
 
-(defmacro sage-shell:if-proc-and-anything-exists (then-form &optional else-form)
-  (declare (indent 0))
-  `(sage-shell:if-process-alive
-    (cond ((and (featurep 'anything)
-                (featurep 'anything-match-plugin)
-                (require 'anything-sage nil t))
-           (with-no-warnings
-             ,then-form))
-
-          (t ,else-form))
-    (error "Process is not alive.")))
-
 (defun sage-shell:completion-at-point-func ()
   (list (sage-shell:word-at-pt-beg)
         (point)
