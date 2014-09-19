@@ -1449,6 +1449,14 @@ function does not highlight the input."
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
 
+      ;; If we're currently completing, stop.  We're definitely done
+      ;; completing, and by sending the input, we might cause side effects
+      ;; that will confuse the code running in the completion
+      ;; post-command-hook.
+      (when (and (fboundp 'completion-in-region-mode)
+                 completion-in-region-mode)
+        (completion-in-region-mode -1))
+
       (sage-shell:prepare-for-send)
       ;; Since comint-send-input sets comint-input-ring-index to nil,
       ;; restore its value
