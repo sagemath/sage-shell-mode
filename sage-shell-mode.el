@@ -965,14 +965,6 @@ This ring remebers the parts.")
       (cl-loop for f in (nreverse (symbol-value hook)) do (funcall f))
     (set hook nil)))
 
-(defvar sage-shell:output-filter-count 0)
-(make-variable-buffer-local 'sage-shell:output-filter-count)
-(defvar sage-shell:long-output-rdct-number 5)
-(defvar sage-shell:redirect-last-prompt nil)
-(defvar sage-shell:output-redirect-buffer "*Sage Redirect Output*")
-
-(defvar sage-shell:redirect-long-output-p nil)
-
 (defun sage-shell:ansi-color-filter-apply (string)
   (let* ((ansi-color-context nil)
          (res (ansi-color-filter-apply string)))
@@ -991,59 +983,13 @@ This ring remebers the parts.")
 (defvar sage-shell:comint-redirect-original-filter-function nil)
 
 (defun sage-shell:output-filter (process string)
-  (let ((oprocbuf (process-buffer process))
-        (count sage-shell:long-output-rdct-number))
+  (let ((oprocbuf (process-buffer process)))
     (sage-shell:with-current-buffer-safe (and string oprocbuf)
       (let ((string (sage-shell:ansi-color-filter-apply string)))
-        (cond
-         (sage-shell:redirect-long-output-p
-          (cl-incf sage-shell:output-filter-count)
-          (cond
-           ((< sage-shell:output-filter-count count)
-            (sage-shell:output-filter-no-rdct process string))
-
-           ((equal sage-shell:output-filter-count count)
-            (sage-shell:output-filter-rdct-lop-setup process)
-            (sage-shell:output-filter-rdct-lop process string))
-
-           ((> sage-shell:output-filter-count count)
-            ;; (when (sage-shell:redirect-finished-p)
-            ;;   ;; FIXME
-            ;;   (message "THE OUTPUT MAY NOT BE CORRECT."))
-            (sage-shell:output-filter-rdct-lop process string))))
-         (t (sage-shell:output-filter-no-rdct process string)))))))
-
-(defun sage-shell:output-filter-rdct-lop-setup (process)
-  (let ((o-buf (get-buffer-create sage-shell:output-redirect-buffer))
-        (str (buffer-substring-no-properties
-              comint-last-input-end (point))))
-    (delete-region comint-last-input-end (point))
-    (with-current-buffer o-buf
-      (erase-buffer)
-      (insert str))
-    (sage-shell:prepare-for-redirect
-     process sage-shell:output-redirect-buffer)
-    (setq sage-shell:comint-redirect-original-filter-function (process-filter process))
-    (sage-shell:output-filter-no-rdct process " *Output Redirected*")))
+        (sage-shell:output-filter-no-rdct process string)))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
-(defun sage-shell:output-redirect-cleanup ()
-  (setq sage-shell:output-filter-count 0))
-
-(defun sage-shell:output-filter-rdct-lop (process string)
-  "Redirect long output"
-  (let ((sage-shell:redirect-restore-filter-p nil))
-    (sage-shell:redirect-filter process string)
-    (when (sage-shell:redirect-finished-p)
-      (with-current-buffer (process-buffer process)
-        (sage-shell:output-filter-no-rdct
-         process (concat "\n" sage-shell:redirect-last-prompt))
-        (sage-shell:output-redirect-cleanup)
-        (with-selected-window (display-buffer
-                               (get-buffer sage-shell:output-redirect-buffer))
-          (with-current-buffer sage-shell:output-redirect-buffer
-            (goto-char (point-max)) (recenter -1)))))))
 
 (defun sage-shell:output-filter-no-rdct (process string)
   ;; Insert STRING
@@ -1289,7 +1235,6 @@ Does not delete the prompt."
                              (forward-line -1))
                     (goto-char (point-min)))
                   (re-search-forward f-regexp nil t))
-            (setq sage-shell:redirect-last-prompt (match-string 0))
             (replace-match "")
             (set-buffer proc-buf)
             (sage-shell:redirect-cleanup)
@@ -1490,8 +1435,7 @@ function does not highlight the input."
     (sage-shell:wait-for-redirection-to-complete)
 
     (sage-shell:nullify-ring sage-shell:output-ring)
-    (setq sage-shell:output-finished-p nil)
-    (sage-shell:output-redirect-cleanup))
+    (setq sage-shell:output-finished-p nil))
 
 (defun sage-shell-update-sage-commands-p (line)
   (string-match (rx "from" (1+ nonl) "import") line))
