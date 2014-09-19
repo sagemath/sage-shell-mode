@@ -1454,6 +1454,7 @@ function does not highlight the input."
       ;; that will confuse the code running in the completion
       ;; post-command-hook.
       (when (and (fboundp 'completion-in-region-mode)
+                 (boundp 'completion-in-region-mode)
                  completion-in-region-mode)
         (completion-in-region-mode -1))
 
