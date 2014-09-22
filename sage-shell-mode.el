@@ -714,19 +714,14 @@ argument."
 
 (defvar sage-shell:dot-sage "~/.sage" "DOT_SAGE directory.")
 
-(defun sage-shell:clear-current-buffer ()
-  "Delete all output in the current buffer. This does not delete the last prompt."
-  (interactive)
-  (let ((inhibit-read-only t))
-    (delete-region (point-min) (sage-shell:line-beginning-position))))
-
 (defun sage-shell:redirect-finished-p ()
   (buffer-local-value 'comint-redirect-completed sage-shell:process-buffer))
 
 (defun sage-shell:clear-command-cache ()
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-cpl:set-cmd-lst "sage" nil)
-    (setq sage-shell-ac:doc-arg-alist nil)))
+    (setq sage-shell-ac:doc-arg-alist nil)
+    (sage-shell:clear-completion-sync-cached)))
 
 (defun sage-shell:update-sage-commands ()
   (with-current-buffer sage-shell:process-buffer
@@ -783,11 +778,6 @@ returns a lamda function with no args to obtain the result."
   (sage-shell-help:describe-symbol
    (sage-shell-cpl:to-objname-to-send
     (sage-shell:completing-read-commands))))
-
-(defun sage-shell:completion-at-point-func ()
-  (list (sage-shell:word-at-pt-beg)
-        (point)
-        (sage-shell-cpl:candidates-sync)))
 
 (defun sage-shell:complete ()
   (interactive)
@@ -1062,6 +1052,13 @@ This ring remebers the parts.")
         (overlay-put ov
                      'font-lock-face 'comint-highlight-prompt)))))
 
+(defun sage-shell:clear-current-buffer ()
+  "Delete all output in the current buffer. This does not delete the last prompt."
+  (interactive)
+  (let ((inhibit-read-only t))
+    (delete-region (point-min) (sage-shell:line-beginning-position))
+    (sage-shell:clear-completion-sync-cached)))
+
 (defun sage-shell:delete-output ()
   "Delete all output from interpreter since last input.
 Does not delete the prompt."
@@ -1077,6 +1074,7 @@ Does not delete the prompt."
         (goto-char (process-mark proc))
         (setq replacement (buffer-substring pmark (point)))
         (delete-region pmark (point))))
+    (sage-shell:clear-completion-sync-cached)
     ;; Output message and put back prompt
     (sage-shell:output-filter proc replacement)))
 
@@ -2275,9 +2273,39 @@ of current Sage process.")
     (sage-shell-cpl:candidates
      (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
 
+(defvar sage-shell:completion-sync-cached nil)
+(make-variable-buffer-local 'sage-shell:completion-sync-cached)
+(defun sage-shell:clear-completion-sync-cached ()
+  (setq sage-shell:completion-sync-cached nil))
 
-
-
+(defun sage-shell:completion-at-point-func ()
+  "Used for completion-at-point. The result is cached."
+  (let ((old-int (assoc-default 'interface sage-shell-cpl:info))
+        (old-pref (assoc-default 'prefix sage-shell-cpl:info))
+        (old-name (assoc-default 'var-base-name sage-shell-cpl:info))
+        (wab (sage-shell:word-at-pt-beg))
+        (var-name (assoc-default 'var-base-name
+                                 (progn (sage-shell-cpl:prefix)
+                                        sage-shell-cpl:info))))
+    (cond ((and
+            old-int (string= old-int "sage") old-pref
+            ;; same line as the last completion
+            (or (= (line-number-at-pos wab) (line-number-at-pos old-pref))
+                (sage-shell:clear-completion-sync-cached))
+            var-name
+            (assoc-default var-name sage-shell:completion-sync-cached))
+           (list wab (point) (assoc-default var-name
+                                            sage-shell:completion-sync-cached)))
+          (t (list wab
+                   (point)
+                   (cond
+                    (var-name
+                     (setq sage-shell:completion-sync-cached
+                           (cons (cons var-name
+                                       (sage-shell-cpl:candidates-sync))
+                                 sage-shell:completion-sync-cached))
+                     (assoc-default var-name sage-shell:completion-sync-cached))
+                    (t (sage-shell-cpl:candidates-sync))))))))
 
 
 ;;; sage-edit
