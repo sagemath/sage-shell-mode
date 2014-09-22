@@ -84,6 +84,12 @@
   "Non-nil means use unicode character in Sage's banner."
   :type 'boolean
   :group 'sage-shell)
+
+(defcustom sage-shell:completion-ignore-case nil
+  "Non-nil means don't consider case significant in completion."
+  :type 'boolean
+  :group 'sage-shell)
+
 
 ;;; Anaphoric macros
 (defmacro sage-shell:ansetq (&rest rest)
@@ -422,6 +428,8 @@ returned from the function, otherwise, this returns it self. "
 (define-derived-mode sage-shell-mode comint-mode
   "Sage-repl" "Execute Sage commands interactively."
 
+  (set (make-local-variable 'completion-ignore-case)
+       sage-shell:completion-ignore-case)
   (setq font-lock-defaults '(sage-shell:font-lock-keywords
                              nil nil nil beginning-of-line))
   (setq sage-shell:process-buffer (current-buffer))
