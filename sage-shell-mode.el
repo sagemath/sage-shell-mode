@@ -2539,13 +2539,15 @@ of current Sage process.")
 
 
 (cl-defun sage-shell-edit:load-file-base
-  (&key command switch-p (display-function nil))
+    (&key command file-name switch-p (display-function nil)
+          (insert-command-p nil))
   (sage-shell-edit:exec-command-base
-   :command command
+   :command (or command (format "load('%s')" file-name))
    :switch-p switch-p
    :display-function display-function
    :pre-message "Loading the file to the Sage process..."
-   :post-message "Loading the file to the Sage process... Done.")
+   :post-message "Loading the file to the Sage process... Done."
+   :insert-command-p insert-command-p)
   (sage-shell:clear-command-cache))
 
 (defun sage-shell-edit:load-file (file-name)
@@ -2609,22 +2611,24 @@ of current Sage process.")
 (defun sage-shell:sagetex-load-file (filename)
   "Compile a TeX file, execute this command and compile the TeX file again."
   (interactive
-   (list (let ((dflt (expand-file-name
-                      (concat
-                       (if (fboundp 'TeX-master-file)
-                           (TeX-master-file)
-                         (sage-shell:->>
-                          (buffer-file-name)
-                          file-name-nondirectory
-                          file-name-sans-extension))
-                       ".sagetex.sage")
-                      default-directory)))
+   (list (let ((dflt (abbreviate-file-name
+                      (expand-file-name
+                       (concat
+                        (if (fboundp 'TeX-master-file)
+                            (TeX-master-file)
+                          (sage-shell:->>
+                           (buffer-file-name)
+                           file-name-nondirectory
+                           file-name-sans-extension))
+                        ".sagetex.sage")
+                       default-directory))))
            (read-file-name "Sage TeX file: " nil dflt nil
                            (file-name-nondirectory dflt)
                            (lambda (name)
                              (string-match (rx (or ".sage" ".py") eol)
                                            name))))))
-  (sage-shell-edit:load-file filename))
+  (sage-shell-edit:load-file-base
+   :file-name filename :insert-command-p t))
 
 
 ;;; Alias
