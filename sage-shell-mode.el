@@ -2289,7 +2289,8 @@ of current Sage process.")
 (defvar sage-shell:completion-sync-cached nil)
 (make-variable-buffer-local 'sage-shell:completion-sync-cached)
 (defun sage-shell:clear-completion-sync-cached ()
-  (setq sage-shell:completion-sync-cached nil))
+  (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+      (setq sage-shell:completion-sync-cached nil)))
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
