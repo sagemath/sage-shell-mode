@@ -90,6 +90,11 @@
   :type 'boolean
   :group 'sage-shell)
 
+(defcustom sage-shell:completion-candidate-regexp (rx (1+ (or "_" alnum)))
+  "Regexp used for collect completions when completion-at-point is called."
+  :type 'regexp
+  :group 'sage-shell)
+
 
 ;;; Anaphoric macros
 (defmacro sage-shell:ansetq (&rest rest)
@@ -2310,10 +2315,12 @@ of current Sage process.")
                     (var-name
                      (setq sage-shell:completion-sync-cached
                            (cons (cons var-name
-                                       (sage-shell-cpl:candidates-sync))
+                                       (sage-shell-cpl:candidates-sync
+                                        sage-shell:completion-candidate-regexp))
                                  sage-shell:completion-sync-cached))
                      (assoc-default var-name sage-shell:completion-sync-cached))
-                    (t (sage-shell-cpl:candidates-sync))))))))
+                    (t (sage-shell-cpl:candidates-sync
+                        sage-shell:completion-candidate-regexp))))))))
 
 
 ;;; sage-edit
