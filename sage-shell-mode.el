@@ -835,11 +835,16 @@ Match group 1 will be replaced with devel/sage-branch")
     (let* ((match (string-match sage-shell:site-packages-regexp filename)))
            (sage-shell:aif (and filename match
                           (cl-loop for a in '("devel" "src")
-                                if (file-exists-p (expand-file-name a (sage-shell:sage-root)))
+                                   if (file-exists-p
+                                       (expand-file-name
+                                        a (sage-shell:sage-root)))
                                 return a))
-               (let* ((base (concat (substring filename 0 (match-beginning 1)) it "/"))
+               (let* ((base (concat (substring filename 0
+                                               (match-beginning 1))
+                                    it))
                       (branch (cond ((string= "devel" it)
-                                     (or (file-symlink-p (concat base "sage")) "sage"))
+                                     (or (file-symlink-p (concat base "/sage"))
+                                         "/sage"))
                                     (t ""))))
                  (concat base branch (substring filename (match-end 1))))
              filename))))
