@@ -95,6 +95,11 @@
   :type 'regexp
   :group 'sage-shell)
 
+(defcustom sage-shell:make-error-link-p t
+  "If non-nil and the output contains an error line, output-filter-function creates a link to the file where the error is raised."
+  :type 'boolean
+  :group 'sage-shell)
+
 
 ;;; Anaphoric macros
 (defmacro sage-shell:ansetq (&rest rest)
@@ -1051,7 +1056,10 @@ This ring remebers the parts.")
 
           (sage-shell:run-hook-and-remove
            'sage-shell:output-filter-finished-hook)
-          (comint-postoutput-scroll-to-bottom string)))
+          (comint-postoutput-scroll-to-bottom string)
+          ;; create links in the output buffer.
+          (when sage-shell:make-error-link-p
+            (sage-shell:make-error-links comint-last-input-end (point)))))
       (goto-char saved-point))))
 
 (defun sage-shell:highlight-prompt (prompt-start)
@@ -1824,6 +1832,41 @@ send current line to Sage process buffer."
       (sage-shell-edit:exec-command-base :command it :insert-command-p t
                                    :display-function 'display-buffer))))
 
+
+;;; make err link
+(defvar sage-shell:make-err-link--line-regexp
+  (rx bol (group (1+ (regexp "[^
+]")) (or ".pyc" ".py")) eow " in"))
+
+(defun sage-shell:make-err-link--fname-conv (filename)
+  (let* ((fname (cond ((string-match (rx (or ".py" ".pyc") eol) filename)
+                       (concat (file-name-sans-extension filename) ".py"))
+                      (t filename))))
+    (if sage-shell:prefer-development-file-p
+        (sage-shell:development-version fname)
+      fname)))
+
+(defun sage-shell:make-error-links (beg end)
+  (save-excursion
+    (goto-char beg)
+    (cl-loop while (re-search-forward sage-shell:make-err-link--line-regexp
+                                      end t)
+             for fbeg = (match-beginning 1)
+             for fend = (match-end 1)
+             for filename = (sage-shell:make-err-link--fname-conv
+                             (match-string 1))
+             if (progn
+                  (forward-line 1)
+                  (and (looking-at (rx bol (1+ whitespace)
+                                       (1+ num)))
+                       (re-search-forward (rx bol (1+ "-") ">"
+                                              (1+ whitespace)
+                                              (group (1+ num)))
+                                          end t)))
+             do
+             (sage-shell-help:file-type-make-button
+              fbeg fend filename
+              (string-to-number (match-string 1))))))
 
 
 ;;; sage-shell-interfaces
