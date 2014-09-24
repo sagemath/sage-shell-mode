@@ -1709,7 +1709,8 @@ python-mode"
                   (button-get button 'sage-shell:file))
                  (when linenum
                    (goto-char (point-min))
-                   (forward-line (1- linenum)))))
+                   (forward-line (1- linenum))
+                   (recenter))))
      'follow-link t)))
 
 
