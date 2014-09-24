@@ -1696,7 +1696,9 @@ python-mode"
            (if sage-shell:prefer-development-file-p
                    (sage-shell:development-version fname)
                  fname)
-           linenum))))))
+           linenum))))
+    (when sage-shell:make-error-link-p
+     (sage-shell:make-error-links (point-min) (point-max)))))
 
 (defun sage-shell-help:file-type-make-button (beg end file line)
   (unless (button-at beg)
