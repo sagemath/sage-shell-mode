@@ -1681,10 +1681,14 @@ python-mode"
                                              (and bol "FILE" eol)))
                                      nil t)
                   (re-search-forward "[^ \n\t]+" nil t))
-        (sage-shell-help:file-type-make-button
-         (match-beginning 0)
-         (match-end 0)
-         (match-string 0) linenum)))))
+        (let ((fname (match-string 0)))
+          (sage-shell-help:file-type-make-button
+           (match-beginning 0)
+           (match-end 0)
+           (if sage-shell:prefer-development-file-p
+                   (sage-shell:development-version fname)
+                 fname)
+           linenum))))))
 
 (defun sage-shell-help:file-type-make-button (beg end file line)
   (unless (button-at beg)
