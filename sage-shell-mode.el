@@ -1682,13 +1682,14 @@ python-mode"
                                      nil t)
                   (re-search-forward "[^ \n\t]+" nil t))
         (sage-shell-help:file-type-make-button
-         0 (match-string 0) linenum)))))
+         (match-beginning 0)
+         (match-end 0)
+         (match-string 0) linenum)))))
 
-(defun sage-shell-help:file-type-make-button (match-number file line)
-  (unless (button-at (match-beginning match-number))
+(defun sage-shell-help:file-type-make-button (beg end file line)
+  (unless (button-at beg)
     (make-text-button
-     (match-beginning match-number)
-     (match-end match-number)
+     beg end
      'sage-shell:file file 'sage-shell:line line
      'action (lambda (button)
                (let ((linenum (button-get button 'sage-shell:line)))
