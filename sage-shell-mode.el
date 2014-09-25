@@ -320,21 +320,25 @@ returned from the function, otherwise, this returns it self. "
   (concat "Please set `sage-shell:sage-root' or"
           " `sage-shell:sage-executable' correctly."))
 
-
+(defvar sage-shell:sage-root--cached nil)
 (defun sage-shell:sage-root ()
-  (or sage-shell:sage-root
-      (sage-shell:aif (and (sage-shell:sage-executable)
-                           (executable-find (sage-shell:sage-executable)))
-          (sage-shell:->>  it
-                           file-truename
-                           file-name-directory))))
+  (or (sage-shell:aif sage-shell:sage-root
+          (expand-file-name it))
+      sage-shell:sage-root--cached
+      (setq sage-shell:sage-root--cached
+            (sage-shell:aif (and (sage-shell:sage-executable)
+                                 (executable-find (sage-shell:sage-executable)))
+                (sage-shell:->>  it
+                                 file-truename
+                                 file-name-directory)))))
 
 (defun sage-shell:sage-executable ()
-  (or sage-shell:sage-executable
-      (sage-shell:acond
-       ((stringp sage-shell:sage-root)
-        (expand-file-name "sage" sage-shell:sage-root))
-       ((executable-find "sage") (file-truename it)))))
+  (expand-file-name
+   (or sage-shell:sage-executable
+       (sage-shell:acond
+        ((stringp sage-shell:sage-root)
+         (expand-file-name "sage" sage-shell:sage-root))
+        ((executable-find "sage") (file-truename it))))))
 
 
 (defvar sage-shell:output-finished-regexp
