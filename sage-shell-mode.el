@@ -1708,7 +1708,8 @@ python-mode"
     (when sage-shell:make-error-link-p
      (sage-shell:make-error-links (point-min) (point-max)))))
 
-(defun sage-shell-help:file-type-make-button (beg end file line)
+(defun sage-shell-help:file-type-make-button (beg end file line &optional cont)
+  "If cont is a function, then cont will be called after visiting the file."
   (unless (button-at beg)
     (make-text-button
      beg end
@@ -1720,7 +1721,9 @@ python-mode"
                  (when linenum
                    (goto-char (point-min))
                    (forward-line (1- linenum))
-                   (recenter))))
+                   (recenter))
+                 (when (functionp cont)
+                   (funcall cont))))
      'follow-link t)))
 
 
