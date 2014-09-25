@@ -848,14 +848,18 @@ Match group 1 will be replaced with devel/sage-branch")
                                         (expand-file-name
                                          a (sage-shell:sage-root)))
                                     return a))
-          (let* ((base (concat (substring filename 0
-                                          (match-beginning 1))
-                               it))
+          (let* ((dr (concat (substring filename 0
+                                        (match-beginning 1))
+                             it))
                  (branch (cond ((string= "devel" it)
-                                (or (file-symlink-p (concat base "/sage"))
+                                (or (file-symlink-p (concat dr "/sage"))
                                     "/sage"))
-                               (t ""))))
-            (concat base branch (substring filename (match-end 1))))
+                               (t "")))
+                 (base1 (substring filename (match-end 1)))
+                 (base (if (string-match (rx "so" eol) base1)
+                           (concat (file-name-sans-extension base1) ".pyx")
+                         base1)))
+            (concat dr branch base))
         filename))))
 
 (defcustom sage-shell:prefer-development-file-p t
@@ -1843,11 +1847,13 @@ send current line to Sage process buffer."
 ;;; make err link
 (defvar sage-shell:make-err-link--line-regexp
   (rx bol (group (1+ (regexp "[^
-]")) (or ".pyc" ".py")) eow " in"))
+]")) (or ".pyc" ".py" ".so")) eow " in"))
 
 (defun sage-shell:make-err-link--fname-conv (filename)
   (let* ((fname (cond ((string-match (rx (or ".py" ".pyc") eol) filename)
                        (concat (file-name-sans-extension filename) ".py"))
+                      ((string-match (rx ".so" eol) filename)
+                       (sage-shell:development-version filename))
                       (t filename))))
     (if sage-shell:prefer-development-file-p
         (sage-shell:development-version fname)
@@ -1860,20 +1866,23 @@ send current line to Sage process buffer."
                                       end t)
              for fbeg = (match-beginning 1)
              for fend = (match-end 1)
+             for file-org-name = (match-string 1)
              for filename = (sage-shell:make-err-link--fname-conv
-                             (match-string 1))
-             if (progn
-                  (forward-line 1)
-                  (and (looking-at (rx bol (1+ whitespace)
-                                       (1+ num)))
-                       (re-search-forward (rx bol (1+ "-") ">"
-                                              (1+ whitespace)
-                                              (group (1+ num)))
-                                          end t)))
+                             file-org-name)
+             for linenum = nil
+             if (or (string-match (rx ".so" eol) file-org-name)
+                    (progn
+                      (forward-line 1)
+                      (and (looking-at (rx bol (1+ whitespace)
+                                           (1+ num)))
+                           (prog1 (re-search-forward (rx bol (1+ "-") ">"
+                                                         (1+ whitespace)
+                                                         (group (1+ num)))
+                                                     end t)
+                             (setq linenum (match-string 1))))))
              do
              (sage-shell-help:file-type-make-button
-              fbeg fend filename
-              (string-to-number (match-string 1))))))
+              fbeg fend filename linenum))))
 
 
 ;;; sage-shell-interfaces
