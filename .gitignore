@@ -2,3 +2,4 @@
 *.elc
 /.ropeproject/*
 /sage-shell-autoloads.el
+/.cask/
