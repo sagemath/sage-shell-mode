@@ -1875,7 +1875,16 @@ send current line to Sage process buffer."
              for filename = (sage-shell:make-err-link--fname-conv
                              file-org-name)
              for linenum = nil
-             if (or (string-match (rx ".so" eol) file-org-name)
+             for cont = nil
+             if (or (and (string-match (rx ".so" eol) file-org-name)
+                         (prog1 t
+                           (forward-line 0)
+                           (when (re-search-forward
+                                  (rx "in" (1+ space)
+                                      (group (1+ (or alnum "_" "-" "."))))
+                                  (line-end-position) t)
+                             (setq cont (sage-shell:make-error-links--cont
+                                         file-org-name (match-string 1))))))
                     (progn
                       (forward-line 1)
                       (and (looking-at (rx bol (1+ whitespace)
@@ -1884,10 +1893,38 @@ send current line to Sage process buffer."
                                                          (1+ whitespace)
                                                          (group (1+ num)))
                                                      end t)
-                             (setq linenum (match-string 1))))))
+                             (setq linenum (string-to-number
+                                            (match-string 1)))))))
              do
              (sage-shell-help:file-type-make-button
-              fbeg fend filename linenum))))
+              fbeg fend filename linenum cont))))
+
+
+(defun sage-shell:make-error-links--cont (f-org-name func-name)
+  (when (and (= (string-match
+                 (sage-shell:sage-root) f-org-name)
+                0)
+             (string-match (rx "site-packages/" (group "sage" (1+ nonl)))
+                           (file-name-sans-extension f-org-name)))
+    (let* ((l1 (split-string (match-string 1 f-org-name) "/"))
+           (l2 (split-string func-name (rx ".")))
+           (func-ls (cl-loop for a1 on l1 for a2 on l2
+                             unless a1
+                             finally return a2)))
+      (lexical-let ((func-ls func-ls))
+        (lambda ()
+          (goto-char (point-min))
+          (dolist (a func-ls)
+            (re-search-forward
+             (rx-to-string
+              `(and (or "def" "cdef" "cpdef" "class")
+                    (or whitespace
+                        (and whitespace
+                             (0+ nonl)
+                             whitespace))
+                    ,a (0+ whitespace) "("))
+             nil t))
+          (forward-line 0))))))
 
 
 ;;; sage-shell-interfaces
