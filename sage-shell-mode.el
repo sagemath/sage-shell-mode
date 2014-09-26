@@ -1714,8 +1714,10 @@ python-mode"
     (make-text-button
      beg end
      'sage-shell:file file 'sage-shell:line line
+     'sage-shell:cont cont
      'action (lambda (button)
-               (let ((linenum (button-get button 'sage-shell:line)))
+               (let ((linenum (button-get button 'sage-shell:line))
+                     (cont (button-get button 'sage-shell:cont)))
                  (find-file-other-window
                   (button-get button 'sage-shell:file))
                  (when linenum
