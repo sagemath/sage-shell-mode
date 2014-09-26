@@ -1855,14 +1855,14 @@ send current line to Sage process buffer."
  ]")) (or ".pyc" ".py" ".so")) eow " in"))
 
 (defun sage-shell:make-err-link--fname-conv (filename)
-  (let* ((fname (cond ((string-match (rx (or ".py" ".pyc") eol) filename)
-                       (concat (file-name-sans-extension filename) ".py"))
-                      ((string-match (rx ".so" eol) filename)
-                       (sage-shell:development-version filename))
-                      (t filename))))
-    (if sage-shell:prefer-development-file-p
-        (sage-shell:development-version fname)
-      fname)))
+  (cond ((string-match (rx (or ".py" ".pyc") eol) filename)
+         (let ((fname (concat (file-name-sans-extension filename) ".py")))
+           (if sage-shell:prefer-development-file-p
+               (sage-shell:development-version fname)
+             fname)))
+        ((string-match (rx ".so" eol) filename)
+         (sage-shell:development-version filename))
+        (t filename)))
 
 (defun sage-shell:make-error-links (beg end)
   (save-excursion
