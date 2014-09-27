@@ -666,10 +666,8 @@ When sync is nill this return a lambda function to get the result."
   (sage-shell:send-command
    (mapconcat 'identity sage-shell:init-command-list "; ") buffer)
   (setq sage-shell:init-finished-p t)
-  ;; Check (sage-shell:sage-root) is correct.
-  (unless (cl-loop for a in '("devel" "src")
-                   thereis (file-exists-p
-                            (expand-file-name a (sage-shell:sage-root))))
+  (unless (sage-shell:check--sage-root)
+    ;; Fix (sage-shell:sage-root)
     (setq sage-shell:sage-root--cached
           (let* ((s (sage-shell:send-command-to-string
                      "import os; print os.environ['SAGE_ROOT']"))
@@ -678,6 +676,21 @@ When sync is nill this return a lambda function to get the result."
             (if (string-match (rx "/" eol) s1)
                 s1
               (concat s1 "/"))))))
+
+(defun sage-shell:check--sage-root ()
+  "Check (sage-shell:sage-root)."
+  (and (cl-loop for a in '("devel" "src")
+                for d = (expand-file-name a (sage-shell:sage-root))
+                thereis (and (file-exists-p d)
+                             (file-directory-p d)))
+       (let ((ver-txt (expand-file-name "VERSION.txt" (sage-shell:sage-root))))
+         (and (file-exists-p ver-txt)
+              (with-temp-buffer
+                (insert-file-contents-literally ver-txt)
+                (goto-char (point-min))
+                (let ((case-fold-search nil))
+                  (re-search-forward (rx bow "Sage" eow) nil t)))))))
+
 
 (defun sage-shell:shell-buffer-name (new)
   (let* ((buffer-base-name "*Sage*"))
