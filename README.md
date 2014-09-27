@@ -25,7 +25,7 @@ put the following line to `~/.emacs.d/init.el`.
 ```lisp
 (setq sage-shell:sage-root "/path/to/sage/root_directory")
 ```
-And replace `"/path/to/sage_root_directory"` by the root directory of Sage,
+And replace `/path/to/sage_root_directory` by the root directory of Sage,
 i.e. `$SAGE_ROOT`.
 
 If you do not know the root directory of Sage,
