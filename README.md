@@ -28,15 +28,12 @@ put the following line to `~/.emacs.d/init.el`.
 And replace `"/path/to/sage_root_directory"` by the root directory of Sage,
 i.e. `$SAGE_ROOT`.
 
-
-
 If you do not know the root directory of Sage,
+evaluate the following code in Sage:
 
-1. In the Sage notebook, open a worksheet.
-2. Change the interface to `sh` and evaluate `echo $SAGE_ROOT` as follows:
-
-![alt text](./images/examine_sage_root.png "SAGE_ROOT")
-
+```python
+import os; print os.environ["SAGE_ROOT"]
+```
 
 Alternatively, instead of setting `sage-shell:sage-root`,
 you may set the variable `sage-shell:sage-executable`.
