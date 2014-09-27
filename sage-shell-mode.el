@@ -838,7 +838,7 @@ returns a lamda function with no args to obtain the result."
 Match group 1 will be replaced with devel/sage-branch")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun sage-shell:development-version (filename)
+(defun sage-shell:src-version (filename)
   "If FILENAME is in site-packages, current branch version, else FILENAME."
   (save-match-data
     (let* ((match (string-match sage-shell:site-packages-regexp filename)))
@@ -863,7 +863,7 @@ Match group 1 will be replaced with devel/sage-branch")
         filename))))
 
 (defcustom sage-shell:prefer-development-file-p t
-  "If non nil, prefer a source file in devel directory rather than site-packages directory."
+  "If non nil, prefer a source file in src directory rather than site-packages directory."
   :group 'sage-shell
   :type 'boolean)
 
@@ -882,7 +882,7 @@ Match group 1 will be replaced with devel/sage-branch")
                         str)
       (let ((src-file (match-string 1 str)))
         (cons (if sage-shell:prefer-development-file-p
-                  (sage-shell:development-version src-file)
+                  (sage-shell:src-version src-file)
                 src-file)
               (string-to-number (match-string 2 str)))))))
 
@@ -1702,7 +1702,7 @@ python-mode"
            (match-beginning 0)
            (match-end 0)
            (if sage-shell:prefer-development-file-p
-                   (sage-shell:development-version fname)
+                   (sage-shell:src-version fname)
                  fname)
            linenum))))
     (when sage-shell:make-error-link-p
@@ -1858,10 +1858,10 @@ send current line to Sage process buffer."
   (cond ((string-match (rx (or ".py" ".pyc") eol) filename)
          (let ((fname (concat (file-name-sans-extension filename) ".py")))
            (if sage-shell:prefer-development-file-p
-               (sage-shell:development-version fname)
+               (sage-shell:src-version fname)
              fname)))
         ((string-match (rx ".so" eol) filename)
-         (sage-shell:development-version filename))
+         (sage-shell:src-version filename))
         (t filename)))
 
 (defun sage-shell:make-error-links (beg end)
