@@ -665,7 +665,19 @@ When sync is nill this return a lambda function to get the result."
   "Runs after starting Sage"
   (sage-shell:send-command
    (mapconcat 'identity sage-shell:init-command-list "; ") buffer)
-  (setq sage-shell:init-finished-p t))
+  (setq sage-shell:init-finished-p t)
+  ;; Check (sage-shell:sage-root) is correct.
+  (unless (cl-loop for a in '("devel" "src")
+                   thereis (file-exists-p
+                            (expand-file-name a (sage-shell:sage-root))))
+    (setq sage-shell:sage-root--cached
+          (let* ((s (sage-shell:send-command-to-string
+                     "import os; print os.environ['SAGE_ROOT']"))
+                 (s1 (replace-regexp-in-string "
+" "" s)))
+            (if (string-match (rx "/" eol) s1)
+                s1
+              (concat s1 "/"))))))
 
 (defun sage-shell:shell-buffer-name (new)
   (let* ((buffer-base-name "*Sage*"))
