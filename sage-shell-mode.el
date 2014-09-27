@@ -1913,9 +1913,8 @@ send current line to Sage process buffer."
 
 
 (defun sage-shell:make-error-links--cont (f-org-name func-name)
-  (when (and (= (string-match
-                 (sage-shell:sage-root) f-org-name)
-                0)
+  (when (and (sage-shell:awhen (string-match (sage-shell:sage-root) f-org-name)
+               (= it 0))
              (string-match (rx "site-packages/" (group "sage" (1+ nonl)))
                            (file-name-sans-extension f-org-name)))
     (let* ((l1 (split-string (match-string 1 f-org-name) "/"))
