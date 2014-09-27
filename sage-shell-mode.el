@@ -1740,11 +1740,18 @@ python-mode"
      beg end
      'sage-shell:file file 'sage-shell:line line
      'sage-shell:cont cont
+     'sage-shell:proc-buf sage-shell:process-buffer
      'action (lambda (button)
-               (let ((linenum (button-get button 'sage-shell:line))
-                     (cont (button-get button 'sage-shell:cont)))
-                 (find-file-other-window
-                  (button-get button 'sage-shell:file))
+               (let* ((linenum (button-get button 'sage-shell:line))
+                      (cont (button-get button 'sage-shell:cont))
+                      (proc-buf (button-get button 'sage-shell:proc-buf))
+                      (file (button-get button 'sage-shell:file))
+                      (buf (find-file-noselect file)))
+                 (with-current-buffer buf
+                   (setq sage-shell:process-buffer proc-buf))
+                 (select-window (get-buffer-window proc-buf))
+                 (pop-to-buffer buf)
+                 (select-window (get-buffer-window buf))
                  (when linenum
                    (goto-char (point-min))
                    (forward-line (1- linenum))
