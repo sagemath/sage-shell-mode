@@ -1896,41 +1896,45 @@ send current line to Sage process buffer."
          (sage-shell:src-version filename))
         (t filename)))
 
+(defun sage-shell:research-forward-w-bd (reg bd)
+  (when (< (point) bd)
+    (re-search-forward reg bd t)))
+
 (defun sage-shell:make-error-links (beg end)
-  (when (< beg end)
-    (save-excursion
-      (goto-char beg)
-      (cl-loop while (re-search-forward sage-shell:make-err-link--line-regexp
-                                        end t)
-               for fbeg = (match-beginning 1)
-               for fend = (match-end 1)
-               for file-org-name = (match-string 1)
-               for filename = (sage-shell:make-err-link--fname-conv
-                               file-org-name)
-               for linenum = nil
-               for cont = nil
-               if (or (and (string-match (rx ".so" eol) file-org-name)
-                           (prog1 t
-                             (forward-line 0)
-                             (when (re-search-forward
-                                    (rx "in" (1+ space)
-                                        (group (1+ (or alnum "_" "-" "."))))
-                                    (line-end-position) t)
-                               (setq cont (sage-shell:make-error-links--cont
-                                           file-org-name (match-string 1))))))
-                      (progn
-                        (forward-line 1)
-                        (and (looking-at (rx bol (1+ whitespace)
-                                             (1+ num)))
-                             (prog1 (re-search-forward (rx bol (1+ "-") ">"
-                                                           (1+ whitespace)
-                                                           (group (1+ num)))
-                                                       end t)
-                               (setq linenum (string-to-number
-                                              (match-string 1)))))))
-               do
-               (sage-shell-help:file-type-make-button
-                fbeg fend filename linenum cont)))))
+  (save-excursion
+    (goto-char beg)
+    (cl-loop while (sage-shell:research-forward-w-bd
+                    sage-shell:make-err-link--line-regexp end)
+             for fbeg = (match-beginning 1)
+             for fend = (match-end 1)
+             for file-org-name = (match-string 1)
+             for filename = (sage-shell:make-err-link--fname-conv
+                             file-org-name)
+             for linenum = nil
+             for cont = nil
+             if (or (and (string-match (rx ".so" eol) file-org-name)
+                         (prog1 t
+                           (forward-line 0)
+                           (when (re-search-forward
+                                  (rx "in" (1+ space)
+                                      (group (1+ (or alnum "_" "-" "."))))
+                                  (line-end-position) t)
+                             (setq cont (sage-shell:make-error-links--cont
+                                         file-org-name (match-string 1))))))
+                    (progn
+                      (forward-line 1)
+                      (and (looking-at (rx bol (1+ whitespace)
+                                           (1+ num)))
+                           (prog1 (sage-shell:research-forward-w-bd
+                                   (rx bol (1+ "-") ">"
+                                       (1+ whitespace)
+                                       (group (1+ num)))
+                                   end)
+                             (setq linenum (string-to-number
+                                            (match-string 1)))))))
+             do
+             (sage-shell-help:file-type-make-button
+              fbeg fend filename linenum cont))))
 
 
 (defun sage-shell:make-error-links--cont (f-org-name func-name)
