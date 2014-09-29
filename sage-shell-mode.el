@@ -478,6 +478,8 @@ returned from the function, otherwise, this returns it self. "
   (set (make-local-variable 'comint-output-filter-functions)
        (remove 'comint-postoutput-scroll-to-bottom
                comint-output-filter-functions))
+  ;; Ignore duplicates in command history
+  (setq comint-input-ignoredups t)
   (add-hook 'completion-at-point-functions
             'sage-shell:completion-at-point-func nil t)
   (unless sage-shell:menu-defined-p
@@ -647,9 +649,16 @@ When sync is nill this return a lambda function to get the result."
     (file-name-directory
      (locate-file sage-shell:python-module load-path '(".py")))))
 
+(defun sage-shell:remove-trailing-slash (s)
+  (if (string-match (rx "/" eol) s)
+      (substring s 0 -1)
+    s))
+
 (defvar sage-shell:init-command-list
   (list
-   (format "sys.path = sys.path + ['%s']" sage-shell:python-script-directory)
+   (format "sys.path = sys.path + ['%s']"
+           (sage-shell:remove-trailing-slash
+            sage-shell:python-script-directory))
    (format "import %s" sage-shell:python-module))
   "Sage command list evaluated after loading Sage.")
 
@@ -1092,7 +1101,8 @@ This ring remebers the parts.")
           (comint-postoutput-scroll-to-bottom string)
           ;; create links in the output buffer.
           (when sage-shell:make-error-link-p
-            (sage-shell:make-error-links comint-last-input-end (point)))))
+            (sage-shell:make-error-links comint-last-input-end (point)))
+          (sage-shell-pdb:comint-output-filter-function string)))
       (goto-char saved-point))))
 
 (defun sage-shell:highlight-prompt (prompt-start)
@@ -2598,13 +2608,8 @@ of current Sage process.")
 
 (defvar sage-shell-edit:temp-file-header "# -*- coding: utf-8 -*-\n")
 
-(defun sage-shell-edit:make-temp-file-from-region (start end)
-  "Make temp file from region and return temp file name."
-  (let* ((f (sage-shell-edit:temp-file
-             (sage-shell:aif (buffer-file-name)
-                 (file-name-extension it)
-               "sage")))
-         (orig-start (min start end))
+(defun sage-shell-edit:write-region-to-file (start end file)
+  (let* ((orig-start (min start end))
          (buf-str (buffer-substring-no-properties start end))
          (offset (save-excursion
                    (goto-char orig-start)
@@ -2616,14 +2621,22 @@ of current Sage process.")
         (insert buf-str))
       (re-search-forward (rx (not whitespace)) nil t)
       (beginning-of-line)
-      (when (looking-at " +") ; need dummy block
+      (when (looking-at " +")           ; need dummy block
         (insert "if True:\n"))
       (goto-char (point-max))
       (unless (bolp)
         (newline))
-      (write-region nil nil  f nil 'nomsg))
+      (write-region nil nil  file nil 'nomsg))
     ;; return temp file name
-    f))
+    file))
+
+(defun sage-shell-edit:make-temp-file-from-region (start end)
+  "Make temp file from region and return temp file name."
+  (let ((f (sage-shell-edit:temp-file
+            (sage-shell:aif (buffer-file-name)
+                (file-name-extension it)
+              "sage"))))
+    (sage-shell-edit:write-region-to-file start end f)))
 
 (defun sage-shell-edit:beg-of-defun-position ()
   (min (save-excursion
@@ -2859,6 +2872,149 @@ of current Sage process.")
 ;;;###autoload
 (add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
 
+
+;;; sage-shell-pdb
+(defun sage-shell-pdb:send--command (cmd)
+  (when (sage-shell-pdb:pdb-prompt-p)
+    (sage-shell-edit:exec-command-base
+     :command cmd
+     :insert-command-p t
+     :display-function 'display-buffer)
+    (sage-shell:after-output-finished
+      (with-current-buffer sage-shell:process-buffer
+        (goto-char (process-mark (get-buffer-process
+                                  sage-shell:process-buffer)))))))
+
+(eval-when-compile
+  (defvar sage-shell-pdb:command-list
+    '("next" "step" "where" "up" "down" "until" "continue" "help"
+      "run" "quit")))
+
+(defmacro sage-shell-pdb:define--commands ()
+  (append '(progn)
+          (cl-loop for cmd in sage-shell-pdb:command-list
+                   collect
+                   `(defun ,(intern (concat
+                                     "sage-shell-pdb:input-"
+                                     cmd))
+                        ()
+                      (interactive)
+                      ,(format "Input '%s' in the process buffer." cmd)
+                      (sage-shell-pdb:send--command ,cmd)))))
+
+;; Define sage-shell-pdb:input-next, etc.
+(sage-shell-pdb:define--commands)
+
+(defun sage-shell-pdb:set-break-point-at-point ()
+  (interactive)
+  (let ((file (buffer-file-name))
+        (line (save-restriction
+                (widen)
+                (count-lines (point-min) (point)))))
+    (when file
+      (sage-shell-pdb:send--command
+       (format "break %s:%s" file line)))))
+
+(defun sage-shell-pdb:pdb-prompt-p ()
+  (sage-shell-edit:set-sage-proc-buf-internal nil t)
+  (with-current-buffer sage-shell:process-buffer
+    (save-excursion
+      ;; goto last prompt
+      (goto-char (process-mark (get-buffer-process (current-buffer))))
+      (forward-line 0)
+      (looking-at "(Pdb) "))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                 Borrowed from Gallina's python.el.                  ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defcustom sage-shell-pdb:activate t
+  "Non-nil makes  Sage shell enable pdbtracking."
+  :type 'boolean
+  :group 'sage-shell
+  :safe 'booleanp)
+
+(defvar sage-shell-pdb:stacktrace-info-regexp
+  "> \\([^\"(<]+\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_<>]+\\)()"
+  "Regular expression matching stacktrace information.
+Used to extract the current line and module being inspected.")
+
+(defvar sage-shell-pdb:tracked-buffer nil
+  "Variable containing the value of the current tracked buffer.
+Never set this variable directly, use
+`sage-shell-pdb:set-tracked-buffer' instead.")
+
+(defvar sage-shell-pdb:buffers-to-kill nil
+  "List of buffers to be deleted after tracking finishes.")
+
+(defun sage-shell-pdb:set-tracked-buffer (file-name)
+  "Set the buffer for FILE-NAME as the tracked buffer.
+Internally it uses the `sage-shell-pdb:tracked-buffer' variable.
+Returns the tracked buffer."
+  (let ((file-buffer (get-file-buffer
+                      (concat (file-remote-p default-directory)
+                              file-name))))
+    (if file-buffer
+        (setq sage-shell-pdb:tracked-buffer file-buffer)
+      (setq file-buffer (find-file-noselect file-name))
+      (when (not (member file-buffer sage-shell-pdb:buffers-to-kill))
+        (add-to-list 'sage-shell-pdb:buffers-to-kill file-buffer)))
+    file-buffer))
+
+(defun sage-shell-pdb:comint-output-filter-function (output)
+  "Move overlay arrow to current pdb line in tracked buffer.
+Argument OUTPUT is a string with the output from the comint process."
+  (when (and sage-shell-pdb:activate (not (string= output "")))
+    (let* ((full-output (ansi-color-filter-apply
+                         (buffer-substring comint-last-input-end (point-max))))
+           (line-number)
+           (file-name
+            (with-temp-buffer
+              (insert full-output)
+              ;; When the debugger encounters a pdb.set_trace()
+              ;; command, it prints a single stack frame.  Sometimes
+              ;; it prints a bit of extra information about the
+              ;; arguments of the present function.  When ipdb
+              ;; encounters an exception, it prints the _entire_ stack
+              ;; trace.  To handle all of these cases, we want to find
+              ;; the _last_ stack frame printed in the most recent
+              ;; batch of output, then jump to the corresponding
+              ;; file/line number.
+              (goto-char (point-max))
+              (when (re-search-backward sage-shell-pdb:stacktrace-info-regexp nil t)
+                (setq line-number (string-to-number
+                                   (match-string-no-properties 2)))
+                (match-string-no-properties 1)))))
+      (if (and file-name line-number)
+          (let* ((tracked-buffer
+                  (sage-shell-pdb:set-tracked-buffer file-name))
+                 (shell-buffer (current-buffer))
+                 (tracked-buffer-window (get-buffer-window tracked-buffer))
+                 (tracked-buffer-line-pos))
+            (with-current-buffer tracked-buffer
+              (set (make-local-variable 'overlay-arrow-string) "=>")
+              (set (make-local-variable 'overlay-arrow-position) (make-marker))
+              (setq tracked-buffer-line-pos (progn
+                                              (goto-char (point-min))
+                                              (forward-line (1- line-number))
+                                              (point-marker)))
+              (when tracked-buffer-window
+                (set-window-point
+                 tracked-buffer-window tracked-buffer-line-pos))
+              (set-marker overlay-arrow-position tracked-buffer-line-pos))
+            (pop-to-buffer tracked-buffer)
+            (switch-to-buffer-other-window shell-buffer))
+        (when sage-shell-pdb:tracked-buffer
+          (with-current-buffer sage-shell-pdb:tracked-buffer
+            (set-marker overlay-arrow-position nil))
+          (unless (sage-shell-pdb:pdb-prompt-p)
+            (mapc #'(lambda (buffer)
+                      (ignore-errors (kill-buffer buffer)))
+                  sage-shell-pdb:buffers-to-kill))
+          (setq sage-shell-pdb:tracked-buffer nil
+                sage-shell-pdb:buffers-to-kill nil)))))
+  output)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
