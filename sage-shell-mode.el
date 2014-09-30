@@ -1121,17 +1121,8 @@ This ring remebers the parts.")
         (overlay-put ov
                      'font-lock-face 'comint-highlight-prompt)))))
 
-(defun sage-shell:clear-current-buffer ()
-  "Delete all output in the current buffer. This does not delete the last prompt."
-  (interactive)
-  (let ((inhibit-read-only t))
-    (delete-region (point-min) (sage-shell:line-beginning-position))
-    (sage-shell:clear-completion-sync-cached)))
-
-(defun sage-shell:delete-output ()
-  "Delete all output from interpreter since last input.
-Does not delete the prompt."
-  (interactive)
+(defun sage-shell:-delete-output (pt)
+  "Delete region between pt and process-mark"
   (let ((proc (get-buffer-process (current-buffer)))
         (replacement nil)
         (inhibit-read-only t))
@@ -1139,13 +1130,24 @@ Does not delete the prompt."
       (let ((pmark (progn (goto-char (process-mark proc))
                           (forward-line 0)
                           (point-marker))))
-        (delete-region comint-last-input-end pmark)
+        (delete-region pt pmark)
         (goto-char (process-mark proc))
         (setq replacement (buffer-substring pmark (point)))
         (delete-region pmark (point))))
     (sage-shell:clear-completion-sync-cached)
     ;; Output message and put back prompt
     (sage-shell:output-filter proc replacement)))
+
+(defun sage-shell:clear-current-buffer ()
+  "Delete all output in the current buffer. This does not delete the last prompt."
+  (interactive)
+  (sage-shell:-delete-output (point-min)))
+
+(defun sage-shell:delete-output ()
+  "Delete all output from interpreter since last input.
+Does not delete the prompt."
+  (interactive)
+  (sage-shell:-delete-output comint-last-input-end))
 
 (defmacro sage-shell:font-lock-when-sage-line (&rest forms)
   `(when (save-match-data
