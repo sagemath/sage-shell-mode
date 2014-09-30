@@ -2577,8 +2577,8 @@ of current Sage process.")
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
 (defun sage-shell-edit:exec-cmd-internal (command insert-command-p)
-  (with-current-buffer sage-shell:process-buffer
-    (save-excursion
+  (let ((saved-pt (point)))
+    (with-current-buffer sage-shell:process-buffer
       (goto-char (process-mark
                   (get-buffer-process (current-buffer))))
       (end-of-line)
@@ -2595,7 +2595,9 @@ of current Sage process.")
                  (comint-send-string (get-buffer-process
                                       sage-shell:process-buffer)
                                      (concat command "\n"))))
-        (insert line)))))
+        (insert line)
+        (unless insert-command-p
+          (goto-char (point)))))))
 
 (defvar sage-shell-edit:temp-file-base-name "sage_shell_mode_temp")
 (defvar sage-shell-edit:temp-directory
