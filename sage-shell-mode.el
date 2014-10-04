@@ -2567,7 +2567,8 @@ of current Sage process.")
   (sage-shell-edit:set-sage-proc-buf-internal)
 
   (with-current-buffer sage-shell:process-buffer
-    (sage-shell:change-mode-line-process t))
+    (sage-shell:change-mode-line-process t)
+    (force-mode-line-update))
 
   (sage-shell:awhen pre-message (message it))
 
