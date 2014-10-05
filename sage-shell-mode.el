@@ -2864,7 +2864,9 @@ of current Sage process.")
                              (string-match (rx (or ".sage" ".py") eol)
                                            name))))))
   (sage-shell-edit:load-file-base
-   :file-name filename :insert-command-p t))
+   :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
+                    filename)
+   :insert-command-p t))
 
 
 ;;; Alias

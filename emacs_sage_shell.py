@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
+import os
+from contextlib import contextmanager
+
 try:
     ip = get_ipython()
     ip.autoindent = False
@@ -52,3 +55,20 @@ def print_all_attributes(varname):
                 print a
     except:
         pass
+
+
+
+@contextmanager
+def current_dir(d):
+    cwd = os.getcwd()
+    os.chdir(d)
+    try:
+        yield
+    finally:
+        os.chdir(cwd)
+
+
+def sage_tex_load(f):
+    d = os.path.dirname(os.path.expanduser(f))
+    with current_dir(d):
+        ip.ev('load("{f}")'.format(f=f))
