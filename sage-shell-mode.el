@@ -2841,7 +2841,9 @@ of current Sage process.")
                      "local/share/texmf/tex/generic/sagetex:"
                      it)))
     (when (and sage-shell:add-to-texinputs-p
-               (not (sage-shell:in sagetexdir (split-string texinputs ":"))))
+               (or (null texinputs)
+                   (not (sage-shell:in (substring sagetexdir 0 -1)
+                                       (split-string texinputs ":")))))
       (setenv "TEXINPUTS" (concat texinputs sagetexdir)))))
 
 
