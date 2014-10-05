@@ -1767,7 +1767,8 @@ python-mode"
     (when sage-shell:make-error-link-p
      (sage-shell:make-error-links (point-min) (point-max)))))
 
-(defun sage-shell-help:file-type-make-button (beg end file line &optional cont)
+(cl-defun sage-shell-help:file-type-make-button
+    (beg end file line &optional cont (recenter-arg 0))
   "If cont is a function, then cont will be called after visiting the file."
   (unless (button-at beg)
     (make-text-button
@@ -1776,23 +1777,23 @@ python-mode"
      'sage-shell:cont cont
      'sage-shell:buffer (current-buffer)
      'sage-shell:proc-buf sage-shell:process-buffer
-     'action (lambda (button)
-               (let* ((linenum (button-get button 'sage-shell:line))
-                      (cont (button-get button 'sage-shell:cont))
-                      (proc-buf (button-get button 'sage-shell:proc-buf))
-                      (file (button-get button 'sage-shell:file))
-                      (cbuf (button-get button 'sage-shell:buffer)))
-                 (with-selected-window (get-buffer-window cbuf)
-                   (find-file-other-window file))
-                 (with-current-buffer (get-file-buffer file)
-                   (setq sage-shell:process-buffer proc-buf))
-                 (select-window (get-buffer-window (get-file-buffer file)))
-                 (when linenum
-                   (goto-char (point-min))
-                   (forward-line (1- linenum))
-                   (recenter 0))
-                 (when (functionp cont)
-                   (funcall cont))))
+     'action `(lambda (button)
+                (let* ((linenum (button-get button 'sage-shell:line))
+                       (cont (button-get button 'sage-shell:cont))
+                       (proc-buf (button-get button 'sage-shell:proc-buf))
+                       (file (button-get button 'sage-shell:file))
+                       (cbuf (button-get button 'sage-shell:buffer)))
+                  (with-selected-window (get-buffer-window cbuf)
+                    (find-file-other-window file))
+                  (with-current-buffer (get-file-buffer file)
+                    (setq sage-shell:process-buffer proc-buf))
+                  (select-window (get-buffer-window (get-file-buffer file)))
+                  (when linenum
+                    (goto-char (point-min))
+                    (forward-line (1- linenum))
+                    (recenter ,recenter-arg))
+                  (when (functionp cont)
+                    (funcall cont))))
      'follow-link t)))
 
 
@@ -1969,7 +1970,7 @@ send current line to Sage process buffer."
                                             (match-string 1)))))))
              do
              (sage-shell-help:file-type-make-button
-              fbeg fend filename linenum cont))))
+              fbeg fend filename linenum cont nil))))
 
 
 (defun sage-shell:make-error-links--cont (f-org-name func-name)
