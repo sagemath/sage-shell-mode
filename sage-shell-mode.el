@@ -1053,7 +1053,11 @@ This ring remebers the parts.")
         (save-selected-window
           (when (and (windowp win) (window-live-p win))
             (select-window win))
-          (sage-shell:output-filter-no-rdct process string))))))
+          (sage-shell:output-filter-no-rdct process string))
+        (when sage-shell:output-finished-p
+          (comint-postoutput-scroll-to-bottom string)
+          (sage-shell:run-hook-and-remove
+           'sage-shell:output-filter-finished-hook process))))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
@@ -1122,10 +1126,7 @@ This ring remebers the parts.")
           ;; create links in the output buffer.
           (when sage-shell:make-error-link-p
             (sage-shell:make-error-links comint-last-input-end (point)))
-          (sage-shell-pdb:comint-output-filter-function string)
-          (comint-postoutput-scroll-to-bottom string)
-          (sage-shell:run-hook-and-remove
-           'sage-shell:output-filter-finished-hook process)))
+          (sage-shell-pdb:comint-output-filter-function string)))
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
         (goto-char saved-point)))))
