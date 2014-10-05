@@ -1034,8 +1034,12 @@ This ring remebers the parts.")
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process)))
     (sage-shell:with-current-buffer-safe (and string oprocbuf)
-      (let ((string (sage-shell:ansi-color-filter-apply string)))
-        (sage-shell:output-filter-no-rdct process string)))))
+      (let ((string (sage-shell:ansi-color-filter-apply string))
+            (win (get-buffer-window (process-buffer process))))
+        (save-selected-window
+          (when (and (windowp win) (window-live-p win))
+            (select-window win))
+          (sage-shell:output-filter-no-rdct process string))))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
@@ -2578,7 +2582,11 @@ of current Sage process.")
                 (display-function display-function))
 
     (sage-shell:as-soon-as (sage-shell:output-finished-p)
-      (sage-shell-edit:exec-cmd-internal command insert-command-p)
+      (let ((win (get-buffer-window sage-shell:process-buffer)))
+        (if (and (windowp win) (window-live-p win))
+            (with-selected-window win
+              (sage-shell-edit:exec-cmd-internal command insert-command-p))
+          (sage-shell-edit:exec-cmd-internal command insert-command-p)))
       (when post-message
         (sage-shell:after-output-finished
           (message post-message)))
