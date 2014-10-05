@@ -21,19 +21,9 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Setting
-;; If (executable-find "sage") is non-nil, you do not need the setting below.
-;; If (executable-find "sage") is nil,
-;; put the followin line to ~/.emacs.d/init.el
-;; (setq sage-shell:sage-root "/path/to/sage_root_directory")
+;;; Commentary:
 
-;; Here /path/to/sage_root_directory is the location of Sage's root directory.
-;; If you use Mac OS X and install Sage as a Mac OS X application,
-;; it is like as follows:
-;; "/Applications/Sage-*.*-OSX-64bit-**.*.app/Contents/Resources/sage".
-
-;; Instead of the line above, you may put the following line to ~/.emacs.d/init.el
-;; (setq sage-shell:sage-executable "paht/to/sage/executable")
+;; Please visit https://github.com/stakemori/sage-shell-mode for documentation.
 
 ;;; Code:
 (eval-when-compile (require 'cl))
