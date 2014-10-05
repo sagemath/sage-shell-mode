@@ -83,12 +83,14 @@
 (defcustom sage-shell:use-unicode-banner nil
   "Non-nil means use unicode character in Sage's banner."
   :type 'boolean
-  :group 'sage-shell)
+  :group 'sage-shell
+  :safe 'booleanp)
 
 (defcustom sage-shell:completion-ignore-case nil
   "Non-nil means don't consider case significant in completion."
   :type 'boolean
-  :group 'sage-shell)
+  :group 'sage-shell
+  :safe 'booleanp)
 
 (defcustom sage-shell:completion-candidate-regexp (rx (1+ alnum))
   "Regexp used for collect completions when completion-at-point is called."
@@ -98,7 +100,25 @@
 (defcustom sage-shell:make-error-link-p t
   "If non-nil and the output contains an error line, output-filter-function creates a link to the file where the error is raised."
   :type 'boolean
-  :group 'sage-shell)
+  :group 'sage-shell
+  :safe 'booleanp)
+
+(defcustom sage-shell:prefer-development-file-p t
+  "If non nil, prefer a source file in src directory rather than site-packages directory."
+  :group 'sage-shell
+  :type 'boolean)
+
+(defcustom sage-shell:add-to-texinputs-p t
+  "Non-nil means sage-shell-mode adds $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
+  :type 'boolean
+  :group 'sage-shell
+  :safe 'booleanp)
+
+(defcustom sage-shell-pdb:activate t
+  "Non-nil makes  Sage shell enable pdbtracking."
+  :type 'boolean
+  :group 'sage-shell
+  :safe 'booleanp)
 
 
 ;;; Anaphoric macros
@@ -895,12 +915,6 @@ Match group 1 will be replaced with devel/sage-branch")
                          base1)))
             (concat dr branch base))
         filename))))
-
-(defcustom sage-shell:prefer-development-file-p t
-  "If non nil, prefer a source file in src directory rather than site-packages directory."
-  :group 'sage-shell
-  :type 'boolean)
-
 
 (defun sage-shell:source-file-and-line-num (obj)
   "Return (cons sourcefile line-number)"
@@ -2837,9 +2851,11 @@ of current Sage process.")
 (sage-shell:awhen (sage-shell:sage-root)
   (let ((texinputs (getenv "TEXINPUTS"))
         (sagetexdir (expand-file-name
-                     "local/share/texmf/tex/generic/sagetex/:"
+                     "local/share/texmf/tex/generic/sagetex:"
                      it)))
-    (setenv "TEXINPUTS" (concat texinputs sagetexdir))))
+    (when (and sage-shell:add-to-texinputs-p
+               (not (sage-shell:in sagetexdir (split-string texinputs ":"))))
+      (setenv "TEXINPUTS" (concat texinputs sagetexdir)))))
 
 
 ;;; sagetex
@@ -2962,12 +2978,6 @@ of current Sage process.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                 Borrowed from Gallina's python.el.                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom sage-shell-pdb:activate t
-  "Non-nil makes  Sage shell enable pdbtracking."
-  :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
-
 (defvar sage-shell-pdb:stacktrace-info-regexp
   "> \\([^\"(<]+\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_<>]+\\)()"
   "Regular expression matching stacktrace information.
