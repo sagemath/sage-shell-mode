@@ -945,11 +945,10 @@ Match group 1 will be replaced with devel/sage-branch")
                (win (display-buffer buf)))
           (with-current-buffer buf
             (view-mode 1)
-            (with-selected-window win
-              (sage-shell:goto-line line)
-              (recenter offset)
-              (setq sage-shell:process-buffer proc-buf)))
-          win)
+            (select-window win)
+            (sage-shell:goto-line line)
+            (recenter offset)
+            (setq sage-shell:process-buffer proc-buf)))
       (message "Source file not found."))))
 
 
@@ -1529,14 +1528,6 @@ function does not highlight the input."
 (defvar sage-shell:clear-commands-regexp
   (rx bol "clear" (zero-or-more space) eol))
 
-(defun sage-shell:send-blank-line-and-select-win (win)
-  (sage-shell:send-blank-line)
-  (lexical-let ((win win))
-    (sage-shell:after-output-finished
-      (when (and (windowp win)
-                 (window-live-p win))
-        (select-window win)))))
-
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
 ;; * Set `sage-shell:output-finished-p'.
@@ -1582,11 +1573,10 @@ function does not highlight the input."
                                (zero-or-more blank)
                                (group (1+ "?"))
                                (zero-or-more blank) eol) line))
-        (let ((win (if (> (length (match-string 2 line)) 1)
-                       (sage-shell:find-source-in-view-mode
-                        (match-string 1 line))
-                     (sage-shell-help:describe-symbol (match-string 1 line)))))
-          (sage-shell:send-blank-line-and-select-win win)))
+        (if (> (length (match-string 2 line)) 1)
+            (sage-shell:find-source-in-view-mode (match-string 1 line))
+          (sage-shell-help:describe-symbol (match-string 1 line)))
+        (sage-shell:send-blank-line))
        ((and at-tl-in-sage-p
              (string-match (rx bol (zero-or-more blank)
                                "help"
@@ -1596,8 +1586,8 @@ function does not highlight the input."
                                (zero-or-more blank) ")"
                                (zero-or-more blank)
                                eol) line))
-        (sage-shell:send-blank-line-and-select-win
-         (sage-shell-help:describe-symbol (match-string 1 line) "help(%s)")))
+        (sage-shell-help:describe-symbol (match-string 1 line) "help(%s)")
+        (sage-shell:send-blank-line))
 
        ;; send current line to indenting buffer and to process normally
        (t (sage-shell:send-line-to-indenting-buffer-and-indent line)
@@ -1629,8 +1619,13 @@ function does not highlight the input."
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
-           (lambda (proc str) (comint-simple-send proc ""))))
-      (sage-shell:comint-send-input))))
+           (lambda (proc str) (comint-simple-send proc "")))
+          (win (get-buffer-window sage-shell:process-buffer)))
+      (if (and (windowp win)
+               (window-live-p win))
+          (with-selected-window win
+            (sage-shell:comint-send-input))
+        (sage-shell:comint-send-input)))))
 
 (defun sage-shell:at-top-level-p ()
   (save-excursion
@@ -1886,7 +1881,7 @@ python-mode"
 
 
 (cl-defun sage-shell-help:describe-symbol (symbol &optional (cmd "%%pinfo %s"))
-  "Describe symbol and display help buffer."
+  "Describe symbol, display help buffer and select the window."
   (let* ((buf (get-buffer-create sage-shell-help:help-buffer-name))
          (cmd-str (format cmd symbol))
          (str (sage-shell:send-command-to-string cmd-str))
@@ -1895,8 +1890,8 @@ python-mode"
       (error (format "Object %s not found." symbol)))
 
     (let ((inhibit-read-only t)
-          (view-read-only nil)
-          (help-window-select nil))
+          (help-window-select t)
+          (view-read-only nil))
       (with-help-window (buffer-name buf)
         (with-current-buffer buf
           (erase-buffer) (sage-shell:help-mode)
@@ -1914,8 +1909,7 @@ python-mode"
           ;; update history index
           (setq sage-shell-help:help-contents-list-index 0)
           ;; make forward or backward button
-          (sage-shell-help:make-forward-back-button)))
-      (get-buffer-window buf))))
+          (sage-shell-help:make-forward-back-button))))))
 
 (defun sage-shell-help:send-current-line ()
   "In the help buffer, if current line contains a string 'sage:',
