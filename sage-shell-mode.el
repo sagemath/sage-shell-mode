@@ -333,7 +333,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:sage-root--cached nil)
 (defun sage-shell:sage-root ()
   (or (sage-shell:aif sage-shell:sage-root
-          (expand-file-name it))
+          (file-name-as-directory (expand-file-name it)))
       sage-shell:sage-root--cached
       (setq sage-shell:sage-root--cached
             (sage-shell:aif (and (sage-shell:sage-executable)
