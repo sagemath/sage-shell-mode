@@ -1871,7 +1871,8 @@ python-mode"
   [remap help-go-forward] 'sage-shell-help:forward-history)
 
 
-(cl-defun sage-shell-help:describe-symbol (symbol &optional (cmd "%%pinfo %s"))
+(cl-defun sage-shell-help:describe-symbol (symbol &optional
+                                                  (cmd "%s?"))
   "Describe symbol, display help buffer and select the window."
   (let* ((buf (get-buffer-create sage-shell-help:help-buffer-name))
          (cmd-str (format cmd symbol))
