@@ -2971,10 +2971,11 @@ of current Sage process.")
   (let ((file (buffer-file-name))
         (line (save-restriction
                 (widen)
-                (count-lines (point-min) (point)))))
+                (line-number-at-pos))))
     (when file
       (sage-shell-pdb:send--command
-       (format "break %s:%s" file line)))))
+       (format "break %s:%s" (sage-shell:site-package-version file)
+               line)))))
 
 (defun sage-shell-pdb:pdb-prompt-p ()
   (sage-shell-edit:set-sage-proc-buf-internal nil t)
