@@ -906,6 +906,27 @@ Match group 1 will be replaced with devel/sage-branch")
             (concat dr branch base))
         filename))))
 
+(defun sage-shell:site-package-version (filename)
+  "Inverse to `sage-shell:src-version'"
+  (cond ((sage-shell:aand
+           (string-match (expand-file-name "src/sage/"
+                                           (sage-shell:sage-root))
+                         filename)
+           (= it 0))
+         (let* ((python-dir1
+                 (expand-file-name "local/lib/python/site-packages/"
+                                   (sage-shell:sage-root)))
+                (python-dir (if (file-exists-p python-dir1)
+                                (file-truename python-dir1)))
+                (sfile-name1 (expand-file-name
+                              (concat "sage/"
+                                      (substring filename (match-end 0)))
+                              python-dir)))
+           (if (file-exists-p sfile-name1)
+               sfile-name1
+             filename)))
+        (t filename)))
+
 (defun sage-shell:source-file-and-line-num (obj)
   "Return (cons sourcefile line-number)"
   (let ((str (sage-shell:send-command-to-string
