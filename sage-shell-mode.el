@@ -680,6 +680,8 @@ When sync is nill this return a lambda function to get the result."
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
 
+(defvar sage-shell:check--sage-root-ok nil)
+
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:send-command
@@ -694,9 +696,16 @@ When sync is nill this return a lambda function to get the result."
 " "" s)))
             (if (string-match (rx "/" eol) s1)
                 s1
-              (concat s1 "/"))))))
+              (concat s1 "/"))))
+    (setq sage-shell:check--sage-root-ok t)))
 
 (defun sage-shell:check--sage-root ()
+  (or sage-shell:check--sage-root-ok
+      (setq sage-shell:check--sage-root-ok
+            (when (sage-shell:check--sage-root1)
+              t))))
+
+(defun sage-shell:check--sage-root1 ()
   "Check (sage-shell:sage-root)."
   (and (cl-loop for a in '("devel" "src")
                 for d = (expand-file-name a (sage-shell:sage-root))
