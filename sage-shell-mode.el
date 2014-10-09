@@ -3098,31 +3098,22 @@ Argument OUTPUT is a string with the output from the comint process."
                                   (split-string texinputs ":")))
         (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
 
+(defun sage-shell-sagetex:tex-to-sagetex-file (f)
+  (concat (file-name-sans-extension f) ".sagetex.sage"))
+
 ;;;###autoload
 (defun sage-shell-sagetex:load-file (filename)
   "Load a .sagetex.sage file to an existing Sage process."
   (interactive
-   (list (let ((dflt (abbreviate-file-name
-                      (expand-file-name
-                       (concat
-                        (if (fboundp 'TeX-master-file)
-                            (TeX-master-file)
-                          (sage-shell:->>
-                           (buffer-file-name)
-                           file-name-nondirectory
-                           file-name-sans-extension))
-                        ".sagetex.sage")
-                       default-directory))))
-           (read-file-name "Sage TeX file: " nil dflt nil
-                           (file-name-nondirectory dflt)
-                           (lambda (name)
-                             (string-match (rx (or ".sage" ".py") eol)
-                                           name))))))
-  (sage-shell-edit:load-file-base
-   :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
-                    filename)
-   :insert-command-p t))
+   (list (sage-shell-sagetex:read-latex-file)))
+  (let ((dflt (sage-shell-sagetex:tex-to-sagetex-file
+               filename)))
+    (sage-shell-edit:load-file-base
+     :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
+                      dflt)
+     :insert-command-p t)))
 
+;;;###autoload
 (defun sage-shell-sagetex:load-current-file ()
   (interactive)
   (sage-shell-sagetex:-load-current-file
@@ -3184,8 +3175,7 @@ again. See the documentation of
           (sage-shell:TeX-shell-command-option)
           (sage-shell-sagetex:pre-command f))
         (deferred:nextc it
-          (lambda (x) (sage-shell-sagetex:load-file
-                   (concat (file-name-sans-extension f) ".sagetex.sage"))))
+          (lambda (x) (sage-shell-sagetex:load-file f)))
         (deferred:nextc it
           (lambda (x) (while (not (file-exists-p
                                (concat (file-name-sans-extension f)
@@ -3225,8 +3215,7 @@ exisiting Sage process."
           (sage-shell:TeX-shell-command-option)
           (sage-shell-sagetex:pre-command f))
         (deferred:nextc it
-          (lambda (x) (sage-shell-sagetex:load-file
-                   (concat (file-name-sans-extension f) ".sagetex.sage")))))
+          (lambda (x) (sage-shell-sagetex:load-file f))))
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
