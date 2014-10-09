@@ -697,7 +697,9 @@ When sync is nill this return a lambda function to get the result."
             (if (string-match (rx "/" eol) s1)
                 s1
               (concat s1 "/"))))
-    (setq sage-shell:check--sage-root-ok t)))
+    (setq sage-shell:check--sage-root-ok t))
+  (when sage-shell:add-to-texinputs-p
+    (sage-shell:add-to-texinputs)))
 
 (defun sage-shell:check--sage-root ()
   (or sage-shell:check--sage-root-ok
@@ -2865,17 +2867,18 @@ of current Sage process.")
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
   "C-c C-j" 'sage-shell-edit:send-line)
 
-;; Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS.
-(sage-shell:awhen (sage-shell:sage-root)
-  (let ((texinputs (getenv "TEXINPUTS"))
-        (sagetexdir (expand-file-name
-                     "local/share/texmf/tex/generic/sagetex:"
-                     it)))
-    (when (and sage-shell:add-to-texinputs-p
-               (or (null texinputs)
-                   (not (sage-shell:in (substring sagetexdir 0 -1)
-                                       (split-string texinputs ":")))))
-      (setenv "TEXINPUTS" (concat texinputs sagetexdir)))))
+
+(defun sage-shell:add-to-texinputs ()
+  "Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
+  (sage-shell:awhen (sage-shell:sage-root)
+    (let ((texinputs (getenv "TEXINPUTS"))
+          (sagetexdir (expand-file-name
+                       "local/share/texmf/tex/generic/sagetex:"
+                       it)))
+      (unless (and texinputs
+                   (sage-shell:in (substring sagetexdir 0 -1)
+                                  (split-string texinputs ":")))
+        (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
 
 
 ;;; sagetex
