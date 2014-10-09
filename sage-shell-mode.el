@@ -50,6 +50,7 @@
   :group 'sage-shell
   :type 'string)
 
+;;;###autoload
 (defvaralias 'sage-shell:command 'sage-shell:sage-executable)
 
 (defcustom sage-shell:input-history-cache-file
@@ -141,6 +142,7 @@ will be ignored."
   :type 'boolean
   :group 'sage-shell-sagetex)
 
+;;;###autoload
 (defvaralias 'sage-shell:add-to-texinputs-p
   'sage-shell-sagetex:add-to-texinputs-p)
 
