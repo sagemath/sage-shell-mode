@@ -48,7 +48,8 @@
 (defcustom sage-shell:sage-executable nil
   "Name of the Sage executable. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
   :group 'sage-shell
-  :type 'string)
+  :type '(choice (string :tag "Executable file of Sage")
+                 (const :tag "Not specified" nil)))
 
 ;;;###autoload
 (defvaralias 'sage-shell:command 'sage-shell:sage-executable)
