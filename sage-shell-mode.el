@@ -73,14 +73,12 @@
 (defcustom sage-shell:use-unicode-banner nil
   "Non-nil means use unicode character in Sage's banner."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell:completion-ignore-case nil
   "Non-nil means don't consider case significant in completion."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell:completion-candidate-regexp (rx (1+ alnum))
   "Regexp used for collect completions when completion-at-point is called."
@@ -90,8 +88,7 @@
 (defcustom sage-shell:make-error-link-p t
   "If non-nil and the output contains an error line, output-filter-function creates a link to the file where the error is raised."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell:prefer-development-file-p t
   "If non nil, prefer a source file in src directory rather than site-packages directory."
@@ -101,14 +98,12 @@
 (defcustom sage-shell:add-to-texinputs-p t
   "Non-nil means sage-shell-mode adds $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell-pdb:activate t
   "Non-nil makes  Sage shell enable pdbtracking."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 
 ;;; Anaphoric macros
