@@ -3223,7 +3223,7 @@ exisiting Sage process."
 (defun sage-shell-sagetex:run-latex-and-load-current-file ()
   (interactive)
   (sage-shell:aif (buffer-file-name)
-      (sage-shell-sagetex:run-latex-and-load-current-file it)
+      (sage-shell-sagetex:run-latex-and-load-file it)
     (message "Current buffer is not a file buffer.")))
 
 (defun sage-shell-sagetex:read-latex-file ()
