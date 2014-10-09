@@ -2993,7 +2993,7 @@ of current Sage process.")
       ;; goto last prompt
       (goto-char (process-mark (get-buffer-process (current-buffer))))
       (forward-line 0)
-      (looking-at "(Pdb) "))))
+      (looking-at (rx (or "(Pdb)" "ipdb>") " ")))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
