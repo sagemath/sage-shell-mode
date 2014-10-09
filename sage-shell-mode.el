@@ -3123,6 +3123,12 @@ Argument OUTPUT is a string with the output from the comint process."
                     filename)
    :insert-command-p t))
 
+(defun sage-shell-sagetex:load-current-file ()
+  (interactive)
+  (sage-shell-sagetex:-load-current-file
+   'sage-shell-sagetex:load-file))
+
+
 ;;;###autoload
 (defalias 'sage-shell:sagetex-load-file 'sage-shell-sagetex:load-file)
 
@@ -3194,12 +3200,18 @@ again. See the documentation of
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
+(defun sage-shell-sagetex:-load-current-file (func)
+  (let ((f (buffer-file-name)))
+    (sage-shell:aif (and f
+                         (string-match (rx ".tex$") f))
+        (funcall func it)
+      (message "Not valid LaTeX buffer."))))
+
 ;;;###autoload
 (defun sage-shell-sagetex:compile-current-file ()
   (interactive)
-  (sage-shell:aif (buffer-file-name)
-      (sage-shell-sagetex:compile-file it)
-    (message "Current buffer is not a file buffer.")))
+  (sage-shell-sagetex:-load-current-file
+   'sage-shell-sagetex:compile-file))
 
 ;;;###autoload
 (defun sage-shell-sagetex:run-latex-and-load-file (f)
@@ -3222,9 +3234,8 @@ exisiting Sage process."
 ;;;###autoload
 (defun sage-shell-sagetex:run-latex-and-load-current-file ()
   (interactive)
-  (sage-shell:aif (buffer-file-name)
-      (sage-shell-sagetex:run-latex-and-load-file it)
-    (message "Current buffer is not a file buffer.")))
+  (sage-shell-sagetex:-load-current-file
+   'sage-shell-sagetex:run-latex-and-load-file))
 
 (defun sage-shell-sagetex:read-latex-file ()
   (expand-file-name
