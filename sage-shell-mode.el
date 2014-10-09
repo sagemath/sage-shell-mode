@@ -385,12 +385,11 @@ returned from the function, otherwise, this returns it self. "
                                  file-name-directory)))))
 
 (defun sage-shell:sage-executable ()
-  (expand-file-name
-   (or sage-shell:sage-executable
-       (sage-shell:acond
-        ((stringp sage-shell:sage-root)
-         (expand-file-name "sage" sage-shell:sage-root))
-        ((executable-find "sage") (file-truename it))))))
+  (or sage-shell:sage-executable
+      (sage-shell:acond
+       ((stringp sage-shell:sage-root)
+        (expand-file-name "sage" sage-shell:sage-root))
+       ((executable-find "sage") (file-truename it)))))
 
 
 (defvar sage-shell:output-finished-regexp
