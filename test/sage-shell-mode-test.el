@@ -10,4 +10,9 @@
           (should (string=
                    (sage-shell:src-version
                     "/usr/lib/sagemath/local/lib/python2.7/site-packages/sage/misc/cachefunc.so")
-                   "/usr/lib/sagemath/src/sage/misc/cachefunc.pyx"))))
+                   "/usr/lib/sagemath/src/sage/misc/cachefunc.pyx"))
+          (should (string=
+                   (sage-shell:site-package-version
+                    "/usr/lib/sagemath/src/sage/rings/function_field/function_field.py")
+                   "/usr/lib/sagemath/local/lib/python2.7/site-packages/sage/rings/function_field/function_field.py"
+                   ))))

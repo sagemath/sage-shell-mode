@@ -328,7 +328,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:sage-root--cached nil)
 (defun sage-shell:sage-root ()
   (or (sage-shell:aif sage-shell:sage-root
-          (expand-file-name it))
+          (file-name-as-directory (expand-file-name it)))
       sage-shell:sage-root--cached
       (setq sage-shell:sage-root--cached
             (sage-shell:aif (and (sage-shell:sage-executable)
@@ -675,6 +675,8 @@ When sync is nill this return a lambda function to get the result."
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
 
+(defvar sage-shell:check--sage-root-ok nil)
+
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:send-command
@@ -689,9 +691,18 @@ When sync is nill this return a lambda function to get the result."
 " "" s)))
             (if (string-match (rx "/" eol) s1)
                 s1
-              (concat s1 "/"))))))
+              (concat s1 "/"))))
+    (setq sage-shell:check--sage-root-ok t))
+  (when sage-shell:add-to-texinputs-p
+    (sage-shell:add-to-texinputs)))
 
 (defun sage-shell:check--sage-root ()
+  (or sage-shell:check--sage-root-ok
+      (setq sage-shell:check--sage-root-ok
+            (when (sage-shell:check--sage-root1)
+              t))))
+
+(defun sage-shell:check--sage-root1 ()
   "Check (sage-shell:sage-root)."
   (and (cl-loop for a in '("devel" "src")
                 for d = (expand-file-name a (sage-shell:sage-root))
@@ -900,6 +911,27 @@ Match group 1 will be replaced with devel/sage-branch")
                          base1)))
             (concat dr branch base))
         filename))))
+
+(defun sage-shell:site-package-version (filename)
+  "Inverse to `sage-shell:src-version'"
+  (cond ((sage-shell:aand
+           (string-match (expand-file-name "src/sage/"
+                                           (sage-shell:sage-root))
+                         filename)
+           (= it 0))
+         (let* ((python-dir1
+                 (expand-file-name "local/lib/python/site-packages/"
+                                   (sage-shell:sage-root)))
+                (python-dir (if (file-exists-p python-dir1)
+                                (file-truename python-dir1)))
+                (sfile-name1 (expand-file-name
+                              (concat "sage/"
+                                      (substring filename (match-end 0)))
+                              python-dir)))
+           (if (file-exists-p sfile-name1)
+               sfile-name1
+             filename)))
+        (t filename)))
 
 (defun sage-shell:source-file-and-line-num (obj)
   "Return (cons sourcefile line-number)"
@@ -2830,17 +2862,18 @@ of current Sage process.")
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
   "C-c C-j" 'sage-shell-edit:send-line)
 
-;; Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS.
-(sage-shell:awhen (sage-shell:sage-root)
-  (let ((texinputs (getenv "TEXINPUTS"))
-        (sagetexdir (expand-file-name
-                     "local/share/texmf/tex/generic/sagetex:"
-                     it)))
-    (when (and sage-shell:add-to-texinputs-p
-               (or (null texinputs)
-                   (not (sage-shell:in (substring sagetexdir 0 -1)
-                                       (split-string texinputs ":")))))
-      (setenv "TEXINPUTS" (concat texinputs sagetexdir)))))
+
+(defun sage-shell:add-to-texinputs ()
+  "Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
+  (sage-shell:awhen (sage-shell:sage-root)
+    (let ((texinputs (getenv "TEXINPUTS"))
+          (sagetexdir (expand-file-name
+                       "local/share/texmf/tex/generic/sagetex:"
+                       it)))
+      (unless (and texinputs
+                   (sage-shell:in (substring sagetexdir 0 -1)
+                                  (split-string texinputs ":")))
+        (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
 
 
 ;;; sagetex
@@ -2945,10 +2978,11 @@ of current Sage process.")
   (let ((file (buffer-file-name))
         (line (save-restriction
                 (widen)
-                (count-lines (point-min) (point)))))
+                (line-number-at-pos))))
     (when file
       (sage-shell-pdb:send--command
-       (format "break %s:%s" file line)))))
+       (format "break %s:%s" (sage-shell:site-package-version file)
+               line)))))
 
 (defun sage-shell-pdb:pdb-prompt-p ()
   (sage-shell-edit:set-sage-proc-buf-internal nil t)
@@ -2957,7 +2991,7 @@ of current Sage process.")
       ;; goto last prompt
       (goto-char (process-mark (get-buffer-process (current-buffer))))
       (forward-line 0)
-      (looking-at "(Pdb) "))))
+      (looking-at (rx (or "(Pdb)" "ipdb>") " ")))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
