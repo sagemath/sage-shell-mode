@@ -3202,9 +3202,8 @@ again. See the documentation of
 
 (defun sage-shell-sagetex:-load-current-file (func)
   (let ((f (buffer-file-name)))
-    (sage-shell:aif (and f
-                         (string-match (rx ".tex$") f))
-        (funcall func it)
+    (sage-shell:aif (and f (string-match (rx ".tex" eol) f))
+        (funcall func f)
       (message "Not valid LaTeX buffer."))))
 
 ;;;###autoload
