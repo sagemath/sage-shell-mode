@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 - 2014 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/stakemori/sage-shell-mode
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1"))
 ;; Keywords: Sage, math
 ;; Version: 0.0.2
 
@@ -28,11 +28,16 @@
 ;;; Code:
 (eval-when-compile (require 'cl))
 (require 'cl-lib)
+(require 'deferred)
 
 ;;; Global variables for users
 (defgroup sage-shell
   nil "Run Sage process in a buffer."
   :group 'languages)
+
+(defgroup sage-shell-sagetex
+  nil "Group for SageTeX."
+  :group 'sage-shell)
 
 (defcustom sage-shell:sage-root nil
   "SAGE_ROOT directory. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
@@ -73,14 +78,12 @@
 (defcustom sage-shell:use-unicode-banner nil
   "Non-nil means use unicode character in Sage's banner."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell:completion-ignore-case nil
   "Non-nil means don't consider case significant in completion."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell:completion-candidate-regexp (rx (1+ alnum))
   "Regexp used for collect completions when completion-at-point is called."
@@ -90,25 +93,61 @@
 (defcustom sage-shell:make-error-link-p t
   "If non-nil and the output contains an error line, output-filter-function creates a link to the file where the error is raised."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
 
 (defcustom sage-shell:prefer-development-file-p t
   "If non nil, prefer a source file in src directory rather than site-packages directory."
   :group 'sage-shell
   :type 'boolean)
 
-(defcustom sage-shell:add-to-texinputs-p t
-  "Non-nil means sage-shell-mode adds $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
-  :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
-
 (defcustom sage-shell-pdb:activate t
   "Non-nil makes  Sage shell enable pdbtracking."
   :type 'boolean
-  :group 'sage-shell
-  :safe 'booleanp)
+  :group 'sage-shell)
+
+
+(defcustom sage-shell-sagetex:pre-latex-command
+  "latex -interaction=nonstopmode"
+  "This LaTeX command will be called by
+  `sage-shell-sagetex:auctex-command-name' before loading a
+  .sagetex.sage file."
+  :group 'sage-shell-sagetex
+  :type 'string)
+
+(defcustom sage-shell-sagetex:latex-command "latex -interaction=nonstopmode"
+  "If `sage-shell-sagetex:auctex-command-name' is nil (by default
+  it is nil), then this variable is used for
+  `sage-shell-sagetex:compile-file' after loading a
+  .sagetex.sage file. It should be a LaTeX command without a file
+  name. `sage-shell-sagetex:compile-file' will call the
+  LaTeX command after loading a .sagetex.sage file."
+  :group 'sage-shell-sagetex
+  :type 'string)
+
+(defcustom sage-shell-sagetex:auctex-command-name nil
+  "This variable is for AUCTeX users. If non-nil, it should be a
+name of an element of `TeX-command-list', i.e. the first element
+of an element of the list. Then the corresponding LaTeX command
+will be called after loading a .sagetex.sage file by
+`sage-shell-sagetex:compile-file'. If this value is
+non-nil, then the value of `sage-shell-sagetex:latex-command'
+will be ignored."
+  :group 'sage-shell-sagetex
+  :type '(choice (const :tag "Not Specified" nil)
+                 (string :tag "LaTeX command")))
+
+(defcustom sage-shell-sagetex:add-to-texinputs-p t
+  "Non-nil means sage-shell-mode adds $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
+  :type 'boolean
+  :group 'sage-shell-sagetex)
+
+(defvaralias 'sage-shell:add-to-texinputs-p
+  'sage-shell-sagetex:add-to-texinputs-p)
+
+(defcustom sage-shell-sagetex:pop-to-error-buffer t
+  "Non-nil means pop to the SageTeX error buffer."
+  :type 'boolean
+  :group 'sage-shell-sagetex)
 
 
 ;;; Anaphoric macros
@@ -698,8 +737,8 @@ When sync is nill this return a lambda function to get the result."
                 s1
               (concat s1 "/"))))
     (setq sage-shell:check--sage-root-ok t))
-  (when sage-shell:add-to-texinputs-p
-    (sage-shell:add-to-texinputs)))
+  (when sage-shell-sagetex:add-to-texinputs-p
+    (sage-shell-sagetex:add-to-texinputs)))
 
 (defun sage-shell:check--sage-root ()
   (or sage-shell:check--sage-root-ok
@@ -2867,46 +2906,6 @@ of current Sage process.")
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
   "C-c C-j" 'sage-shell-edit:send-line)
 
-
-(defun sage-shell:add-to-texinputs ()
-  "Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
-  (sage-shell:awhen (sage-shell:sage-root)
-    (let ((texinputs (getenv "TEXINPUTS"))
-          (sagetexdir (expand-file-name
-                       "local/share/texmf/tex/generic/sagetex:"
-                       it)))
-      (unless (and texinputs
-                   (sage-shell:in (substring sagetexdir 0 -1)
-                                  (split-string texinputs ":")))
-        (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
-
-
-;;; sagetex
-;;;###autoload
-(defun sage-shell:sagetex-load-file (filename)
-  "Compile a TeX file, execute this command and compile the TeX file again."
-  (interactive
-   (list (let ((dflt (abbreviate-file-name
-                      (expand-file-name
-                       (concat
-                        (if (fboundp 'TeX-master-file)
-                            (TeX-master-file)
-                          (sage-shell:->>
-                           (buffer-file-name)
-                           file-name-nondirectory
-                           file-name-sans-extension))
-                        ".sagetex.sage")
-                       default-directory))))
-           (read-file-name "Sage TeX file: " nil dflt nil
-                           (file-name-nondirectory dflt)
-                           (lambda (name)
-                             (string-match (rx (or ".sage" ".py") eol)
-                                           name))))))
-  (sage-shell-edit:load-file-base
-   :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
-                    filename)
-   :insert-command-p t))
-
 
 ;;; Alias
 ;;;###autoload
@@ -3083,6 +3082,174 @@ Argument OUTPUT is a string with the output from the comint process."
                 sage-shell-pdb:buffers-to-kill nil)))))
   output)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; sagetex
+(defun sage-shell-sagetex:add-to-texinputs ()
+  "Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
+  (sage-shell:awhen (sage-shell:sage-root)
+    (let ((texinputs (getenv "TEXINPUTS"))
+          (sagetexdir (expand-file-name
+                       "local/share/texmf/tex/generic/sagetex:"
+                       it)))
+      (unless (and texinputs
+                   (sage-shell:in (substring sagetexdir 0 -1)
+                                  (split-string texinputs ":")))
+        (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
+
+;;;###autoload
+(defun sage-shell-sagetex:load-file (filename)
+  "Load a .sagetex.sage file to an existing Sage process."
+  (interactive
+   (list (let ((dflt (abbreviate-file-name
+                      (expand-file-name
+                       (concat
+                        (if (fboundp 'TeX-master-file)
+                            (TeX-master-file)
+                          (sage-shell:->>
+                           (buffer-file-name)
+                           file-name-nondirectory
+                           file-name-sans-extension))
+                        ".sagetex.sage")
+                       default-directory))))
+           (read-file-name "Sage TeX file: " nil dflt nil
+                           (file-name-nondirectory dflt)
+                           (lambda (name)
+                             (string-match (rx (or ".sage" ".py") eol)
+                                           name))))))
+  (sage-shell-edit:load-file-base
+   :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
+                    filename)
+   :insert-command-p t))
+
+;;;###autoload
+(defalias 'sage-shell:sagetex-load-file 'sage-shell-sagetex:load-file)
+
+(defvar sage-shell-sagetex:latex-command-func
+  'sage-shell-sagetex:post-command
+  "This varable should be a function with one argument (the file
+name of a LaTeX file) which returns a LaTeX command with the
+file name.")
+
+(defun sage-shell:TeX-shell ()
+  "Name of shell used to parse TeX commands."
+  (cond ((boundp 'TeX-shell) TeX-shell)
+        ((memq system-type '(ms-dos emx windows-nt)) shell-file-name)
+        (t "/bin/sh")))
+
+(defun sage-shell:TeX-shell-command-option ()
+  "Shell argument indicating that next argument is the command."
+  (cond
+   ((boundp 'TeX-shell-command-option) TeX-shell-command-option)
+   ((memq system-type '(ms-dos emx windows-nt))
+    (cond ((boundp 'shell-command-option)
+           shell-command-option)
+          ((boundp 'shell-command-switch)
+           shell-command-switch)
+          (t "/c")))
+   (t                                   ;Unix & EMX (Emacs 19 port to OS/2)
+    "-c")))
+
+(defun sage-shell-sagetex:pre-command (f)
+    (format "%s %s" sage-shell-sagetex:pre-latex-command f))
+
+(defun sage-shell-sagetex:post-command (f)
+  (sage-shell:aif (and (featurep 'tex)
+                       sage-shell-sagetex:auctex-command-name)
+      (with-no-warnings
+        (TeX-command-expand (nth 1 (assoc it TeX-command-list))
+                            'TeX-master-file))
+    (format "%s %s" sage-shell-sagetex:latex-command f)))
+
+;;;###autoload
+(defun sage-shell-sagetex:compile-file (f)
+  "This command runs LaTeX on the current file, loads the
+.sagetex.sage file to an existing Sage process and runs LaTeX
+again. See the documentation of
+`sage-shell-sagetex:latex-command' and
+`sage-shell-sagetex:auctex-command-name' for the customization."
+  (interactive (list (sage-shell-sagetex:read-latex-file)))
+  (lexical-let ((f f))
+    (deferred:$
+      (deferred:$
+        (deferred:process
+          (sage-shell:TeX-shell)
+          (sage-shell:TeX-shell-command-option)
+          (sage-shell-sagetex:pre-command f))
+        (deferred:nextc it
+          (lambda (x) (sage-shell-sagetex:load-file
+                   (concat (file-name-sans-extension f) ".sagetex.sage"))))
+        (deferred:nextc it
+          (lambda (x) (while (not (file-exists-p
+                               (concat (file-name-sans-extension f)
+                                       ".sagetex.sout")))
+                    (sleep-for 0 100))))
+        (deferred:nextc it
+          (lambda (x)
+            (deferred:process
+              (sage-shell:TeX-shell)
+              (sage-shell:TeX-shell-command-option)
+              (funcall sage-shell-sagetex:latex-command-func f)))))
+      (deferred:error it
+        (lambda (e) (sage-shell-sagetex:insert-error e))))))
+
+;;;###autoload
+(defun sage-shell-sagetex:compile-current-file ()
+  (interactive)
+  (sage-shell:aif (buffer-file-name)
+      (sage-shell-sagetex:compile-file it)
+    (message "Current buffer is not a file buffer.")))
+
+;;;###autoload
+(defun sage-shell-sagetex:run-latex-and-load-file (f)
+  "This command runs LaTeX and loads a .sagetex.sage file to the
+exisiting Sage process."
+  (interactive (list (sage-shell-sagetex:read-latex-file)))
+  (lexical-let ((f f))
+    (deferred:$
+      (deferred:$
+        (deferred:process
+          (sage-shell:TeX-shell)
+          (sage-shell:TeX-shell-command-option)
+          (sage-shell-sagetex:pre-command f))
+        (deferred:nextc it
+          (lambda (x) (sage-shell-sagetex:load-file
+                   (concat (file-name-sans-extension f) ".sagetex.sage")))))
+      (deferred:error it
+        (lambda (e) (sage-shell-sagetex:insert-error e))))))
+
+;;;###autoload
+(defun sage-shell-sagetex:run-latex-and-load-current-file ()
+  (interactive)
+  (sage-shell:aif (buffer-file-name)
+      (sage-shell-sagetex:run-latex-and-load-current-file it)
+    (message "Current buffer is not a file buffer.")))
+
+(defun sage-shell-sagetex:read-latex-file ()
+  (expand-file-name
+   (read-file-name
+    "LaTeX File: "
+    nil
+    (sage-shell:awhen (buffer-file-name) it)
+    nil
+    (sage-shell:awhen (buffer-file-name)
+      (file-name-nondirectory it))
+    (lambda (name)
+      (string-match (rx ".tex" eol) name)))))
+
+(defun sage-shell-sagetex:insert-error (e)
+  (let ((b (get-buffer-create "*SageTeX-error*")))
+    (with-current-buffer b
+      (let ((inhibit-read-only t)
+            (view-read-only nil))
+        (erase-buffer)
+        (insert (error-message-string e))
+        (sage-shell-sagetex:error-mode)))
+    (when sage-shell-sagetex:pop-to-error-buffer
+      (pop-to-buffer b))))
+
+(define-derived-mode sage-shell-sagetex:error-mode special-mode "SageTeX-Error"
+  "Error mode for SageTeX")
+
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
