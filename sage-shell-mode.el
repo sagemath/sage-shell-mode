@@ -1474,7 +1474,8 @@ function does not highlight the input."
         (unless no-newline
           (insert ?\n))
 
-        (comint-add-to-input-history history)
+        (comint-add-to-input-history (substring-no-properties
+                                      history))
 
         (run-hook-with-args 'comint-input-filter-functions
                             (if no-newline input
