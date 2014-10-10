@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 - 2014 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/stakemori/sage-shell-mode
-;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1"))
+;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.2"))
 ;; Keywords: Sage, math
 ;; Version: 0.0.2
 
