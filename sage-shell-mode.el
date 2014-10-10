@@ -111,7 +111,7 @@
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
-  `sage-shell-sagetex:auctex-command-name' before loading a
+  `sage-shell-sagetex:compile-file' before loading a
   .sagetex.sage file."
   :group 'sage-shell-sagetex
   :type 'string)
