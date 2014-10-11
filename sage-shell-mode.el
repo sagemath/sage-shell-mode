@@ -3174,7 +3174,8 @@ again. See the documentation of
 `sage-shell-sagetex:latex-command' and
 `sage-shell-sagetex:auctex-command-name' for the customization."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
-  (lexical-let ((f f))
+  (lexical-let* ((f f)
+                 (cmd (funcall sage-shell-sagetex:latex-command-func f)))
     (deferred:$
       (deferred:$
         (deferred:process
@@ -3193,7 +3194,11 @@ again. See the documentation of
             (deferred:process
               (sage-shell:TeX-shell)
               (sage-shell:TeX-shell-command-option)
-              (funcall sage-shell-sagetex:latex-command-func f)))))
+              cmd)))
+        (deferred:nextc it
+          (lambda (x) (message
+                   "Running '%s' ... Done!"
+                   cmd))))
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
