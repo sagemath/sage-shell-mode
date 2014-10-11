@@ -3106,7 +3106,10 @@ Argument OUTPUT is a string with the output from the comint process."
         (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
 
 (defun sage-shell-sagetex:tex-to-sagetex-file (f)
-  (concat (file-name-sans-extension f) ".sagetex.sage"))
+  (concat (file-name-sans-extension
+           (expand-file-name
+            (sage-shell-sagetex:tex-master-maybe f)
+            default-directory)) ".sagetex.sage"))
 
 ;;;###autoload
 (defun sage-shell-sagetex:load-file (filename)
@@ -3155,8 +3158,15 @@ file name.")
    (t                                   ;Unix & EMX (Emacs 19 port to OS/2)
     "-c")))
 
+(defun sage-shell-sagetex:tex-master-maybe (f)
+  (cond ((and (boundp 'TeX-master)
+              (stringp TeX-master))
+         TeX-master)
+        (t (file-name-nondirectory f))))
+
 (defun sage-shell-sagetex:pre-command (f)
-    (format "%s %s" sage-shell-sagetex:pre-latex-command f))
+  (format "%s %s" sage-shell-sagetex:pre-latex-command
+          (sage-shell-sagetex:tex-master-maybe f)))
 
 (defun sage-shell-sagetex:post-command (f)
   (sage-shell:aif (and (featurep 'tex)
@@ -3164,7 +3174,8 @@ file name.")
       (with-no-warnings
         (TeX-command-expand (nth 1 (assoc it TeX-command-list))
                             'TeX-master-file))
-    (format "%s %s" sage-shell-sagetex:latex-command f)))
+    (format "%s %s" sage-shell-sagetex:latex-command
+            (sage-shell-sagetex:tex-master-maybe f))))
 
 ;;;###autoload
 (defun sage-shell-sagetex:compile-file (f)
