@@ -3185,10 +3185,12 @@ again. See the documentation of
         (deferred:nextc it
           (lambda (x) (sage-shell-sagetex:load-file f)))
         (deferred:nextc it
-          (lambda (x) (while (not (file-exists-p
-                               (concat (file-name-sans-extension f)
-                                       ".sagetex.sout")))
-                    (sleep-for 0 100))))
+          (lambda (x) (while (not (sage-shell:output-finished-p))
+                    (sleep-for 0 10))))
+        (deferred:nextc it
+          (lambda (x) (message
+                   "Running '%s' ... "
+                   cmd)))
         (deferred:nextc it
           (lambda (x)
             (deferred:process
