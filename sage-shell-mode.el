@@ -340,6 +340,13 @@ returned from the function, otherwise, this returns it self. "
         (list form x))
     `(sage-shell:->> (sage-shell:->> ,x ,form) ,@forms)))
 
+(defmacro sage-shell:with-default-directory (directory &rest body)
+  (declare (indent 2) (debug t))
+  `(let ((default-directory (or (and ,directory
+                                     (file-name-as-directory ,directory))
+                                default-directory)))
+     ,@body))
+
 (defvar sage-shell:sage-modes '(sage-shell:sage-mode sage-shell-mode))
 
 (require 'compile)
@@ -3158,11 +3165,16 @@ file name.")
    (t                                   ;Unix & EMX (Emacs 19 port to OS/2)
     "-c")))
 
-(defun sage-shell-sagetex:tex-master-maybe (f)
-  (cond ((and (boundp 'TeX-master)
-              (stringp TeX-master))
-         TeX-master)
-        (t (file-name-nondirectory f))))
+(defun sage-shell-sagetex:tex-master-maybe (f &optional nondir)
+  (let* ((b (get-file-buffer f))
+         (tm (when (and (bufferp b)
+                        (boundp 'TeX-master))
+               (buffer-local-value 'TeX-master b))))
+    (let ((ms (cond ((and tm (stringp tm))
+                     (expand-file-name tm (file-name-directory f)))
+                    (t f))))
+      (if nondir (file-name-nondirectory ms)
+        ms))))
 
 (defun sage-shell-sagetex:pre-command (f)
   (format "%s %s" sage-shell-sagetex:pre-latex-command
@@ -3175,7 +3187,37 @@ file name.")
         (TeX-command-expand (nth 1 (assoc it TeX-command-list))
                             'TeX-master-file))
     (format "%s %s" sage-shell-sagetex:latex-command
-            (sage-shell-sagetex:tex-master-maybe f))))
+            (sage-shell-sagetex:tex-master-maybe f t))))
+
+(defun sage-shell-sagetex:-load-and-run-latex (f)
+  (sage-shell-sagetex:load-file f)
+  (lexical-let ((f f))
+    (sage-shell:after-output-finished
+      ;; Run process in the same directory of as f.
+      (sage-shell:with-default-directory (file-name-directory f)
+          (sage-shell-sagetex:-run-latex f t)))))
+
+(defun sage-shell-sagetex:-run-latex (f &optional verbose)
+  (lexical-let* ((verbose verbose)
+                 (f f)
+                 (cmd (let ((b (or (get-file-buffer f)
+                                   (current-buffer))))
+                        (with-current-buffer b
+                          (funcall sage-shell-sagetex:latex-command-func f)))))
+    (deferred:$
+      (deferred:$
+        (deferred:next
+          (lambda ()
+            (message "Running '%s' ..." cmd)))
+        (deferred:process
+          (sage-shell:TeX-shell)
+          (sage-shell:TeX-shell-command-option)
+          cmd)
+        (deferred:nextc it
+          (lambda (x) (when verbose
+                    (message "Running '%s' ... Done!" cmd)))))
+      (deferred:error it
+        (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
 ;;;###autoload
 (defun sage-shell-sagetex:compile-file (f)
@@ -3185,8 +3227,7 @@ again. See the documentation of
 `sage-shell-sagetex:latex-command' and
 `sage-shell-sagetex:auctex-command-name' for the customization."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
-  (lexical-let* ((f f)
-                 (cmd (funcall sage-shell-sagetex:latex-command-func f)))
+  (lexical-let ((f f))
     (deferred:$
       (deferred:$
         (deferred:process
@@ -3194,24 +3235,7 @@ again. See the documentation of
           (sage-shell:TeX-shell-command-option)
           (sage-shell-sagetex:pre-command f))
         (deferred:nextc it
-          (lambda (x) (sage-shell-sagetex:load-file f)))
-        (deferred:nextc it
-          (lambda (x) (while (not (sage-shell:output-finished-p))
-                    (sleep-for 0 10))))
-        (deferred:nextc it
-          (lambda (x) (message
-                   "Running '%s' ... "
-                   cmd)))
-        (deferred:nextc it
-          (lambda (x)
-            (deferred:process
-              (sage-shell:TeX-shell)
-              (sage-shell:TeX-shell-command-option)
-              cmd)))
-        (deferred:nextc it
-          (lambda (x) (message
-                   "Running '%s' ... Done!"
-                   cmd))))
+          (lambda (x) (sage-shell-sagetex:-load-and-run-latex f))))
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
