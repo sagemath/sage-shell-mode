@@ -2606,6 +2606,7 @@ of current Sage process.")
 
 (defun sage-shell:set-process-buffer ()
   (interactive)
+  (setq sage-shell:process-buffer nil)
   (sage-shell-edit:set-sage-proc-buf-internal t t)
   (sage-shell:aif (get-buffer sage-shell:process-buffer)
       (message (format "Set the process buffer to buffer %s."
@@ -2628,13 +2629,14 @@ of current Sage process.")
          ((null proc-alist) t)
          ;; if there are multiple processes
          ((and verbose (consp (cdr proc-alist)))
-          (let* ((proc-name
+          (let* ((buffer-name
                   (completing-read
-                   (concat "There are multiple Sage processes. "
-                           "Please select process. ")
+                   (concat
+                    "There are multiple Sage processes. "
+                    "Please select the process used for loading: ")
                    (cl-loop for (proc-name . proc) in proc-alist
-                         collect proc-name)))
-                 (proc (cdr (assoc proc-name proc-alist))))
+                            collect (buffer-name (process-buffer proc)))))
+                 (proc (get-buffer-process buffer-name)))
             (setq sage-shell:process-buffer (process-buffer proc))))
          ;; if there is exactly one process
          (verbose (setq sage-shell:process-buffer
