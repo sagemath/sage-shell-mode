@@ -1,4 +1,7 @@
+[![melpa badge][melpa-badge]][melpa-link] [![melpa stable badge][melpa-stable-badge]][melpa-stable-link]
+
 # Overview
+
 `sage-shell-mode` is an elisp package and
 provides an Emacs front end for [Sage](http://www.sagemath.org/).
 
@@ -185,3 +188,7 @@ To use `flycheck-mode` in a `sage-shell:sage-mode` buffer and a
 
 Licensed under the [GPL Version 3][GPL]
 [GPL]: http://www.gnu.org/licenses/gpl.html
+[melpa-link]: http://melpa.org/#/sage-shell-mode
+[melpa-stable-link]: http://stable.melpa.org/#/sage-shell-mode
+[melpa-badge]: http://melpa.org/packages/sage-shell-mode-badge.svg
+[melpa-stable-badge]: http://stable.melpa.org/packages/sage-shell-mode-badge.svg
