@@ -114,6 +114,11 @@ If non-nil, then show the maximum output when the window is scrolled."
   :type 'boolean
   :group 'sage-shell)
 
+(defcustom sage-shell:scroll-to-the-bottom nil
+  "Non nil means scrolling to the bottom when sending the input."
+  :type 'boolean
+  :group 'sage-shell)
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -1132,6 +1137,8 @@ This ring remebers the parts.")
             (select-window win))
           (sage-shell:output-filter-no-rdct process string))
         (when sage-shell:output-finished-p
+          (when sage-shell:scroll-to-the-bottom
+            (comint-postoutput-scroll-to-bottom string))
           (sage-shell:run-hook-and-remove
            'sage-shell:output-filter-finished-hook process))))))
 
