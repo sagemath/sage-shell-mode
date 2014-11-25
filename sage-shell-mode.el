@@ -107,6 +107,12 @@
   :type 'boolean
   :group 'sage-shell)
 
+;;; Borrowed from esh-mode.el (eshell).
+(defcustom sage-shell:scroll-show-maximum-output t
+  "Controls how interpreter output causes window to scroll.
+If non-nil, then show the maximum output when the window is scrolled."
+  :type 'boolean
+  :group 'sage-shell)
 
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
@@ -536,6 +542,8 @@ returned from the function, otherwise, this returns it self. "
   (set (make-local-variable 'comint-output-filter-functions)
        (remove 'comint-postoutput-scroll-to-bottom
                comint-output-filter-functions))
+  (when sage-shell:scroll-show-maximum-output
+    (set (make-local-variable 'scroll-conservatively) 1000))
   ;; Ignore duplicates in command history
   (setq comint-input-ignoredups t)
   (add-hook 'completion-at-point-functions
@@ -1124,7 +1132,6 @@ This ring remebers the parts.")
             (select-window win))
           (sage-shell:output-filter-no-rdct process string))
         (when sage-shell:output-finished-p
-          (comint-postoutput-scroll-to-bottom string)
           (sage-shell:run-hook-and-remove
            'sage-shell:output-filter-finished-hook process))))))
 
