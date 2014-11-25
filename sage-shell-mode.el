@@ -29,6 +29,7 @@
 (eval-when-compile (require 'cl))
 (require 'cl-lib)
 (require 'deferred)
+(require 'pcomplete)
 
 ;;; Global variables for users
 (defgroup sage-shell
@@ -65,6 +66,7 @@
   "Function used for `sage-shell:complete'."
   :group 'sage-shell
   :type '(choice (const :tag "default" completion-at-point)
+                 (const :tag "pcomplete" pcomplete)
                  (const :tag "auto-complete" auto-complete)
                  (const :tag "anything" anything-sage-shell)
                  (const :tag "helm" helm-sage-shell)))
@@ -563,7 +565,8 @@ returned from the function, otherwise, this returns it self. "
   ;; Run init functions after Sage loaded.
   (add-to-list 'sage-shell:output-filter-finished-hook
                (lambda () (sage-shell:after-init-function
-                           sage-shell:process-buffer))))
+                       sage-shell:process-buffer)))
+  (sage-shell:pcomplete-setup))
 
 
 (setq sage-shell-mode-syntax-table
@@ -920,12 +923,19 @@ returns a lamda function with no args to obtain the result."
 (defun sage-shell:complete ()
   (interactive)
   (sage-shell:when-process-alive
-   (cond
-    ((functionp sage-shell:completion-function)
-     (if (eq sage-shell:completion-function 'auto-complete)
-         (let ((this-command 'auto-complete))
-           (funcall sage-shell:completion-function))
-       (funcall sage-shell:completion-function)))
+    (cond
+     ((functionp sage-shell:completion-function)
+      (let ((this-command (cl-case sage-shell:completion-function
+                            (auto-complete 'auto-complete)
+                            (pcomplete 'pcomplete)
+                            (t this-command)))
+            (last-command
+             (if (and (or (eq last-command 'sage-shell-tab-command)
+                          (eq last-command 'sage-shell:complete))
+                      (eq sage-shell:completion-function 'pcomplete))
+                 'pcomplete
+               last-command)))
+        (call-interactively sage-shell:completion-function)))
      (t (let ((minibuffer-history nil))
           (completion-at-point))))))
 
@@ -2601,6 +2611,38 @@ of current Sage process.")
                      (assoc-default var-name sage-shell:completion-sync-cached))
                     (t (sage-shell-cpl:candidates-sync
                         sage-shell:completion-candidate-regexp))))))))
+
+
+(defun sage-shell:symbol-beg ()
+  (save-excursion
+    (let ((chars (sage-shell-interfaces:get
+                  (sage-shell-interfaces:current-interface)
+                  'var-chars)))
+      (skip-chars-backward chars))
+    (point)))
+
+(defun sage-shell:pcomplete-parse-args ()
+  (let ((sb (sage-shell:symbol-beg)))
+    (list
+     (list (buffer-substring-no-properties
+            sb (point)))
+     sb)))
+
+(defun sage-shell:pcomplete-setup ()
+  (set (make-local-variable 'pcomplete-parse-arguments-function)
+       'sage-shell:pcomplete-parse-args)
+  (set (make-local-variable 'pcomplete-default-completion-function)
+       'sage-shell:pcomplete-default-completion)
+  (set (make-local-variable 'pcomplete-command-completion-function)
+       'sage-shell:pcomplete-default-completion)
+  (set (make-local-variable 'pcomplete-termination-string) ""))
+
+(defun sage-shell:pcomplete-default-completion ()
+  (pcomplete-here
+   (all-completions (buffer-substring-no-properties
+                     (sage-shell:symbol-beg)
+                     (point))
+                    (car (last (sage-shell:completion-at-point-func))))))
 
 
 ;;; sage-edit
