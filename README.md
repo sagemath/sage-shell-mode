@@ -101,6 +101,16 @@ The basic key-bidings in `sage-shell-mode` are as follows:
 
 For more commands and key-bindings see the help by `M-x describle-mode sage-shell-mode`.
 
+## TAB completion
+
+By default, `TAB` completion uses `completion-at-point`.
+You can use `pcomplete` by the following setting:
+
+```lisp
+(setq sage-shell:completion-function 'pcomplete)
+```
+You can also use `auto-complete`, `anything` and `helm` for completion.
+This requires extensions.
 
 ## Editing a Sage file
 When you visit a file ended with ``".sage"``,
