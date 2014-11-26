@@ -2635,7 +2635,8 @@ of current Sage process.")
        'sage-shell:pcomplete-default-completion)
   (set (make-local-variable 'pcomplete-command-completion-function)
        'sage-shell:pcomplete-default-completion)
-  (set (make-local-variable 'pcomplete-termination-string) ""))
+  (set (make-local-variable 'pcomplete-termination-string) "")
+  (set (make-local-variable 'pcomplete-cycle-completions) nil))
 
 (defun sage-shell:pcomplete-default-completion ()
   (pcomplete-here
