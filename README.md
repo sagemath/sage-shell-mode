@@ -109,7 +109,7 @@ You can use `pcomplete` by the following setting:
 ```lisp
 (setq sage-shell:completion-function 'pcomplete)
 ```
-You can also use `auto-complete`, `anything` and `helm` for completion.
+You can also use `auto-complete`, `anything` or `helm` for completion.
 This requires extensions.
 
 ## Editing a Sage file
