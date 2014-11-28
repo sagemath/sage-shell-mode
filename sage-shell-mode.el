@@ -126,7 +126,7 @@ If non-nil, then show the maximum output when the window is scrolled."
 by `sage-shell:list-outputs' and other related commands.
 Nil means it does not truncate the outputs.")
 
-(defcustom sage-shell:list-outputs-reversed-order-p nil
+(defcustom sage-shell:list-outputs-reversed-order-p t
   "Non nil means outputs ordered by the reversed order.")
 
 (defcustom sage-shell-sagetex:pre-latex-command
