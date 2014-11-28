@@ -4,6 +4,7 @@ import os
 from contextlib import contextmanager
 
 try:
+    from IPython import get_ipython
     ip = get_ipython()
     ip.autoindent = False
 except:                         # Older versions
