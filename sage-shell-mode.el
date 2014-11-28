@@ -121,6 +121,14 @@ If non-nil, then show the maximum output when the window is scrolled."
   :type 'boolean
   :group 'sage-shell)
 
+(defcustom sage-shell:list-outputs-max-line-num 5
+  "Max number of lines of the outputs displayed in the buffer created
+by `sage-shell:list-outputs' and other related commands.
+Nil means it does not truncate the outputs.")
+
+(defcustom sage-shell:list-outputs-reversed-order-p nil
+  "Non nil means outputs ordered by the reversed order.")
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -1402,7 +1410,8 @@ Does not delete the prompt."
           ;; Go to the end of the buffer
           (goto-char (point-max))
           ;; Insert the output
-          (let ((inhibit-read-only comint-redirect-subvert-readonly))
+          (let ((inhibit-read-only t)
+                (view-read-only nil))
             (insert input-string))
 
           ;; If we see the prompt, tidy up
@@ -2103,6 +2112,86 @@ send current line to Sage process buffer."
                     ,a (0+ whitespace) "("))
              nil t))
           (forward-line 0))))))
+
+
+;; inputs outputs
+(defvar sage-shell:list-outputs-buffer "*Sage Outputs*")
+(defvar sage-shell:lo-delim "@sage_shell_delim@")
+(defvar sage-shell:list-outputs-points nil)
+
+(defun sage-shell:list-outputs ()
+  (interactive)
+  (let ((b (get-buffer-create sage-shell:list-outputs-buffer))
+        (proc-buf sage-shell:process-buffer))
+    (with-current-buffer b
+      (let ((inhibit-read-only t)
+            (view-read-only nil))
+        (erase-buffer)
+        (sage-shell:list-outputs-mode)
+        (setq sage-shell:process-buffer proc-buf)
+        (let* ((win (get-buffer-window (pop-to-buffer b)))
+               (delim (mapconcat
+                       (lambda (x) "-")
+                       (number-sequence 1 (window-width win)) ""))
+               (out (sage-shell:-inputs-outputs)))
+          (with-current-buffer b
+            (save-excursion
+              (goto-char (point-min))
+              (let ((pts (cl-loop for a in out
+                                  with pts = nil
+                                  do
+                                  (insert a)
+                                  (insert delim)
+                                  (push (1+ (point)) pts)
+                                  finally return (nreverse pts))))
+                (setq sage-shell:list-outputs-points
+                      (cons 1 (butlast pts)))))))))))
+
+
+(defun sage-shell:-inputs-outputs ()
+  (let ((s (sage-shell:send-command-to-string
+            (sage-shell:py-mod-func
+             (format "print_inputs_outputs(%s, '%s', %s)"
+                     (or sage-shell:list-outputs-max-line-num
+                         "None")
+                     sage-shell:lo-delim
+                     (if sage-shell:list-outputs-reversed-order-p
+                         "True"
+                       "False"))))))
+    (butlast (split-string s sage-shell:lo-delim))))
+
+
+(defun sage-shell:output-forward (arg)
+  (interactive "p")
+  (let* ((pt (point))
+         (marg (- arg))
+         (cr (cl-loop for a on sage-shell:list-outputs-points
+                      if (and (<= (car a) pt) (cadr a) (< pt (cadr a)))
+                      return a
+                      finally return (last sage-shell:list-outputs-points))))
+    (let* ((l-cr (length cr))
+           (l-pts (length sage-shell:list-outputs-points))
+           (dest (cond ((>= arg l-cr) (car (last cr)))
+                       ((equal arg 0) (car cr))
+                       ((> arg 0) (nth arg cr))
+                       ((>= marg (- l-pts l-cr)) 1)
+                       (t (nth (- l-pts l-cr marg)
+                               sage-shell:list-outputs-points)))))
+      (goto-char dest))))
+
+(defun sage-shell:output-backward (arg)
+  (interactive "p")
+  (sage-shell:output-forward (- arg)))
+
+(define-derived-mode sage-shell:list-outputs-mode special-mode
+  "Sage Outputs"
+  (font-lock-add-keywords
+   nil `((,(rx bol (or "In " "Out") "[" (1+ num) "]:") .
+          'comint-highlight-prompt))))
+
+(sage-shell:define-keys sage-shell:list-outputs-mode-map
+  "n" 'sage-shell:output-forward
+  "p" 'sage-shell:output-backward)
 
 
 ;;; sage-shell-interfaces

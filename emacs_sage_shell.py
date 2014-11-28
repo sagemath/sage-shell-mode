@@ -73,3 +73,39 @@ def sage_tex_load(f):
     d = os.path.dirname(os.path.expanduser(f))
     with current_dir(d):
         ip.ev('load("{f}")'.format(f=f))
+
+
+def print_inputs_outputs(max_line_num, delim, reversed_ord):
+    def show_func(s):
+        if max_line_num is None:
+            res = s
+        else:
+            ss = s.split("\n")
+            if len(ss) > max_line_num:
+                l = ss[:max_line_num] + ["....."]
+            else:
+                l = ss
+            res = "\n".join(l)
+        if '\n' in res:
+            return '\n' + res
+        else:
+            return res
+
+    def format_func(obj):
+        try:
+            return ip.display_formatter.format(obj)[0]['text/plain']
+        except:
+            return repr(obj)
+
+    outputs = ip.ev("_oh")
+    if reversed_ord:
+        key_func = lambda x: -x[0]
+    else:
+        key_func = lambda x: x
+    outputs = sorted(list(outputs.items()), key=key_func)
+    outputs = [(k, show_func(format_func(v))) for k, v in outputs]
+    inputs = ip.ev("_ih")
+    for k, v in outputs:
+        print "In [{k}]: {i}".format(k=k, i=inputs[k])
+        print "Out[{k}]: {out}".format(k=k, out=v)
+        print delim
