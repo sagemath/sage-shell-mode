@@ -98,6 +98,7 @@ The basic key-bidings in `sage-shell-mode` are as follows:
 | C-c M-o    | sage-shell:clear-current-buffer | Delete all outputs in the current buffer. This does not delete the last prompt. |
 | C-c C-l    | sage-shell:load-file            | Send contents of a file to the Sage process.                                    |
 | C-c C-h    | sage-shell:help                 | Show a document string of a Sage object.                                        |
+| C-c o      | sage-shell:list-outputs         | List inputs and outputs in a buffer.|
 
 For more commands and key-bindings see the help by `M-x describle-mode sage-shell-mode`.
 
