@@ -468,12 +468,6 @@ returned from the function, otherwise, this returns it self. "
 
 
 ;;; Menu
-(defun sage-shell:delete-menu-from-map (keymap)
-  (let ((map (symbol-value keymap)))
-    (mapc (lambda (i) (when (eq (car-safe i) 'menu-bar)
-                    (set keymap (delete i map))))
-          map)))
-
 (defvar sage-shell:in-out-menu-spec
       '("In/Out"
         ["Expand History Before Point" comint-replace-by-expanded-history t]
@@ -564,7 +558,6 @@ returned from the function, otherwise, this returns it self. "
   (add-hook 'completion-at-point-functions
             'sage-shell:completion-at-point-func nil t)
   (unless sage-shell:menu-defined-p
-    (sage-shell:delete-menu-from-map 'sage-shell-mode-map)
     (easy-menu-define sage-shell-menu
       sage-shell-mode-map "sage-shell menu"
       sage-shell:menu-spec)
