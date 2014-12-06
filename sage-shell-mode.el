@@ -802,13 +802,7 @@ When sync is nill this return a lambda function to get the result."
               (read-from-minibuffer "Run sage (like this): "
                                     "sage" nil nil 'sage-shell:run-history
                                     "sage") " ")))
-    (format "%s %s"
-            (sage-shell:acond
-             ((sage-shell:sage-executable) it)
-             ((let* ((r (sage-shell:sage-root))
-                     (f (expand-file-name "sage" (sage-shell:sage-root))))
-                (and r (file-exists-p f) f)) it)
-             (t "sage"))
+    (format "%s %s" (sage-shell:sage-executable)
             (mapconcat 'identity (cdr lst) " "))))
 
 (cl-defun sage-shell:run (cmd new &optional
