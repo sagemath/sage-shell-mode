@@ -3346,19 +3346,23 @@ file name.")
                  (cmd (let ((b (or (get-file-buffer f)
                                    (current-buffer))))
                         (with-current-buffer b
-                          (funcall sage-shell-sagetex:latex-command-func f)))))
+                          (funcall sage-shell-sagetex:latex-command-func f))))
+                 (cmd-name
+                  (sage-shell:aif sage-shell-sagetex:auctex-command-name
+                      (format "`%s' %s" it (file-name-nondirectory f))
+                    cmd)))
     (deferred:$
       (deferred:$
         (deferred:next
           (lambda ()
-            (message "Running '%s' ..." cmd)))
+            (message "Running \"%s\" ..." cmd-name)))
         (deferred:process
           (sage-shell:TeX-shell)
           (sage-shell:TeX-shell-command-option)
           cmd)
         (deferred:nextc it
           (lambda (x) (when verbose
-                    (message "Running '%s' ... Done!" cmd)))))
+                    (message "Running \"%s\" ... Done." cmd-name)))))
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
