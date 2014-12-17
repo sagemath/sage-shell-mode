@@ -136,18 +136,18 @@ Nil means it does not truncate the outputs."
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
-  `sage-shell-sagetex:compile-file' before loading a
-  .sagetex.sage file."
+`sage-shell-sagetex:compile-file' before loading a .sagetex.sage
+file."
   :group 'sage-shell-sagetex
   :type 'string)
 
 (defcustom sage-shell-sagetex:latex-command "latex -interaction=nonstopmode"
   "If `sage-shell-sagetex:auctex-command-name' is nil (by default
-  it is nil), then this variable is used for
-  `sage-shell-sagetex:compile-file' after loading a
-  .sagetex.sage file. It should be a LaTeX command without a file
-  name. `sage-shell-sagetex:compile-file' will call the
-  LaTeX command after loading a .sagetex.sage file."
+it is nil), then this variable is used for
+`sage-shell-sagetex:compile-file' after loading a .sagetex.sage
+file. It should be a LaTeX command without a file
+name. `sage-shell-sagetex:compile-file' will call the LaTeX
+command after loading a .sagetex.sage file."
   :group 'sage-shell-sagetex
   :type 'string)
 
