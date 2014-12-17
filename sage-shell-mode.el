@@ -124,10 +124,14 @@ If non-nil, then show the maximum output when the window is scrolled."
 (defcustom sage-shell:list-outputs-max-line-num 5
   "Max number of lines of the outputs displayed in the buffer created
 by `sage-shell:list-outputs' and other related commands.
-Nil means it does not truncate the outputs.")
+Nil means it does not truncate the outputs."
+  :type 'integer
+  :group 'sage-shell)
 
 (defcustom sage-shell:list-outputs-reversed-order-p t
-  "Non nil means outputs ordered by the reversed order.")
+  "Non nil means outputs ordered by the reversed order."
+  :type 'boolean
+  :group 'sage-shell)
 
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
