@@ -2799,7 +2799,10 @@ of current Sage process.")
 
 (cl-defun sage-shell-edit:exec-command-base
     (&key command pre-message post-message switch-p
-          (display-function nil) (insert-command-p nil))
+          (display-function nil) (insert-command-p nil) (before-sentence nil))
+  "If `insert-command-p' is non-nil, then it inserts `command' in
+the process buffer. If `before-sentence' is non-nil, it will be
+inserted in the process buffer before executing the command."
   ;; set sage process buffer
   (sage-shell-edit:set-sage-proc-buf-internal)
 
@@ -2812,14 +2815,17 @@ of current Sage process.")
   (lexical-let ((command command)
                 (post-message post-message)
                 (insert-command-p insert-command-p)
-                (display-function display-function))
+                (display-function display-function)
+                (before-sentence before-sentence))
 
     (sage-shell:as-soon-as (sage-shell:output-finished-p)
       (let ((win (get-buffer-window sage-shell:process-buffer)))
         (if (and (windowp win) (window-live-p win))
             (with-selected-window win
-              (sage-shell-edit:exec-cmd-internal command insert-command-p))
-          (sage-shell-edit:exec-cmd-internal command insert-command-p)))
+              (sage-shell-edit:exec-cmd-internal command insert-command-p
+                                                 before-sentence))
+          (sage-shell-edit:exec-cmd-internal command insert-command-p
+                                             before-sentence)))
       (when post-message
         (sage-shell:after-output-finished
           (message post-message)))
@@ -2837,25 +2843,27 @@ of current Sage process.")
           (sage-shell:change-mode-line-process nil))))
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
-(defun sage-shell-edit:exec-cmd-internal (command insert-command-p)
-  (with-current-buffer sage-shell:process-buffer
-    (goto-char (process-mark
-                (get-buffer-process (current-buffer))))
-    (end-of-line)
-    (let* ((bol (comint-line-beginning-position))
-           (eol (line-end-position))
-           (line (buffer-substring-no-properties bol eol)))
-      (delete-region bol eol)
-      (cond (insert-command-p
-             (goto-char (process-mark (get-buffer-process
-                                       sage-shell:process-buffer)))
-             (insert command)
-             (sage-shell:send-input))
-            (t (sage-shell:prepare-for-send)
-               (comint-send-string (get-buffer-process
-                                    sage-shell:process-buffer)
-                                   (concat command "\n"))))
-      (insert line))))
+(defun sage-shell-edit:exec-cmd-internal
+    (command insert-command-p before-sentence)
+  (let* ((proc (get-buffer-process sage-shell:process-buffer))
+         (pmark (process-mark proc)))
+    (with-current-buffer sage-shell:process-buffer
+      (goto-char pmark)
+      (end-of-line)
+      (let* ((bol (comint-line-beginning-position))
+             (eol (line-end-position))
+             (line (buffer-substring-no-properties bol eol)))
+        (delete-region bol eol)
+        (sage-shell:awhen before-sentence
+          (insert it)
+          (set-marker pmark (point)))
+        (cond (insert-command-p
+               (goto-char pmark)
+               (insert command)
+               (sage-shell:send-input))
+              (t (sage-shell:prepare-for-send)
+                 (comint-send-string proc (concat command "\n"))))
+        (insert line)))))
 
 (defvar sage-shell-edit:temp-file-base-name "sage_shell_mode_temp")
 (defvar sage-shell-edit:temp-directory
@@ -3006,14 +3014,15 @@ of current Sage process.")
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p (display-function nil)
-          (insert-command-p nil))
+          (insert-command-p nil) (before-sentence nil))
   (sage-shell-edit:exec-command-base
    :command (or command (format "load('%s')" file-name))
    :switch-p switch-p
    :display-function display-function
    :pre-message "Loading the file to the Sage process..."
    :post-message "Loading the file to the Sage process... Done."
-   :insert-command-p insert-command-p)
+   :insert-command-p insert-command-p
+   :before-sentence before-sentence)
   (sage-shell:clear-command-cache))
 
 (defun sage-shell-edit:load-file (file-name)
