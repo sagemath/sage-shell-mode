@@ -1082,22 +1082,23 @@ This ring remebers the parts.")
     (save-excursion
       (when comint-last-output-start
         (cl-loop initially
-              (goto-char comint-last-output-start)
-              while
-              (not (or (not (re-search-forward "^." nil t))
-                       (save-excursion
-                         (forward-line 0)
-                         (looking-at sage-shell:output-finished-regexp))))
-              do
-              (let ((p (sage-shell:python-syntax-output-p
-                        (buffer-substring (line-beginning-position)
-                                          (line-end-position)))))
-                (cond ((not p) (put-text-property  (1- (point)) (point)
-                                                   'syntax-table (cons 11 nil)))
-                      ((numberp p)
-                       (setq p (+ p (line-beginning-position)))
-                       (put-text-property  p (1+ p)
-                                           'syntax-table (cons 11 nil))))))))))
+                 (goto-char comint-last-output-start)
+                 while
+                 (and (re-search-forward "^." nil t)
+                      (not (save-excursion
+                             (forward-line 0)
+                             (looking-at sage-shell:output-finished-regexp))))
+                 do
+                 (let ((p (sage-shell:python-syntax-output-p
+                           (buffer-substring (line-beginning-position)
+                                             (line-end-position)))))
+                   (cond ((not p) (put-text-property
+                                   (1- (point)) (point)
+                                   'syntax-table (cons 11 nil)))
+                         ((numberp p)
+                          (setq p (+ p (line-beginning-position)))
+                          (put-text-property
+                           p (1+ p) 'syntax-table (cons 11 nil))))))))))
 
 (defmacro sage-shell:after-output-finished (&rest body)
   (declare (indent 0))
@@ -2837,27 +2838,24 @@ of current Sage process.")
     (when switch-p (pop-to-buffer sage-shell:process-buffer))))
 
 (defun sage-shell-edit:exec-cmd-internal (command insert-command-p)
-  (let ((saved-pt (point)))
-    (with-current-buffer sage-shell:process-buffer
-      (goto-char (process-mark
-                  (get-buffer-process (current-buffer))))
-      (end-of-line)
-      (let* ((bol (comint-line-beginning-position))
-             (eol (line-end-position))
-             (line (buffer-substring-no-properties bol eol)))
-        (delete-region bol eol)
-        (cond (insert-command-p
-               (goto-char (process-mark (get-buffer-process
-                                         sage-shell:process-buffer)))
-               (insert command)
-               (sage-shell:send-input))
-              (t (sage-shell:prepare-for-send)
-                 (comint-send-string (get-buffer-process
-                                      sage-shell:process-buffer)
-                                     (concat command "\n"))))
-        (insert line)
-        (unless insert-command-p
-          (goto-char (point)))))))
+  (with-current-buffer sage-shell:process-buffer
+    (goto-char (process-mark
+                (get-buffer-process (current-buffer))))
+    (end-of-line)
+    (let* ((bol (comint-line-beginning-position))
+           (eol (line-end-position))
+           (line (buffer-substring-no-properties bol eol)))
+      (delete-region bol eol)
+      (cond (insert-command-p
+             (goto-char (process-mark (get-buffer-process
+                                       sage-shell:process-buffer)))
+             (insert command)
+             (sage-shell:send-input))
+            (t (sage-shell:prepare-for-send)
+               (comint-send-string (get-buffer-process
+                                    sage-shell:process-buffer)
+                                   (concat command "\n"))))
+      (insert line))))
 
 (defvar sage-shell-edit:temp-file-base-name "sage_shell_mode_temp")
 (defvar sage-shell-edit:temp-directory
