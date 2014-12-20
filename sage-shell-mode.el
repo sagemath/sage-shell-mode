@@ -3377,6 +3377,22 @@ file name.")
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
+(defmacro sage-shell-sagetex:-run-latex-and-do (f sym)
+  `(progn
+     (sage-shell-edit:set-sage-proc-buf-internal t nil)
+     (lexical-let ((f ,f))
+       (sage-shell:as-soon-as (sage-shell:output-finished-p)
+         (deferred:$
+           (deferred:$
+             (deferred:process
+               (sage-shell:TeX-shell)
+               (sage-shell:TeX-shell-command-option)
+               (sage-shell-sagetex:pre-command f))
+             (deferred:nextc it
+               (lambda (x) (,sym f))))
+           (deferred:error it
+             (lambda (e) (sage-shell-sagetex:insert-error e))))))))
+
 ;;;###autoload
 (defun sage-shell-sagetex:compile-file (f)
   "This command runs LaTeX on the current file, loads the
@@ -3385,17 +3401,8 @@ again. See the documentation of
 `sage-shell-sagetex:latex-command' and
 `sage-shell-sagetex:auctex-command-name' for the customization."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
-  (lexical-let ((f f))
-    (deferred:$
-      (deferred:$
-        (deferred:process
-          (sage-shell:TeX-shell)
-          (sage-shell:TeX-shell-command-option)
-          (sage-shell-sagetex:pre-command f))
-        (deferred:nextc it
-          (lambda (x) (sage-shell-sagetex:-load-and-run-latex f))))
-      (deferred:error it
-        (lambda (e) (sage-shell-sagetex:insert-error e))))))
+  (sage-shell-sagetex:-run-latex-and-do
+   f sage-shell-sagetex:-load-and-run-latex))
 
 (defun sage-shell-sagetex:-load-current-file (func)
   (let ((f (buffer-file-name)))
@@ -3414,17 +3421,8 @@ again. See the documentation of
   "This command runs LaTeX and loads a .sagetex.sage file to the
 exisiting Sage process."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
-  (lexical-let ((f f))
-    (deferred:$
-      (deferred:$
-        (deferred:process
-          (sage-shell:TeX-shell)
-          (sage-shell:TeX-shell-command-option)
-          (sage-shell-sagetex:pre-command f))
-        (deferred:nextc it
-          (lambda (x) (sage-shell-sagetex:load-file f))))
-      (deferred:error it
-        (lambda (e) (sage-shell-sagetex:insert-error e))))))
+  (sage-shell-sagetex:-run-latex-and-do
+   f sage-shell-sagetex:load-file))
 
 ;;;###autoload
 (defun sage-shell-sagetex:run-latex-and-load-current-file ()
