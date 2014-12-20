@@ -2819,13 +2819,12 @@ inserted in the process buffer before executing the command."
                 (before-sentence before-sentence))
 
     (sage-shell:as-soon-as (sage-shell:output-finished-p)
-      (let ((win (get-buffer-window sage-shell:process-buffer)))
+      (let ((win (get-buffer-window sage-shell:process-buffer))
+            (args (list command insert-command-p before-sentence)))
         (if (and (windowp win) (window-live-p win))
             (with-selected-window win
-              (sage-shell-edit:exec-cmd-internal command insert-command-p
-                                                 before-sentence))
-          (sage-shell-edit:exec-cmd-internal command insert-command-p
-                                             before-sentence)))
+              (apply 'sage-shell-edit:exec-cmd-internal args))
+          (apply 'sage-shell-edit:exec-cmd-internal args)))
       (when post-message
         (sage-shell:after-output-finished
           (message post-message)))
