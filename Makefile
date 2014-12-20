@@ -1,18 +1,14 @@
-EMACS ?= emacs
-CASK ?= cask
-
-all:
-	${MAKE} clean
-	${MAKE} test
-	${MAKE} compile
-	${MAKE} test
-	${MAKE} clean
+EMACS = emacs
+CASK = cask
 
 compile:
-	${CASK} exec ${EMACS} -Q -batch -f batch-byte-compile sage-shell-mode.el
-test:
-	$(MAKE) clean && ${CASK} exec ${EMACS} -Q -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
+	$(CASK) exec $(EMACS) -Q -batch -f batch-byte-compile sage-shell-mode.el
+
+test: clean
+	$(CASK) exec $(EMACS) -Q -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
+	$(MAKE) compile
+
 clean:
 	rm -f sage-shell-mode.elc
 
-.PHONY: all compile test clean
+.PHONY: compile test clean
