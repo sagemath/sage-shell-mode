@@ -168,6 +168,11 @@ will be ignored."
   :type 'boolean
   :group 'sage-shell-sagetex)
 
+(defcustom sage-shell-sagetex:prefix-key (kbd "C-c s")
+  "SageTeX minor-mode prefix key."
+  :group 'sage-shell-sagetex
+  :type 'string)
+
 ;;;###autoload
 (defvaralias 'sage-shell:add-to-texinputs-p
   'sage-shell-sagetex:add-to-texinputs-p)
@@ -3453,6 +3458,27 @@ exisiting Sage process."
 (define-derived-mode sage-shell-sagetex:error-mode special-mode "SageTeX-Error"
   "Error mode for SageTeX")
 
+(defvar sage-shell-sagetex-command-map
+  (let ((map (make-sparse-keymap)))
+    (sage-shell:define-keys map
+      "l" 'sage-shell-sagetex:load-current-file
+      "c" 'sage-shell-sagetex:compile-current-file
+      "r" 'sage-shell-sagetex:run-latex-and-load-current-file
+      "L" 'sage-shell-sagetex:load-file
+      "R" 'sage-shell-sagetex:run-latex-and-load-file
+      "C" 'sage-shell-sagetex:compile-file) map))
+
+(defvar sage-shell-sagetex-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map sage-shell-sagetex:prefix-key
+      sage-shell-sagetex-command-map)
+    (define-key map (kbd "C-c C-z") 'sage-shell-edit:pop-to-process-buffer)
+    map)
+  "Keymap used for `sage-shell-sagetex-mode'.")
+
+(define-minor-mode sage-shell-sagetex-mode "minor-mode for
+  SageTeX. Used only for overriding some keybindings."
+  nil "sagetex" sage-shell-sagetex-mode-map)
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
