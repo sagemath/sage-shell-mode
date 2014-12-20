@@ -3278,7 +3278,7 @@ Argument OUTPUT is a string with the output from the comint process."
     (sage-shell-edit:load-file-base
      :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
                       dflt)
-     :insert-command-p t)))
+     :before-sentence "# ")))
 
 ;;;###autoload
 (defun sage-shell-sagetex:load-current-file ()
