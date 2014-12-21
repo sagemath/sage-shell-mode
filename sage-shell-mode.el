@@ -2749,28 +2749,30 @@ of current Sage process.")
 (defun sage-shell:set-process-buffer ()
   (interactive)
   (setq sage-shell:process-buffer nil)
-  (sage-shell-edit:set-sage-proc-buf-internal t t)
+  (sage-shell-edit:set-sage-proc-buf-internal)
   (sage-shell:aif (get-buffer sage-shell:process-buffer)
       (message (format "Set the process buffer to buffer %s."
                        (buffer-name it)))))
 
-(cl-defun sage-shell-edit:set-sage-proc-buf-internal (&optional (start-p t) (verbose t))
+(cl-defun sage-shell-edit:set-sage-proc-buf-internal (&optional (start-p t))
   "Set `sage-shell:process-buffer'"
-  (or (get-buffer-process sage-shell:process-buffer)
+  (or (and (bufferp sage-shell:process-buffer)
+           (get-buffer-process sage-shell:process-buffer))
       (let ((proc-alist (sage-shell-edit:process-alist))
             (cur-buf (current-buffer)))
         (cond
          ;; if there are no processes
-         ((and (null proc-alist) start-p)
-          (if (y-or-n-p (concat "Threre are no Sage processes. "
-                                "Start new process? "))
-              (let ((proc-buf
-                     (sage-shell:run (sage-shell:read-command) nil 'no-switch)))
-                (with-current-buffer cur-buf
-                  (setq sage-shell:process-buffer proc-buf)))))
-         ((null proc-alist) t)
+         ((null proc-alist)
+          (when (and start-p
+                     (y-or-n-p (concat "Threre are no Sage processes. "
+                                       "Start new process? ")))
+            (let ((proc-buf
+                   (sage-shell:run
+                    (sage-shell:read-command) nil 'pop-to-buffer)))
+              (with-current-buffer cur-buf
+                (setq sage-shell:process-buffer proc-buf)))))
          ;; if there are multiple processes
-         ((and verbose (consp (cdr proc-alist)))
+         ((and (consp (cdr proc-alist)))
           (let* ((buffer-name
                   (completing-read
                    (concat
@@ -2781,8 +2783,8 @@ of current Sage process.")
                  (proc (get-buffer-process buffer-name)))
             (setq sage-shell:process-buffer (process-buffer proc))))
          ;; if there is exactly one process
-         (verbose (setq sage-shell:process-buffer
-                        (process-buffer (cdar proc-alist))))))))
+         (t (setq sage-shell:process-buffer
+                  (process-buffer (cdar proc-alist))))))))
 
 (defvar sage-shell-edit:display-function nil)
 (defvar sage-shell:original-mode-line-process nil)
@@ -3154,7 +3156,7 @@ inserted in the process buffer before executing the command."
                line)))))
 
 (defun sage-shell-pdb:pdb-prompt-p ()
-  (sage-shell-edit:set-sage-proc-buf-internal nil t)
+  (sage-shell-edit:set-sage-proc-buf-internal nil)
   (with-current-buffer sage-shell:process-buffer
     (save-excursion
       ;; goto last prompt
@@ -3374,7 +3376,7 @@ file name.")
 
 (defmacro sage-shell-sagetex:-run-latex-and-do (f sym)
   `(progn
-     (sage-shell-edit:set-sage-proc-buf-internal t nil)
+     (sage-shell-edit:set-sage-proc-buf-internal)
      (lexical-let ((f ,f))
        (sage-shell:as-soon-as (sage-shell:output-finished-p)
          (deferred:$
