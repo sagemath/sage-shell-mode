@@ -2768,7 +2768,7 @@ of current Sage process.")
                                        "Start new process? ")))
             (let ((proc-buf
                    (sage-shell:run
-                    (sage-shell:read-command) nil 'pop-to-buffer)))
+                    (sage-shell:read-command) nil 'display-buffer)))
               (with-current-buffer cur-buf
                 (setq sage-shell:process-buffer proc-buf)))))
          ;; if there are multiple processes
