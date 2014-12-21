@@ -1,6 +1,8 @@
+# sage-shell-mode
+
 [![melpa badge][melpa-badge]][melpa-link] [![melpa stable badge][melpa-stable-badge]][melpa-stable-link]
 
-# Overview
+## Overview
 
 `sage-shell-mode` is an elisp package and
 provides an Emacs front end for [Sage](http://www.sagemath.org/).
@@ -16,7 +18,7 @@ There are extensions for this package,
 [anything-sage](https://github.com/stakemori/anything-sage).
 
 
-# Installation
+## Installation
 You can install `sage-shell-mode` from
 [MELPA](https://github.com/milkypostman/melpa.git) by package.el
 (`M-x package-install sage-shell-mode`).
@@ -47,7 +49,7 @@ you may set the variable `sage-shell:sage-executable`.
 Here `"/path/to/sage/executable"` is the path of the executable file of Sage.
 This may be a symbolic link.
 
-# Aliases
+## Aliases
 The major mode `sage-mode` and the command `run-sage` are provided by
 [sage-mode](https://bitbucket.org/gvol/sage-mode/src)
 (the official `sage-mode`).
@@ -73,8 +75,8 @@ the following aliases will be defined.
 Then you can run Sage by `M-x run-sage` instead of `M-x sage-shell:run-sage`
 with these aliases.
 
-# Basic Usage
-## Running a Sage process
+## Basic Usage
+### Running a Sage process
 You can run Sage by `M-x sage-shell:run-sage`.
 You can run new Sage process by `M-x sage-shell:run-new-sage`.
 
@@ -102,7 +104,7 @@ The basic key-bidings in `sage-shell-mode` are as follows:
 
 For more commands and key-bindings see the help by `M-x describle-mode sage-shell-mode`.
 
-## TAB completion
+### TAB completion
 
 By default, `TAB` completion uses `completion-at-point`.
 You can use `pcomplete` by the following setting:
@@ -113,7 +115,7 @@ You can use `pcomplete` by the following setting:
 You can also use `auto-complete`, `anything` or `helm` for completion.
 This requires extensions.
 
-## Editing a Sage file
+### Editing a Sage file
 When you visit a file ended with ``".sage"``,
 then `sage-shell:sage-mode` will be the major-mode of the buffer
 automatically.
@@ -146,7 +148,7 @@ The basic key-bidings in `sage-shell:sage-mode` are as follows:
 If you run multiple Sage processes, you can choose which process to send
 by `M-x sage-shell:set-process-buffer`.
 
-# Extensions
+## Extensions
 * [auto-complete-sage](https://github.com/stakemori/auto-complete-sage) provides an
   [auto-complete](https://github.com/auto-complete/auto-complete)
   source for `sage-shell-mode`.
@@ -157,7 +159,7 @@ by `M-x sage-shell:set-process-buffer`.
   provides an [anything](http://www.emacswiki.org/Anything)
   source for `sage-shell-mode`.
 
-# Screenshots
+## Screenshots
 Automatic indentation and syntax highlighting work.
 
 ![alt text](./images/indent.png "Auto indentation and syntax highlighting")
@@ -172,7 +174,7 @@ Completion with [helm-sage](https://github.com/stakemori/helm-sage).
 
 ![alt text](./images/helm1.png "helm-sage")
 
-# Workaround for `flycheck`
+## Workaround for `flycheck`
 To use `flycheck-mode` in a `sage-shell:sage-mode` buffer and a
 `python-mode` buffer, try the following code.
 
@@ -195,7 +197,7 @@ To use `flycheck-mode` in a `sage-shell:sage-mode` buffer and a
 (add-hook 'python-mode-hook 'sage-shell:flycheck-turn-on)
 ```
 
-# License
+## License
 
 Licensed under the [GPL Version 3][GPL]
 [GPL]: http://www.gnu.org/licenses/gpl.html
