@@ -3331,12 +3331,22 @@ file name.")
   (format "%s %s" sage-shell-sagetex:pre-latex-command
           (sage-shell-sagetex:tex-master-maybe f)))
 
+(defun sage-shell-sagetex:-auctex-cmd ()
+  "When auctex command is available returns
+`sage-shell-sagetex:auctex-command-name' else nil"
+  (sage-shell:awhen (and (featurep 'tex)
+                         sage-shell-sagetex:auctex-command-name
+                         (require 'tex-buf nil t)
+                         (with-no-warnings
+                           (assoc sage-shell-sagetex:auctex-command-name
+                                  TeX-command-list)))
+    sage-shell-sagetex:auctex-command-name))
+
 (defun sage-shell-sagetex:post-command (f)
-  (sage-shell:aif (and (featurep 'tex)
-                       sage-shell-sagetex:auctex-command-name)
+  (sage-shell:aif (sage-shell-sagetex:-auctex-cmd)
       (with-no-warnings
-        (TeX-command-expand (nth 1 (assoc it TeX-command-list))
-                            'TeX-master-file))
+        (TeX-command-expand
+         (nth 1 (assoc it TeX-command-list)) 'TeX-master-file))
     (format "%s %s" sage-shell-sagetex:latex-command
             (sage-shell-sagetex:tex-master-maybe f t))))
 
@@ -3356,7 +3366,7 @@ file name.")
                         (with-current-buffer b
                           (funcall sage-shell-sagetex:latex-command-func f))))
                  (cmd-name
-                  (sage-shell:aif sage-shell-sagetex:auctex-command-name
+                  (sage-shell:aif (sage-shell-sagetex:-auctex-cmd)
                       (format "`%s' %s" it (file-name-nondirectory f))
                     cmd)))
     (deferred:$
