@@ -129,8 +129,8 @@ def sage_getdef(name):
         except NameError:
             pass
 
-_doc_delims = ["INPUT", "EXAMPLE", "EXAMPLES", "TESTS",
-               "AUTHOR", "AUTHORS"]
+_doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
+               "ALGORITHM"]
 
 _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
