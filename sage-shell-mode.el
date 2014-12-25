@@ -2754,7 +2754,9 @@ of current Sage process.")
       (message (format "Set the process buffer to buffer %s."
                        (buffer-name it)))))
 
-(cl-defun sage-shell-edit:set-sage-proc-buf-internal (&optional (start-p t))
+;; TODO Remove unused argument verbose.
+(cl-defun sage-shell-edit:set-sage-proc-buf-internal
+    (&optional (start-p t) (verbose t))
   "Set `sage-shell:process-buffer'"
   (or (and (bufferp sage-shell:process-buffer)
            (get-buffer-process sage-shell:process-buffer))
