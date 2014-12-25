@@ -162,16 +162,16 @@ def print_def(name):
 
 def print_short_doc_and_def(name):
     try:
+        df = sage_getdef(name)
+        if df is not None:
+            print df
+    except:
+        df = None
+
+    try:
+        if df is not None:
+            print ""
         sd = short_doc(name)
         print sd
     except:
         sd = None
-    try:
-        df = sage_getdef(name)
-        if sd is not None:
-            print ""
-        if df is not None:
-            print (df),
-    except:
-        pass
-
