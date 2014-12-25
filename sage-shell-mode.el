@@ -2779,7 +2779,7 @@ of current Sage process.")
                   (completing-read
                    (concat
                     "There are multiple Sage processes. "
-                    "Please select the process used for loading: ")
+                    "Please select the process buffer: ")
                    (cl-loop for (proc-name . proc) in proc-alist
                             collect (buffer-name (process-buffer proc)))))
                  (proc (get-buffer-process buffer-name)))
