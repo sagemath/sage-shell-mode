@@ -108,3 +108,70 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
         print "In [{k}]: {i}".format(k=k, i=inputs[k])
         print "Out[{k}]: {out}".format(k=k, out=v)
         print delim
+
+_func_call_reg = re.compile("[()]")
+
+def _is_safe_str(s):
+    if _func_call_reg.search(s) is None:
+        return True
+    else:
+        return False
+
+def sage_getdef(name):
+    if _is_safe_str(name):
+        gd_name = "sage.misc.sageinspect.sage_getdef"
+        try:
+            df = ip.ev("%s(%s)"%(gd_name, name))
+            if (df == '( [noargspec] )' and
+                ip.ev("hasattr(%s, '__init__')"%name)):
+                df = ip.ev("%s(%s.__init__)"%(gd_name, name))
+            return "%s%s"%(name, df)
+        except NameError:
+            pass
+
+_doc_delims = ["INPUT", "EXAMPLE", "EXAMPLES", "TESTS",
+               "AUTHOR", "AUTHORS"]
+
+_doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
+
+def short_doc(name):
+    if _is_safe_str(name):
+        sd_name = "sage.misc.sageinspect.sage_getdoc"
+        dc = ip.ev("%s(%s)"%(sd_name, name))
+        m = _doc_delim_regexp.search(dc)
+        if m is not None:
+            res = dc[:m.start()]
+        else:
+            res = dc
+        return res.strip()
+
+
+def print_short_doc(name):
+    try:
+        print short_doc(name)
+    except:
+        pass
+
+def print_def(name):
+    try:
+        df = sage_getdef(name)
+        if df is not None:
+            print df
+    except:
+        pass
+
+def print_short_doc_and_def(name):
+    try:
+        sd = short_doc(name)
+        print sd
+    except:
+        sd = None
+    try:
+        df = sage_getdef(name)
+        if sd is not None:
+            print ""
+        if df is not None:
+            print (df),
+    except:
+        pass
+
