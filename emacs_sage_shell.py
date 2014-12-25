@@ -16,12 +16,12 @@ ip.run_line_magic('colors', 'NoColor')
 
 interfaces = ip.ev('interfaces')
 
+_sage_const_regexp = re.compile("_sage_const_")
 
 def print_all_commands(interface):
     if interface == 'sage':
-        p = re.compile("_sage_const_")
         l = ip.ev('dir()')
-        l = [a for a in l if p.match(a) is None]
+        l = [a for a in l if _sage_const_regexp.match(a) is None]
         for a in l:
             print a
     else:
