@@ -459,7 +459,7 @@ returned from the function, otherwise, this returns it self. "
   "Buffer name used for collect candidates of attributes of a instance.")
 (defvar sage-shell:output-buffer " *sage-output*")
 (defvar sage-shell-ac:doc-arg-alist nil
-  "Alist that consists of (objname-to-send . (arg-spec . doc))")
+  "Alist that consists of (name . short-doc)")
 (make-variable-buffer-local 'sage-shell-ac:doc-arg-alist)
 
 (defvar sage-shell:output-filter-finished-hook nil
