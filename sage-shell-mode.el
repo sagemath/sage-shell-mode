@@ -458,9 +458,6 @@ returned from the function, otherwise, this returns it self. "
   " *sage-attribute-completion*"
   "Buffer name used for collect candidates of attributes of a instance.")
 (defvar sage-shell:output-buffer " *sage-output*")
-(defvar sage-shell-ac:doc-arg-alist nil
-  "Alist that consists of (name . short-doc)")
-(make-variable-buffer-local 'sage-shell-ac:doc-arg-alist)
 
 (defvar sage-shell:output-filter-finished-hook nil
   "Run after output finished.")
@@ -535,7 +532,6 @@ returned from the function, otherwise, this returns it self. "
         comint-input-ring-file-name sage-shell:input-history-cache-file)
   (set (make-local-variable 'comint-redirect-finished-regexp)
        comint-prompt-regexp)
-  (setq sage-shell-ac:doc-arg-alist nil)
   (comint-read-input-ring t)
 
   (set (make-local-variable 'comint-redirect-completed) t)
@@ -864,12 +860,10 @@ argument."
 (defun sage-shell:clear-command-cache ()
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-cpl:set-cmd-lst "sage" nil)
-    (setq sage-shell-ac:doc-arg-alist nil)
     (sage-shell:clear-completion-sync-cached)))
 
 (defun sage-shell:update-sage-commands ()
   (with-current-buffer sage-shell:process-buffer
-    (setq sage-shell-ac:doc-arg-alist nil)
     (sage-shell-cpl:set-cmd-lst "sage" nil)
     (sage-shell-cpl:completion-init "sage" nil t)
     (sage-shell-cpl:candidates)
