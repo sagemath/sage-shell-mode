@@ -135,19 +135,21 @@ _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
 
 _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
-ignore_classes = [sage.interfaces.gap.Gap]
+ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 def short_doc(name, base_name=None):
     '''
-    If base_name is an instance of one of ignore_classes,
+    If name or base_name is an instance of one of ignore_classes,
     then this function returns None.
     '''
     if _is_safe_str(name):
         sd_name = "sage.misc.sageinspect.sage_getdoc"
         calc_doc = True
+        name_ob = ip.ev(name)
         if base_name is not None and isinstance(base_name, str):
             base_ob = ip.ev(base_name)
-            if any(isinstance(base_ob, cls) for cls in ignore_classes):
+            if any(isinstance(base_ob, cls) or isinstance(name_ob, cls)
+                   for cls in ignore_classes):
                 calc_doc = False
         if calc_doc:
             dc = ip.ev("%s(%s)"%(sd_name, name))
