@@ -2,6 +2,7 @@
 import re
 import os
 from contextlib import contextmanager
+import sage
 
 try:
     ip = get_ipython()
@@ -134,21 +135,33 @@ _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
 
 _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
-def short_doc(name):
+ignore_classes = [sage.interfaces.gap.Gap]
+
+def short_doc(name, base_name=None):
+    '''
+    If base_name is an instance of one of ignore_classes,
+    then this function returns None.
+    '''
     if _is_safe_str(name):
         sd_name = "sage.misc.sageinspect.sage_getdoc"
-        dc = ip.ev("%s(%s)"%(sd_name, name))
-        m = _doc_delim_regexp.search(dc)
-        if m is not None:
-            res = dc[:m.start()]
-        else:
-            res = dc
+        calc_doc = True
+        if base_name is not None and isinstance(base_name, str):
+            base_ob = ip.ev(base_name)
+            if any(isinstance(base_ob, cls) for cls in ignore_classes):
+                calc_doc = False
+        if calc_doc:
+            dc = ip.ev("%s(%s)"%(sd_name, name))
+            m = _doc_delim_regexp.search(dc)
+            if m is not None:
+                res = dc[:m.start()]
+            else:
+                res = dc
         return res.strip()
 
 
-def print_short_doc(name):
+def print_short_doc(name, base_name=None):
     try:
-        print short_doc(name)
+        print short_doc(name, base_name=base_name)
     except:
         pass
 
@@ -160,7 +173,7 @@ def print_def(name):
     except:
         pass
 
-def print_short_doc_and_def(name):
+def print_short_doc_and_def(name, base_name=None):
     try:
         df = sage_getdef(name)
         if df is not None:
@@ -169,9 +182,10 @@ def print_short_doc_and_def(name):
         df = None
 
     try:
-        if df is not None:
+        sd = short_doc(name, base_name=base_name)
+        if df is not None and sd is not None:
             print ""
-        sd = short_doc(name)
-        print sd
+        if sd is not None:
+            print sd
     except:
-        sd = None
+        pass
