@@ -328,7 +328,7 @@ returned from the function, otherwise, this returns it self. "
 
 (defmacro sage-shell:with-current-buffer-safe (buf-maybe &rest body)
   (declare (indent 1))
-  `(when (and ,buf-maybe
+  `(when (and (buffer-live-p ,buf-maybe)
               (get-buffer ,buf-maybe))
      (with-current-buffer (get-buffer ,buf-maybe)
        ,@body)))
@@ -349,6 +349,11 @@ returned from the function, otherwise, this returns it self. "
 (defsubst sage-shell:goto-line (n)
   (goto-char (point-min))
   (forward-line (1- n)))
+
+(defun sage-shell:trim-left (s)
+  (if (string-match (rx "\n" buffer-end) s)
+      (replace-match "" t t s)
+    s))
 
 (defmacro sage-shell:labels (bindings &rest body)
   (declare (indent 1) (debug cl-flet))
