@@ -726,9 +726,7 @@ When sync is nill this return a lambda function to get the result."
           funcname))
 
 (defvar sage-shell:python-script-directory
-  (with-no-warnings
-    (file-name-directory
-     (locate-file sage-shell:python-module load-path '(".py")))))
+  (file-name-directory load-file-name))
 
 (defun sage-shell:remove-trailing-slash (s)
   (if (string-match (rx "/" eol) s)
