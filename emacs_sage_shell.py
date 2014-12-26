@@ -118,8 +118,11 @@ def _is_safe_str(s):
     else:
         return False
 
-def sage_getdef(name):
-    if _is_safe_str(name):
+ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
+
+def sage_getdef(name, base_name=None):
+    if _is_safe_str(name) and (_should_be_ignored(name, base_name)
+                               is not None):
         gd_name = "sage.misc.sageinspect.sage_getdef"
         try:
             df = ip.ev("%s(%s)"%(gd_name, name))
@@ -135,29 +138,32 @@ _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
 
 _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
-ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
+def _should_be_ignored(name, base_name):
+    name_ob = ip.ev(name)
+    if isinstance(base_name, str):
+        base_ob = ip.ev(base_name)
+    else:
+        base_ob = None
+    if any(isinstance(base_ob, cls) or isinstance(name_ob, cls)
+           for cls in ignore_classes):
+        return None
+    else:
+        return True
 
 def short_doc(name, base_name=None):
     '''
     If name or base_name is an instance of one of ignore_classes,
     then this function returns None.
     '''
-    if _is_safe_str(name):
-        sd_name = "sage.misc.sageinspect.sage_getdoc"
-        calc_doc = True
-        name_ob = ip.ev(name)
-        if base_name is not None and isinstance(base_name, str):
-            base_ob = ip.ev(base_name)
-            if any(isinstance(base_ob, cls) or isinstance(name_ob, cls)
-                   for cls in ignore_classes):
-                calc_doc = False
-        if calc_doc:
-            dc = ip.ev("%s(%s)"%(sd_name, name))
-            m = _doc_delim_regexp.search(dc)
-            if m is not None:
-                res = dc[:m.start()]
-            else:
-                res = dc
+    sd_name = "sage.misc.sageinspect.sage_getdoc"
+    if _is_safe_str(name) and (_should_be_ignored(name, base_name)
+                               is not None):
+        dc = ip.ev("%s(%s)"%(sd_name, name))
+        m = _doc_delim_regexp.search(dc)
+        if m is not None:
+            res = dc[:m.start()]
+        else:
+            res = dc
         return res.strip()
 
 
@@ -177,7 +183,7 @@ def print_def(name):
 
 def print_short_doc_and_def(name, base_name=None):
     try:
-        df = sage_getdef(name)
+        df = sage_getdef(name, base_name=base_name)
         if df is not None:
             print df
     except:
