@@ -736,10 +736,10 @@ When sync is nill this return a lambda function to get the result."
 
 (defvar sage-shell:init-command-list
   (list
-   (format "sys.path = sys.path + ['%s']"
+   (format "import %s" sage-shell:python-module)
+   (format "sys.path.append('%s')"
            (sage-shell:remove-trailing-slash
-            sage-shell:python-script-directory))
-   (format "import %s" sage-shell:python-module))
+            sage-shell:python-script-directory)))
   "Sage command list evaluated after loading Sage.")
 
 (defun sage-shell:start-sage-process (cmd buffer)
@@ -755,7 +755,7 @@ When sync is nill this return a lambda function to get the result."
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:send-command
-   (mapconcat 'identity sage-shell:init-command-list "; ") buffer)
+   (mapconcat 'identity (reverse sage-shell:init-command-list) "; ") buffer)
   (setq sage-shell:init-finished-p t)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
