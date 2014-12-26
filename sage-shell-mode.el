@@ -2757,7 +2757,7 @@ of current Sage process.")
 
 ;; TODO Remove unused argument verbose.
 (cl-defun sage-shell-edit:set-sage-proc-buf-internal
-    (&optional (start-p t) (verbose t))
+    (&optional (start-p t) (select-p t))
   "Set `sage-shell:process-buffer'"
   (or (and (bufferp sage-shell:process-buffer)
            (get-buffer-process sage-shell:process-buffer))
@@ -2775,16 +2775,17 @@ of current Sage process.")
               (with-current-buffer cur-buf
                 (setq sage-shell:process-buffer proc-buf)))))
          ;; if there are multiple processes
-         ((and (consp (cdr proc-alist)))
-          (let* ((buffer-name
-                  (completing-read
-                   (concat
-                    "There are multiple Sage processes. "
-                    "Please select the process buffer: ")
-                   (cl-loop for (proc-name . proc) in proc-alist
-                            collect (buffer-name (process-buffer proc)))))
-                 (proc (get-buffer-process buffer-name)))
-            (setq sage-shell:process-buffer (process-buffer proc))))
+         ((consp (cdr proc-alist))
+          (when select-p
+            (let* ((buffer-name
+                    (completing-read
+                     (concat
+                      "There are multiple Sage processes. "
+                      "Please select the process buffer: ")
+                     (cl-loop for (proc-name . proc) in proc-alist
+                              collect (buffer-name (process-buffer proc)))))
+                   (proc (get-buffer-process buffer-name)))
+              (setq sage-shell:process-buffer (process-buffer proc)))))
          ;; if there is exactly one process
          (t (setq sage-shell:process-buffer
                   (process-buffer (cdar proc-alist))))))))
