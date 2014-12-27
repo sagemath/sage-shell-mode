@@ -121,14 +121,16 @@ def _is_safe_str(s):
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 def sage_getdef(name, base_name=None):
+    import inspect
     if _is_safe_str(name) and (_should_be_ignored(name, base_name)
                                is not None):
         gd_name = "sage.misc.sageinspect.sage_getdef"
         try:
-            df = ip.ev("%s(%s)"%(gd_name, name))
-            if (df == '( [noargspec] )' and
-                ip.ev("hasattr(%s, '__init__')"%name)):
+            name_ob = ip.ev(name)
+            if inspect.isclass(name_ob):
                 df = ip.ev("%s(%s.__init__)"%(gd_name, name))
+            else:
+                df = ip.ev("%s(%s)"%(gd_name, name))
             return "%s%s"%(name, df)
         except NameError:
             pass
