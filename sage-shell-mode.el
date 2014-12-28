@@ -2479,7 +2479,7 @@ is the buffer for the candidates of attribute."
              (not (file-exists-p (sage-shell-interfaces:get
                                   interface 'cache-file)))
              (or (not (sage-shell:in interface
-                               sage-shell-interfaces:optional-interfaces))
+                                     sage-shell-interfaces:optional-interfaces))
                  (executable-find interface)))
         (unless (get-buffer cmd-cmp-bufn)
           (get-buffer-create cmd-cmp-bufn)
@@ -2489,17 +2489,9 @@ is the buffer for the candidates of attribute."
        (var-base-name
         ;; when var-base-name is non nil, print all attributes in buffer
         ;; `sage-shell-cpl:attribute-completion-buffer'
-        (unless (get-buffer att-cmp-bufn) (get-buffer-create att-cmp-bufn))
-        (cond ((boundp 'ac-auto-start)  ; case when auto-complete.el is loaded
-               (when (or sync
-                         (null ac-auto-start)
-                         (and (integerp ac-auto-start)
-                              (<= (- (point) (sage-shell-cpl:get 'prefix))
-                                  ac-auto-start)))
-                 (sage-shell-cpl:print-all-att var-base-name
-                                               att-cmp-bufn nil sync)))
-              (t (sage-shell-cpl:print-all-att var-base-name
-                                               att-cmp-bufn nil sync)))))
+        (unless (get-buffer att-cmp-bufn)
+          (get-buffer-create att-cmp-bufn))
+        (sage-shell-cpl:print-all-att var-base-name att-cmp-bufn nil sync)))
       (when (and (not (sage-shell-cpl:get-cmd-lst interface))
                  (or (not var-base-name) other-interface-p)
                  (not (get-buffer cmd-cmp-bufn)))
