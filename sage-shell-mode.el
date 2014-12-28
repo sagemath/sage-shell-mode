@@ -2766,13 +2766,15 @@ of current Sage process.")
          ;; if there are multiple processes
          ((consp (cdr proc-alist))
           (when select-p
-            (let* ((buffer-name
+            (let* ((buffer-names
+                    (cl-loop for (proc-name . proc) in proc-alist
+                             collect (buffer-name (process-buffer proc))))
+                   (buffer-name
                     (completing-read
                      (concat
                       "There are multiple Sage processes. "
                       "Please select the process buffer: ")
-                     (cl-loop for (proc-name . proc) in proc-alist
-                              collect (buffer-name (process-buffer proc)))))
+                     buffer-names nil nil (car (last buffer-names))))
                    (proc (get-buffer-process buffer-name)))
               (setq sage-shell:process-buffer (process-buffer proc)))))
          ;; if there is exactly one process
