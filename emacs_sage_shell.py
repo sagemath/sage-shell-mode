@@ -58,6 +58,23 @@ def print_all_attributes(varname):
         pass
 
 
+def source_line(obj):
+    return sage.misc.sageinspect.sage_getsourcelines(obj)[-1]
+
+
+def print_source_file_and_line_num(obj):
+    sf = sage.misc.sageinspect.sage_getfile(obj)
+    sl = source_line(obj)
+    print sf, '*', sl
+
+
+def print_source_line(obj):
+    print source_line(obj)
+
+
+def print_sage_root():
+    print os.environ['SAGE_ROOT']
+
 
 @contextmanager
 def current_dir(d):

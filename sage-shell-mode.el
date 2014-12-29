@@ -760,7 +760,8 @@ When sync is nill this return a lambda function to get the result."
     ;; Fix (sage-shell:sage-root)
     (setq sage-shell:sage-root--cached
           (let* ((s (sage-shell:send-command-to-string
-                     "import os; print os.environ['SAGE_ROOT']"))
+                     (format "%s()"
+                             (sage-shell:py-mod-func "print_sage_root"))))
                  (s1 (replace-regexp-in-string "
 " "" s)))
             (if (string-match (rx "/" eol) s1)
@@ -1012,11 +1013,9 @@ Match group 1 will be replaced with devel/sage-branch")
 (defun sage-shell:source-file-and-line-num (obj)
   "Return (cons sourcefile line-number)"
   (let ((str (sage-shell:send-command-to-string
-              (format
-               (concat "print "
-                       "sage.misc.sageinspect.sage_getfile(%s), '*', "
-                       "sage.misc.sageinspect.sage_getsourcelines(%s)[-1]")
-               obj obj))))
+              (format "%s(%s)"
+                      (sage-shell:py-mod-func "print_source_file_and_line_num")
+                      obj))))
     (when (string-match (rx (group (1+ (not (syntax whitespace))))
                             (1+ " ") "*" (1+ " ")
                             (group (1+ num)))
@@ -1908,11 +1907,9 @@ python-mode"
 (defun sage-shell-help:find-symbols-line-num (symbol process-buffer)
   "return line number"
   (let* ((str (sage-shell:send-command-to-string
-               (format
-                (concat
-                 "print "
-                 "sage.misc.sageinspect.sage_getsourcelines(%s)[-1]")
-                 symbol)
+               (format "%s(%s)"
+                       (sage-shell:py-mod-func "print_source_line")
+                       symbol)
                process-buffer)))
     (when (string-match "\\([0-9]+\\)" str)
       (string-to-number (match-string 1 str)))))
