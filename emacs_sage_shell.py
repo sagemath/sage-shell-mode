@@ -20,6 +20,7 @@ interfaces = ip.ev('interfaces')
 
 _sage_const_regexp = re.compile("_sage_const_")
 
+
 def print_all_commands(interface):
     if interface == 'sage':
         l = ip.ev('dir()')
@@ -130,6 +131,7 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
 
 _func_call_reg = re.compile("[()]")
 
+
 def _is_safe_str(s):
     if _func_call_reg.search(s) is None:
         return True
@@ -137,6 +139,7 @@ def _is_safe_str(s):
         return False
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
+
 
 def sage_getdef(name, base_name=None):
     import inspect
@@ -158,6 +161,7 @@ _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
 
 _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
+
 def _should_be_ignored(name, base_name):
     name_ob = ip.ev(name)
     if isinstance(base_name, str):
@@ -169,6 +173,7 @@ def _should_be_ignored(name, base_name):
         return None
     else:
         return True
+
 
 def short_doc(name, base_name=None):
     '''
@@ -193,6 +198,7 @@ def print_short_doc(name, base_name=None):
     except:
         pass
 
+
 def print_def(name):
     try:
         df = sage_getdef(name)
@@ -200,6 +206,7 @@ def print_def(name):
             print(df)
     except:
         pass
+
 
 def print_short_doc_and_def(name, base_name=None):
     try:
