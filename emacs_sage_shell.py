@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 import re
 import os
 from contextlib import contextmanager
@@ -24,15 +25,15 @@ def print_all_commands(interface):
         l = ip.ev('dir()')
         l = [a for a in l if _sage_const_regexp.match(a) is None]
         for a in l:
-            print a
+            print(a)
     else:
         intfc = ip.ev(interface)
         try:
             for a in intfc.trait_names(verbose=False):
-                print a
+                print(a)
         except:
             for a in intfc.trait_names():
-                print a
+                print(a)
 
 
 def print_all_attributes(varname):
@@ -40,20 +41,20 @@ def print_all_attributes(varname):
         var = ip.ev('eval(preparse("%s"))' % (varname))
         if varname in interfaces:
             for a in ip.ev('dir(%s)' % (varname)):
-                print a
+                print(a)
         elif hasattr(var, 'trait_names'):
             try:
                 for a in var.trait_names(verbose=False) + dir(var):
-                    print a
+                    print(a)
             except TypeError:
                 for a in var.trait_names() + dir(var):
-                    print a
+                    print(a)
             except:
                 for a in dir(var):
-                    print a
+                    print(a)
         else:
             for a in dir(var):
-                print a
+                print(a)
     except:
         pass
 
@@ -65,15 +66,15 @@ def source_line(obj):
 def print_source_file_and_line_num(obj):
     sf = sage.misc.sageinspect.sage_getfile(obj)
     sl = source_line(obj)
-    print sf, '*', sl
+    print(sf, '*', sl)
 
 
 def print_source_line(obj):
-    print source_line(obj)
+    print(source_line(obj))
 
 
 def print_sage_root():
-    print os.environ['SAGE_ROOT']
+    print(os.environ['SAGE_ROOT'])
 
 
 @contextmanager
@@ -123,9 +124,9 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
     outputs = [(k, show_func(format_func(v))) for k, v in outputs]
     inputs = ip.ev("_ih")
     for k, v in outputs:
-        print "In [{k}]: {i}".format(k=k, i=inputs[k])
-        print "Out[{k}]: {out}".format(k=k, out=v)
-        print delim
+        print("In [{k}]: {i}".format(k=k, i=inputs[k]))
+        print("Out[{k}]: {out}".format(k=k, out=v))
+        print(delim)
 
 _func_call_reg = re.compile("[()]")
 
@@ -188,7 +189,7 @@ def short_doc(name, base_name=None):
 
 def print_short_doc(name, base_name=None):
     try:
-        print short_doc(name, base_name=base_name)
+        print(short_doc(name, base_name=base_name))
     except:
         pass
 
@@ -196,7 +197,7 @@ def print_def(name):
     try:
         df = sage_getdef(name)
         if df is not None:
-            print df
+            print(df)
     except:
         pass
 
@@ -204,15 +205,15 @@ def print_short_doc_and_def(name, base_name=None):
     try:
         df = sage_getdef(name, base_name=base_name)
         if df is not None:
-            print df
+            print(df)
     except:
         df = None
 
     try:
         sd = short_doc(name, base_name=base_name)
         if df is not None and sd is not None:
-            print ""
+            print("")
         if sd is not None:
-            print sd
+            print(sd)
     except:
         pass
