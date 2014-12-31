@@ -54,12 +54,9 @@ The major mode `sage-mode` and the command `run-sage` are provided by
 [sage-mode](https://bitbucket.org/gvol/sage-mode/src)
 (the official `sage-mode`).
 To avoid name conflicts, `sage-shell-mode` uses redundant names.
-By putting the following lines in `~/.emacs.d/init.el`,
+By putting the following code in `~/.emacs.d/init.el`,
 ```lisp
-(dolist (c sage-shell:func-alias-alist)
-  (defalias (cdr c) (car c)))
-(dolist (c sage-shell:var-alias-alist)
-  (defvaralias (cdr c) (car c)))
+(sage-shell:define-alias)
 ```
 the following aliases will be defined.
 

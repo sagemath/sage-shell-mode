@@ -3081,8 +3081,9 @@ inserted in the process buffer before executing the command."
     (sage-shell:sage-mode-abbrev-table . sage-mode-abbrev-table)))
 
 ;;;###autoload
-(defun sage-shell:define-alias ()
-  "Define aliases as follows:
+(progn
+  (defun sage-shell:define-alias ()
+    "Define aliases as follows:
 | Original name                     | Alias                  |
 |-----------------------------------+------------------------|
 | sage-shell:sage-mode              | sage-mode              |
@@ -3094,11 +3095,11 @@ inserted in the process buffer before executing the command."
 | sage-shell:run-new-sage           | run-new-sage           |
 |-----------------------------------+------------------------|
 "
-  (interactive)
-  (dolist (c sage-shell:func-alias-alist)
-    (defalias (cdr c) (car c)))
-  (dolist (c sage-shell:var-alias-alist)
-    (defvaralias (cdr c) (car c))))
+    (interactive)
+    (dolist (c sage-shell:func-alias-alist)
+      (defalias (cdr c) (car c)))
+    (dolist (c sage-shell:var-alias-alist)
+      (defvaralias (cdr c) (car c)))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
