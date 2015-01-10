@@ -2083,13 +2083,13 @@ send current line to Sage process buffer."
                       (forward-line 1)
                       (and (looking-at (rx bol (1+ whitespace)
                                            (1+ num)))
-                           (prog1 (sage-shell:research-forward-w-bd
-                                   (rx bol (1+ "-") ">"
-                                       (1+ whitespace)
-                                       (group (1+ num)))
-                                   end)
-                             (setq linenum (string-to-number
-                                            (match-string 1)))))))
+                           (when (sage-shell:research-forward-w-bd
+                                  (rx bol (1+ "-") ">"
+                                      (1+ whitespace)
+                                      (group (1+ num)))
+                                  end)
+                             (setq linenum
+                                   (string-to-number (match-string 1)))))))
              do
              (sage-shell-help:file-type-make-button
               fbeg fend filename linenum cont nil))))
