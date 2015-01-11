@@ -149,6 +149,16 @@ Nil means it does not truncate the outputs."
   :type 'boolean
   :group 'sage-shell)
 
+(defcustom sage-shell-edit:display-function nil
+  "This variable handles how the process buffer will be
+displayed. If non-nil, this function will be called after sending
+the contents of a buffer, a region or a file to the Sage
+process."
+  :type '(choice (const :tag "default" nil)
+                 (const :tag "display-buffer" 'display-buffer)
+                 (const :tag "pop-to-buffer" 'pop-to-buffer))
+  :group 'sage-shell)
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -2794,7 +2804,6 @@ of current Sage process.")
          (t (setq sage-shell:process-buffer
                   (process-buffer (cdar proc-alist))))))))
 
-(defvar sage-shell-edit:display-function nil)
 (defvar sage-shell:original-mode-line-process nil)
 
 (defun sage-shell:change-mode-line-process (on)
@@ -3022,7 +3031,8 @@ inserted in the process buffer before executing the command."
 
 
 (cl-defun sage-shell-edit:load-file-base
-    (&key command file-name switch-p (display-function nil)
+    (&key command file-name switch-p
+          (display-function sage-shell-edit:display-function)
           (insert-command-p nil) (before-sentence nil))
   (sage-shell-edit:exec-command-base
    :command (or command (format "load('%s')" file-name))
