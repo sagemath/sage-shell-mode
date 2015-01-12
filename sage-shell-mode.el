@@ -2679,6 +2679,21 @@ of current Sage process.")
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
       (setq sage-shell:completion-sync-cached nil)))
 
+(defvar sage-shell:-python-builtins
+  '("__import__" "abs" "all" "and" "any" "apply" "as" "assert" "basestring"
+    "bin" "bool" "break" "buffer" "bytearray" "callable" "chr" "class"
+    "classmethod" "cmp" "coerce" "compile" "complex" "continue" "def" "del"
+    "delattr" "dict" "dir" "divmod" "elif" "else" "enumerate" "eval" "except"
+    "exec" "execfile" "file" "filter" "finally" "float" "for" "format" "from"
+    "frozenset" "getattr" "global" "globals" "hasattr" "hash" "help" "hex"
+    "id" "if" "import" "in" "input" "int" "intern" "is" "isinstance" "issubclass"
+    "iter" "lambda" "len" "list" "locals" "long" "map" "max" "memoryview" "min"
+    "next" "not" "object" "oct" "open" "or" "ord" "pass" "pow" "print" "print"
+    "property" "raise" "range" "raw_input" "reduce" "reload" "repr" "return"
+    "reversed" "round" "set" "setattr" "slice" "sorted" "staticmethod" "str"
+    "sum" "super" "try" "tuple" "type" "unichr" "unicode" "vars"
+    "while" "with" "xrange" "yield" "zip"))
+
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
   (let ((old-int (assoc-default 'interface sage-shell-cpl:info))
@@ -2707,8 +2722,9 @@ of current Sage process.")
                                         sage-shell:completion-candidate-regexp))
                                  sage-shell:completion-sync-cached))
                      (assoc-default var-name sage-shell:completion-sync-cached))
-                    (t (sage-shell-cpl:candidates-sync
-                        sage-shell:completion-candidate-regexp))))))))
+                    (t (append sage-shell:-python-builtins
+                               (sage-shell-cpl:candidates-sync
+                                sage-shell:completion-candidate-regexp)))))))))
 
 
 (defun sage-shell:symbol-beg ()
