@@ -627,8 +627,9 @@ returned from the function, otherwise, this returns it self. "
   "Interrupt the current subjob."
   (interactive)
   (comint-interrupt-subjob)
-  (setq comint-redirect-completed t
-        sage-shell:output-finished-p t))
+  ;; (setq comint-redirect-completed t
+  ;;       sage-shell:output-finished-p t)
+  )
 
 (sage-shell:define-keys sage-shell-mode-map
   "TAB" 'sage-shell-tab-command
