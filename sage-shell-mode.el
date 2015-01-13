@@ -2898,7 +2898,8 @@ inserted in the process buffer before executing the command."
                (sage-shell:send-input))
               (t (sage-shell:prepare-for-send)
                  (comint-send-string proc (concat command "\n"))))
-        (insert line)))))
+        (save-excursion
+          (insert line))))))
 
 (defvar sage-shell-edit:temp-file-base-name "sage_shell_mode_temp")
 (defvar sage-shell-edit:temp-directory
