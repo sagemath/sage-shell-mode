@@ -544,9 +544,30 @@ returned from the function, otherwise, this returns it self. "
     (&optional (buffer sage-shell:process-buffer))
   (buffer-local-value 'sage-shell:output-finished-p buffer))
 
+;;; Borrowed from Gallina's pyhon.el.
+(defvar sage-shell-mode-syntax-table
+  (let ((table (make-syntax-table)))
+    ;; Give punctuation syntax to ASCII that normally has symbol
+    ;; syntax or has word syntax and isn't a letter.
+    (let ((symbol (string-to-syntax "_"))
+          (sst (standard-syntax-table)))
+      (dotimes (i 128)
+        (unless (= i ?_)
+          (if (equal symbol (aref sst i))
+              (modify-syntax-entry i "." table)))))
+    (modify-syntax-entry ?$ "." table)
+    (modify-syntax-entry ?% "." table)
+    ;; exceptions
+    (modify-syntax-entry ?# "<" table)
+    (modify-syntax-entry ?\n ">" table)
+    (modify-syntax-entry ?' "\"" table)
+    (modify-syntax-entry ?` "$" table)
+    table))
+
 (define-derived-mode sage-shell-mode comint-mode
   "Sage-repl" "Execute Sage commands interactively."
 
+  (set-syntax-table sage-shell-mode-syntax-table)
   (set (make-local-variable 'completion-ignore-case)
        sage-shell:completion-ignore-case)
   (setq font-lock-defaults '(sage-shell:font-lock-keywords
@@ -599,27 +620,6 @@ returned from the function, otherwise, this returns it self. "
                (lambda () (sage-shell:after-init-function
                        sage-shell:process-buffer)))
   (sage-shell:pcomplete-setup))
-
-
-(setq sage-shell-mode-syntax-table
-      (let ((table (make-syntax-table)))
-        ;; Give punctuation syntax to ASCII that normally has symbol
-        ;; syntax or has word syntax and isn't a letter.
-        (let ((symbol (string-to-syntax "_"))
-              (sst (standard-syntax-table)))
-          (dotimes (i 128)
-            (unless (= i ?_)
-              (if (equal symbol (aref sst i))
-                  (modify-syntax-entry i "." table)))))
-        (modify-syntax-entry ?$ "." table)
-        (modify-syntax-entry ?% "." table)
-        ;; exceptions
-        (modify-syntax-entry ?# "<" table)
-        (modify-syntax-entry ?\n ">" table)
-        (modify-syntax-entry ?' "\"" table)
-        (modify-syntax-entry ?` "$" table)
-        (modify-syntax-entry ?_ "w" table)
-        table))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
