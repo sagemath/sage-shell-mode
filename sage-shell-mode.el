@@ -1216,18 +1216,7 @@ This ring remebers the parts.")
         (let ((output (concat (ring-ref sage-shell:output-ring 1)
                               (ring-ref sage-shell:output-ring 0))))
           (when (string-match sage-shell:output-finished-regexp output)
-            (setq sage-shell:output-finished-p t)
-            (let ((lbp (sage-shell:line-beginning-position)))
-              ;; Delete duplicate propmpt
-              (when (get-text-property lbp 'read-only)
-                (delete-region lbp comint-last-output-start))
-              ;; Highlight the prompt
-              (sage-shell:highlight-prompt lbp)
-
-              ;; create links in the output buffer.
-              (when sage-shell:make-error-link-p
-                (sage-shell:make-error-links comint-last-input-end (point)))
-              (sage-shell-pdb:comint-output-filter-function string))))
+            (setq sage-shell:output-finished-p t)))
 
         (add-text-properties comint-last-output-start
                              (process-mark process)
@@ -1246,6 +1235,18 @@ This ring remebers the parts.")
 
       (goto-char (process-mark process)) ; in case a filter moved it
 
+      (when sage-shell:output-finished-p
+        (let ((lbp (sage-shell:line-beginning-position)))
+          ;; Delete duplicate propmpt
+          (when (get-text-property lbp 'read-only)
+            (delete-region lbp comint-last-output-start))
+          ;; Highlight the prompt
+          (sage-shell:highlight-prompt lbp)
+
+          ;; create links in the output buffer.
+          (when sage-shell:make-error-link-p
+            (sage-shell:make-error-links comint-last-input-end (point)))
+          (sage-shell-pdb:comint-output-filter-function string)))
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
         (goto-char saved-point)))))
