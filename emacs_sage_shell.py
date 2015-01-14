@@ -41,24 +41,21 @@ def print_all_attributes(varname):
     try:
         var = ip.ev('eval(preparse("%s"))' % (varname))
         if varname in interfaces:
-            for a in ip.ev('dir(%s)' % (varname)):
-                print(a)
+            ls = ip.ev('dir(%s)' % (varname))
         elif hasattr(var, 'trait_names'):
             try:
-                for a in var.trait_names(verbose=False) + dir(var):
-                    print(a)
+                ls = var.trait_names(verbose=False) + dir(var)
             except TypeError:
-                for a in var.trait_names() + dir(var):
-                    print(a)
+                ls = var.trait_names() + dir(var)
             except:
-                for a in dir(var):
-                    print(a)
+                ls = dir(var)
         elif hasattr(var, '__file__'):
-            for a in list_submodules(var):
-                print(a)
+            ls = list_submodules(var)
         else:
-            for a in dir(var):
-                print(a)
+            ls = dir(var)
+
+        for a in ls:
+            print(a)
     except:
         pass
 
