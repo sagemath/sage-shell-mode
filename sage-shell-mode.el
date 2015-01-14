@@ -105,7 +105,7 @@
   :type 'boolean
   :group 'sage-shell)
 
-(defcustom sage-shell:completion-candidate-regexp (rx (1+ alnum))
+(defcustom sage-shell:completion-candidate-regexp (rx (1+ (or alnum "_")))
   "Regexp used for collect completions when completion-at-point is called."
   :type 'regexp
   :group 'sage-shell)
