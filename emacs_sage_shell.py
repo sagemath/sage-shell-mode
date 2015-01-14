@@ -53,11 +53,32 @@ def print_all_attributes(varname):
             except:
                 for a in dir(var):
                     print(a)
+        elif hasattr(var, '__file__'):
+            for a in list_submodules(var):
+                print(a)
         else:
             for a in dir(var):
                 print(a)
     except:
         pass
+
+
+
+def list_submodules(module):
+    drct = os.path.dirname(module.__file__)
+    def is_submodule(p):
+        if os.path.isfile(p):
+            return  os.path.splitext(p)[1] in [".py", ".pyc"]
+        elif os.path.isdir(p):
+            init_file = os.path.join(p, "__init__.py")
+            return os.path.exists(init_file)
+        else:
+            return False
+
+    l = [os.path.basename(f) for f in os.listdir(drct)
+         if is_submodule(os.path.join(drct, f))]
+    l = [os.path.splitext(p)[0] for p in l]
+    return sorted(list(set(l)))
 
 
 def source_line(obj):
