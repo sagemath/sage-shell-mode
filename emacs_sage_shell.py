@@ -50,7 +50,7 @@ def print_all_attributes(varname):
             except:
                 ls = dir(var)
         elif hasattr(var, '__file__'):
-            ls = list_submodules(var)
+            ls = list_submodules(var) + dir(var)
         else:
             ls = dir(var)
 
