@@ -18,36 +18,39 @@ There are extensions for this package,
 [anything-sage](https://github.com/stakemori/anything-sage).
 
 
-## Installation
+## Installation and Setup
 You can install `sage-shell-mode` from
-[MELPA](https://github.com/milkypostman/melpa.git) by package.el
-(`M-x package-install sage-shell-mode`).
+[MELPA](https://github.com/milkypostman/melpa.git).
 
-If `M-: (executable-find "sage")` is non-nil, you do not need the setting below.
+1. See http://melpa.org/#/getting-started if you do not have a
+   configuration for MELPA.
 
-If `M-: (executable-find "sage")` is nil,
-add the following line to `~/.emacs.d/init.el`.
+2. Install `sage-shell-mode` by `M-x package-install RET
+   sage-shell-mode RET`.
+
+3. Evaluate the S-expression `(executable-find "sage")` by `M-:
+(executable-find "sage") RET`.
+   If the return value is a string, you do not need the following setup.
+
+   If the return value is `nil`, then
+   add the following line to `~/.emacs.d/init.el`.
 ```lisp
 (setq sage-shell:sage-root "/path/to/sage/root_directory")
 ```
-And replace `/path/to/sage_root_directory` by the root directory of Sage,
-i.e. `$SAGE_ROOT`.
-
-If you do not know the root directory of Sage,
-evaluate the following code in Sage:
-
+   And replace `/path/to/sage_root_directory` by the root directory of Sage,
+   i.e. `$SAGE_ROOT`.
+   If you do not know the root directory of Sage,
+   evaluate the following code in Sage:
 ```python
 import os; print os.environ["SAGE_ROOT"]
 ```
-
-Alternatively, instead of setting `sage-shell:sage-root`,
-you may set the variable `sage-shell:sage-executable`.
-
+   Alternatively, instead of setting `sage-shell:sage-root`,
+   you may set the variable `sage-shell:sage-executable`.
 ```lisp
 (setq sage-shell:sage-executable "/path/to/sage/executable")
 ```
-Here `"/path/to/sage/executable"` is the path of the executable file of Sage.
-This may be a symbolic link.
+   Here `"/path/to/sage/executable"` is the path of the executable file of Sage.
+   This may be a symbolic link.
 
 ## Aliases
 The major mode `sage-mode` and the command `run-sage` are provided by
