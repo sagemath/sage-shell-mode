@@ -22,8 +22,8 @@ There are extensions for this package,
 You can install `sage-shell-mode` from
 [MELPA](https://github.com/milkypostman/melpa.git).
 
-  1. See http://melpa.org/#/getting-started if you do not have a
-  configuration for MELPA.
+  1. Set up the MELPA repository (see http://melpa.org/#/getting-started)
+  if you do not have a configuration for MELPA.
 
   2. Install `sage-shell-mode` by `M-x package-install RET
   sage-shell-mode RET`.
