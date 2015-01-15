@@ -62,20 +62,26 @@ def print_all_attributes(varname):
 
 
 def list_submodules(module):
-    drct = os.path.dirname(module.__file__)
-    def is_submodule(p):
-        if os.path.isfile(p):
-            return  os.path.splitext(p)[1] in [".py", ".pyc"]
-        elif os.path.isdir(p):
-            init_file = os.path.join(p, "__init__.py")
-            return os.path.exists(init_file)
-        else:
-            return False
+    fl = module.__file__
+    if os.path.splitext(os.path.basename(fl))[0] != "__init__":
+        return []
+    try:
+        drct = os.path.dirname(fl)
+        def is_submodule(p):
+            if os.path.isfile(p):
+                return  os.path.splitext(p)[1] in [".py", ".pyc"]
+            elif os.path.isdir(p):
+                init_file = os.path.join(p, "__init__.py")
+                return os.path.exists(init_file)
+            else:
+                return False
 
-    l = [os.path.basename(f) for f in os.listdir(drct)
-         if is_submodule(os.path.join(drct, f))]
-    l = [os.path.splitext(p)[0] for p in l]
-    return sorted(list(set(l)))
+        l = [os.path.basename(f) for f in os.listdir(drct)
+             if is_submodule(os.path.join(drct, f))]
+        l = [os.path.splitext(p)[0] for p in l]
+        return sorted(list(set(l)))
+    except:
+        return []
 
 
 def source_line(obj):
