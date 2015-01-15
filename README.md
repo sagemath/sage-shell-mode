@@ -34,27 +34,21 @@ You can install `sage-shell-mode` from
 
   If the return value is `nil`, then
   add the following line to `~/.emacs.d/init.el`.
-
   ```el
   (setq sage-shell:sage-root "/path/to/sage/root_directory")
   ```
-
   And replace `/path/to/sage_root_directory` by the root directory of Sage,
   i.e. `$SAGE_ROOT`.
   If you do not know the root directory of Sage,
   evaluate the following code in Sage:
-
   ```python
   import os; print os.environ["SAGE_ROOT"]
   ```
-
   Alternatively, instead of setting `sage-shell:sage-root`,
   you may set the variable `sage-shell:sage-executable`.
-
   ```el
   (setq sage-shell:sage-executable "/path/to/sage/executable")
   ```
-
   Here `"/path/to/sage/executable"` is the path of the executable file of Sage.
   This may be a symbolic link.
 
