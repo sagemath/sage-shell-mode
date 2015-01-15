@@ -26,7 +26,7 @@ You can install `sage-shell-mode` from
 If `M-: (executable-find "sage")` is non-nil, you do not need the setting below.
 
 If `M-: (executable-find "sage")` is nil,
-put the following line to `~/.emacs.d/init.el`.
+add the following line to `~/.emacs.d/init.el`.
 ```lisp
 (setq sage-shell:sage-root "/path/to/sage/root_directory")
 ```
