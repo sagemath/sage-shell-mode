@@ -1,6 +1,6 @@
 # sage-shell-mode
 
-[![melpa badge][melpa-badge]][melpa-link] [![melpa stable badge][melpa-stable-badge]][melpa-stable-link]
+[![MELPA](http://melpa.org/packages/sage-shell-mode-badge.svg)](http://melpa.org/#/sage-shell-mode) [![MELPA Stable](http://stable.melpa.org/packages/sage-shell-mode-badge.svg)](http://stable.melpa.org/#/sage-shell-mode)
 
 ## Overview
 
@@ -276,7 +276,3 @@ To use `flycheck-mode` in a `sage-shell:sage-mode` buffer and a
 
 Licensed under the [GPL Version 3][GPL]
 [GPL]: http://www.gnu.org/licenses/gpl.html
-[melpa-link]: http://melpa.org/#/sage-shell-mode
-[melpa-stable-link]: http://stable.melpa.org/#/sage-shell-mode
-[melpa-badge]: http://melpa.org/packages/sage-shell-mode-badge.svg
-[melpa-stable-badge]: http://stable.melpa.org/packages/sage-shell-mode-badge.svg
