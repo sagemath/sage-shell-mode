@@ -22,18 +22,16 @@ There are extensions for this package,
 You can install `sage-shell-mode` from
 [MELPA](https://github.com/milkypostman/melpa.git).
 
-  1. Set up the MELPA repository (see http://melpa.org/#/getting-started)
-  if you do not have a configuration for MELPA.
+  1. See http://melpa.org/#/getting-started if you do not have a
+  configuration for MELPA.
 
   2. Install `sage-shell-mode` by `M-x package-install RET
   sage-shell-mode RET`.
 
-  3. Evaluate the S-expression `(executable-find "sage")` by `M-:
-  (executable-find "sage") RET`.
-  If the return value is a string, you do not need the following setup.
+  3. You can run Sage inside Emacs by `M-x sage-shell:run-sage` if
+  Emacs can find the executable file of Sage.
 
-  If the return value is `nil`, then
-  add the following line to `~/.emacs.d/init.el`.
+  If Emacs cannot find it, put the following line to `~/.emacs.d/init.el`.
   ```el
   (setq sage-shell:sage-root "/path/to/sage/root_directory")
   ```
