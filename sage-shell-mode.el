@@ -1646,7 +1646,7 @@ function does not highlight the input."
     (setq sage-shell:output-finished-p nil))
 
 (defun sage-shell-update-sage-commands-p (line)
-  (string-match (rx "from" (1+ nonl) "import") line))
+  (string-match (rx symbol-start (or "import" "reload") symbol-end) line))
 
 (defvar sage-shell:clear-commands-regexp
   (rx bol "clear" (zero-or-more space) eol))
@@ -1686,6 +1686,7 @@ function does not highlight the input."
       ;; then create completion buffer
       (sage-shell:awhen (sage-shell-cpl:switch-to-another-interface-p line)
         (sage-shell-cpl:completion-init it nil t))
+
 
       ;; if current line is ***? and current interface is sage then
       ;; show help or find-file-read-only source file.
