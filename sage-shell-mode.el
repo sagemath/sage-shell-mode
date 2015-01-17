@@ -1736,6 +1736,21 @@ function does not highlight the input."
                                  eol) line)
                (cd "~")))
 
+        ;; When assignment is performed, add vars to the cached command list.
+        (let ((regexp (rx bol
+                          (group
+                           (0+ (and symbol-start
+                                    (1+ (or "_" alnum))
+                                    (and (0+ whitespace) "," (0+ whitespace))))
+                           (and symbol-start (1+ (or "_" alnum)) symbol-end))
+                          (0+ whitespace) "=" symbol-start)))
+          (when (string-match regexp line)
+            (let ((str-s (split-string (match-string 1 line)
+                                       (rx (1+ (or "," " "))))))
+              (sage-shell-cpl:set-cmd-lst
+               "sage"
+               (append str-s (sage-shell-cpl:get-cmd-lst "sage"))))))
+
         (when (string-match sage-shell:clear-commands-regexp line)
           (sage-shell:clear-current-buffer))))))
 
