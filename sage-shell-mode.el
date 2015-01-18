@@ -796,8 +796,7 @@ When sync is nill this return a lambda function to get the result."
               (concat s1 "/"))))
     (setq sage-shell:check--sage-root-ok t))
   (when sage-shell-sagetex:add-to-texinputs-p
-    (sage-shell-sagetex:add-to-texinputs))
-  (sage-shell:update-sage-commands))
+    (sage-shell-sagetex:add-to-texinputs)))
 
 (defun sage-shell:check--sage-root ()
   (or sage-shell:check--sage-root-ok
@@ -1737,35 +1736,35 @@ function does not highlight the input."
                                  eol) line)
                (cd "~")))
 
-        (let ((regexp-asg
-               (rx bol
-                   (group
-                    (0+ (and symbol-start
-                             (1+ (or "_" alnum))
-                             (and (0+ whitespace) "," (0+ whitespace))))
-                    (and symbol-start (1+ (or "_" alnum)) symbol-end))
-                   (0+ whitespace) "=" (0+ whitespace)
-                   symbol-start))
-              (regexp-def-or-class
-               (rx bol
-                   symbol-start
-                   (or "def" "class")
-                   symbol-end
-                   (1+ whitespace)
-                   (group (1+ (or "_" alnum))))))
-          (cond ((string-match regexp-asg line)
-                 ;; When assignment is performed, add vars to the cached command
-                 ;; list.
-                 (let ((str-s (split-string (match-string 1 line)
-                                            (rx (1+ (or "," " "))))))
-                   (sage-shell-cpl:set-cmd-lst
-                    "sage"
-                    (append str-s (sage-shell-cpl:get-cmd-lst "sage")))))
-                ((string-match regexp-def-or-class line)
-                 (let ((name (match-string 1 line)))
-                   (sage-shell-cpl:set-cmd-lst
-                    "sage"
-                    (cons name (sage-shell-cpl:get-cmd-lst "sage")))))))
+        ;; (let ((regexp-asg
+        ;;        (rx bol
+        ;;            (group
+        ;;             (0+ (and symbol-start
+        ;;                      (1+ (or "_" alnum))
+        ;;                      (and (0+ whitespace) "," (0+ whitespace))))
+        ;;             (and symbol-start (1+ (or "_" alnum)) symbol-end))
+        ;;            (0+ whitespace) "=" (0+ whitespace)
+        ;;            symbol-start))
+        ;;       (regexp-def-or-class
+        ;;        (rx bol
+        ;;            symbol-start
+        ;;            (or "def" "class")
+        ;;            symbol-end
+        ;;            (1+ whitespace)
+        ;;            (group (1+ (or "_" alnum))))))
+        ;;   (cond ((string-match regexp-asg line)
+        ;;          ;; When assignment is performed, add vars to the cached command
+        ;;          ;; list.
+        ;;          (let ((str-s (split-string (match-string 1 line)
+        ;;                                     (rx (1+ (or "," " "))))))
+        ;;            (sage-shell-cpl:set-cmd-lst
+        ;;             "sage"
+        ;;             (append str-s (sage-shell-cpl:get-cmd-lst "sage")))))
+        ;;         ((string-match regexp-def-or-class line)
+        ;;          (let ((name (match-string 1 line)))
+        ;;            (sage-shell-cpl:set-cmd-lst
+        ;;             "sage"
+        ;;             (cons name (sage-shell-cpl:get-cmd-lst "sage")))))))
 
         (when (string-match sage-shell:clear-commands-regexp line)
           (sage-shell:clear-current-buffer))))))
