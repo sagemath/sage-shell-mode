@@ -888,9 +888,14 @@ argument."
 (defun sage-shell:redirect-finished-p ()
   (buffer-local-value 'comint-redirect-completed sage-shell:process-buffer))
 
+(defvar sage-shell-cpl:-cands-in-current-session nil
+  "A cached list of user defined variables in the Sage process buffer.")
+(make-variable-buffer-local 'sage-shell-cpl:-cands-in-current-session)
+
 (defun sage-shell:clear-command-cache ()
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-cpl:set-cmd-lst "sage" nil)
+    (setq sage-shell-cpl:-cands-in-current-session nil)
     (sage-shell:clear-completion-sync-cached)))
 
 (defun sage-shell:update-sage-commands ()
@@ -1736,38 +1741,40 @@ function does not highlight the input."
                                  eol) line)
                (cd "~")))
 
-        ;; (let ((regexp-asg
-        ;;        (rx bol
-        ;;            (group
-        ;;             (0+ (and symbol-start
-        ;;                      (1+ (or "_" alnum))
-        ;;                      (and (0+ whitespace) "," (0+ whitespace))))
-        ;;             (and symbol-start (1+ (or "_" alnum)) symbol-end))
-        ;;            (0+ whitespace) "=" (0+ whitespace)
-        ;;            symbol-start))
-        ;;       (regexp-def-or-class
-        ;;        (rx bol
-        ;;            symbol-start
-        ;;            (or "def" "class")
-        ;;            symbol-end
-        ;;            (1+ whitespace)
-        ;;            (group (1+ (or "_" alnum))))))
-        ;;   (cond ((string-match regexp-asg line)
-        ;;          ;; When assignment is performed, add vars to the cached command
-        ;;          ;; list.
-        ;;          (let ((str-s (split-string (match-string 1 line)
-        ;;                                     (rx (1+ (or "," " "))))))
-        ;;            (sage-shell-cpl:set-cmd-lst
-        ;;             "sage"
-        ;;             (append str-s (sage-shell-cpl:get-cmd-lst "sage")))))
-        ;;         ((string-match regexp-def-or-class line)
-        ;;          (let ((name (match-string 1 line)))
-        ;;            (sage-shell-cpl:set-cmd-lst
-        ;;             "sage"
-        ;;             (cons name (sage-shell-cpl:get-cmd-lst "sage")))))))
-
+        (sage-shell-cpl:-add-to-cands-in-cur-session line)
         (when (string-match sage-shell:clear-commands-regexp line)
           (sage-shell:clear-current-buffer))))))
+
+(defun sage-shell-cpl:-add-to-cands-in-cur-session (line)
+  (let ((regexp-asg
+         (rx bol
+             (group
+              (0+ (and symbol-start
+                       (1+ (or "_" alnum))
+                       (and (0+ whitespace) "," (0+ whitespace))))
+              (and symbol-start (1+ (or "_" alnum)) symbol-end))
+             (0+ whitespace) "=" (0+ whitespace)
+             symbol-start))
+        (regexp-def-or-class
+         (rx bol
+             symbol-start
+             (or "def" "class")
+             symbol-end
+             (1+ whitespace)
+             (group (1+ (or "_" alnum))))))
+
+    (cond ((string-match regexp-asg line)
+           ;; When assignment is performed, add vars to the cached command
+           ;; list.
+           (let ((str-s (split-string (match-string 1 line)
+                                      (rx (1+ (or "," " "))))))
+             (setq sage-shell-cpl:-cands-in-current-session
+                   (append str-s
+                           sage-shell-cpl:-cands-in-current-session))))
+          ((string-match regexp-def-or-class line)
+           (let ((name (match-string 1 line)))
+             (setq sage-shell-cpl:-cands-in-current-session
+                   (cons name sage-shell-cpl:-cands-in-current-session)))))))
 
 
 (defun sage-shell:send-blank-line ()
@@ -2755,6 +2762,7 @@ of current Sage process.")
                                  sage-shell:completion-sync-cached))
                      (assoc-default var-name sage-shell:completion-sync-cached))
                     (t (append sage-shell:-python-builtins
+                               sage-shell-cpl:-cands-in-current-session
                                (sage-shell-cpl:candidates-sync
                                 sage-shell:completion-candidate-regexp)))))))))
 
