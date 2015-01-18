@@ -796,7 +796,8 @@ When sync is nill this return a lambda function to get the result."
               (concat s1 "/"))))
     (setq sage-shell:check--sage-root-ok t))
   (when sage-shell-sagetex:add-to-texinputs-p
-    (sage-shell-sagetex:add-to-texinputs)))
+    (sage-shell-sagetex:add-to-texinputs))
+  (sage-shell:update-sage-commands))
 
 (defun sage-shell:check--sage-root ()
   (or sage-shell:check--sage-root-ok
