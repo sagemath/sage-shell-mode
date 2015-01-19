@@ -655,7 +655,9 @@ returned from the function, otherwise, this returns it self. "
 Sends an EOF only if point is at the end of the buffer and there is no input. "
   (interactive "p")
   (let ((proc (get-buffer-process (current-buffer))))
-    (if (and proc (= (point) (marker-position (process-mark proc))))
+    (if (and proc (= (point) (marker-position (process-mark proc)))
+             (sage-shell:output-finished-p)
+             (sage-shell:redirect-finished-p))
         (sage-shell:send-eof)
       (delete-char arg))))
 
