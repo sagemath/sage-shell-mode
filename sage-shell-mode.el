@@ -2944,9 +2944,7 @@ inserted in the process buffer before executing the command."
 
 (defvar sage-shell-edit:temp-file-base-name "sage_shell_mode_temp")
 (defvar sage-shell-edit:temp-directory
-  (expand-file-name "sage_shell_mode" temporary-file-directory))
-(unless (file-exists-p sage-shell-edit:temp-directory)
-  (make-directory sage-shell-edit:temp-directory))
+  (make-temp-file "sage_shell_mode" 'directory))
 
 (defun sage-shell-edit:temp-file (ext)
   (expand-file-name
