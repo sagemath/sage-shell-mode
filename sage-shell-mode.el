@@ -2943,10 +2943,19 @@ inserted in the process buffer before executing the command."
           (insert line))))))
 
 (defvar sage-shell-edit:temp-file-base-name "sage_shell_mode_temp")
-(defvar sage-shell-edit:temp-directory
+
+(defun sage-shell-edit:make-temp-dir ()
   (make-temp-file "sage_shell_mode" 'directory))
 
+(defvar sage-shell-edit:temp-directory
+  (sage-shell-edit:make-temp-dir))
+
 (defun sage-shell-edit:temp-file (ext)
+  ;; In case temp dir is removed,
+  (unless (and (file-exists-p sage-shell-edit:temp-directory)
+               (file-writable-p sage-shell-edit:temp-directory))
+    (setq sage-shell-edit:temp-directory
+          (sage-shell-edit:make-temp-dir)))
   (expand-file-name
    (concat sage-shell-edit:temp-file-base-name "." ext)
    sage-shell-edit:temp-directory))
