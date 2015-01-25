@@ -2952,7 +2952,8 @@ inserted in the process buffer before executing the command."
 (defun sage-shell-edit:delete-temp-dir ()
   (when (and (stringp sage-shell-edit:temp-directory)
              (string= (file-name-as-directory temporary-file-directory)
-                      (file-name-directory sage-shell-edit:temp-directory)))
+                      (file-name-directory sage-shell-edit:temp-directory))
+             (file-exists-p sage-shell-edit:temp-directory))
     (delete-directory sage-shell-edit:temp-directory t)))
 
 (defvar sage-shell:delete-temp-dir-when-kill-emacs t)
