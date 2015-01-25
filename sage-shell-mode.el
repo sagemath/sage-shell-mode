@@ -2947,12 +2947,12 @@ inserted in the process buffer before executing the command."
 (defun sage-shell-edit:make-temp-dir ()
   (make-temp-file "sage_shell_mode" 'directory))
 
-(defvar sage-shell-edit:temp-directory
-  (sage-shell-edit:make-temp-dir))
+(defvar sage-shell-edit:temp-directory nil)
 
 (defun sage-shell-edit:delete-temp-dir ()
-  (when (string= temporary-file-directory
-                 (file-name-directory sage-shell-edit:temp-directory))
+  (when (and (stringp sage-shell-edit:temp-directory)
+             (string= temporary-file-directory
+                      (file-name-directory sage-shell-edit:temp-directory)))
     (delete-directory sage-shell-edit:temp-directory t)))
 
 (defvar sage-shell:delete-temp-dir-when-kill-emacs t)
@@ -2962,7 +2962,8 @@ inserted in the process buffer before executing the command."
 
 (defun sage-shell-edit:temp-file (ext)
   ;; In case temp dir is removed,
-  (unless (and (file-exists-p sage-shell-edit:temp-directory)
+  (unless (and (stringp sage-shell-edit:temp-directory)
+               (file-exists-p sage-shell-edit:temp-directory)
                (file-writable-p sage-shell-edit:temp-directory))
     (setq sage-shell-edit:temp-directory
           (sage-shell-edit:make-temp-dir)))
