@@ -907,19 +907,7 @@ argument."
     (sage-shell-cpl:candidates)
     (sage-shell-cpl:get-cmd-lst "sage")))
 
-(defun sage-shell:load-file-base (command)
-  (sage-shell-edit:exec-command-base
-   :command command
-   :switch-p nil
-   :display-function nil
-   :pre-message "Loading the file to the Sage process..."
-   :post-message "Loading the file to the Sage process... Done.")
-  (sage-shell:clear-command-cache))
-
-(defun sage-shell:load-file (filename)
-  (interactive (list (sage-shell-edit:read-script-file)))
-  (sage-shell:load-file-base (format "load('%s')" filename)))
-
+(defalias 'sage-shell:load-file 'sage-shell-edit:load-file)
 (defalias 'sage-shell:attach-file 'sage-shell-edit:attach-file)
 
 (defun sage-shell:send-magic-cmd-base (magic-command objname &optional async)
