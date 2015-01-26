@@ -1175,6 +1175,10 @@ This ring remebers the parts.")
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
 
+(defvar sage-shell:attach-file-reloading-regexp
+  (rx bol "### reloading attached file " (1+ nonl) "modified at "
+      (1+ (or num ":"))  " ###"))
+
 (defun sage-shell:output-filter-no-rdct (process string)
   ;; Insert STRING
   (let ((inhibit-read-only t)
@@ -1209,7 +1213,10 @@ This ring remebers the parts.")
         (let ((output (concat (ring-ref sage-shell:output-ring 1)
                               (ring-ref sage-shell:output-ring 0))))
           (when (string-match sage-shell:output-finished-regexp output)
-            (setq sage-shell:output-finished-p t)))
+            (setq sage-shell:output-finished-p t))
+          (when (string-match sage-shell:attach-file-reloading-regexp string)
+            (sage-shell:clear-command-cache)
+            (sage-shell:output-filter process "sage: ")))
 
         (add-text-properties comint-last-output-start
                              (process-mark process)
