@@ -3112,13 +3112,16 @@ inserted in the process buffer before executing the command."
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
           (display-function sage-shell-edit:display-function)
-          (insert-command-p nil) (before-sentence nil))
+          (insert-command-p nil) (before-sentence nil)
+          (gerund "Loading"))
   (sage-shell-edit:exec-command-base
    :command (or command (format "load('%s')" file-name))
    :switch-p switch-p
    :display-function display-function
-   :pre-message "Loading the file to the Sage process..."
-   :post-message "Loading the file to the Sage process... Done."
+   :pre-message (format "%s %s to the Sage process..."
+                        gerund (abbreviate-file-name file-name))
+   :post-message (format "%s %s to the Sage process... Done."
+                         gerund (abbreviate-file-name file-name))
    :insert-command-p insert-command-p
    :before-sentence before-sentence)
   (sage-shell:clear-command-cache))
@@ -3127,19 +3130,21 @@ inserted in the process buffer before executing the command."
   "Load a Sage file FILE-NAME to the Sage process."
   (interactive (list (sage-shell-edit:read-script-file)))
   (sage-shell-edit:load-file-base
-   :command (format "load('%s')" file-name)))
+   :file-name file-name))
 
 (defun sage-shell-edit:attach-file (file-name)
   "Attach a Sage file FILE-NAME to the Sage process."
   (interactive (list (sage-shell-edit:read-script-file)))
   (sage-shell-edit:load-file-base
-   :command (format "attach('%s')" file-name)))
+   :command (format "attach('%s')" file-name)
+   :file-name file-name
+   :gerund "Attaching"))
 
 (defun sage-shell-edit:load-file-and-go (file-name)
   "Load a Sage file FILE-NAME to the Sage process."
   (interactive (list (sage-shell-edit:read-script-file)))
   (sage-shell-edit:load-file-base
-   :command (format "load('%s')" file-name)
+   :file-name file-name
    :switch-p t))
 
 (defun sage-shell-edit:load-current-file ()
@@ -3377,6 +3382,7 @@ Argument OUTPUT is a string with the output from the comint process."
     (sage-shell-edit:load-file-base
      :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
                       dflt)
+     :file-name dflt
      :before-sentence "# ")))
 
 ;;;###autoload
