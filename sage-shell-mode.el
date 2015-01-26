@@ -920,9 +920,7 @@ argument."
   (interactive (list (sage-shell-edit:read-script-file)))
   (sage-shell:load-file-base (format "load('%s')" filename)))
 
-(defun sage-shell:attach-file (filename)
-  (interactive (list (sage-shell-edit:read-script-file)))
-  (sage-shell:load-file-base (format "attach('%s')" filename)))
+(defalias 'sage-shell:attach-file 'sage-shell-edit:attach-file)
 
 (defun sage-shell:send-magic-cmd-base (magic-command objname &optional async)
   "If `async' is nil, return the result as string, otherwise
