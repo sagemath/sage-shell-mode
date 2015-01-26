@@ -3094,8 +3094,10 @@ inserted in the process buffer before executing the command."
    nil
    nil
    (lambda (name)
-     (string-match
-      (concat "\\." (regexp-opt sage-shell:file-extensions) "$") name))))
+     (or
+      (file-directory-p name)
+      (string-match
+       (concat "\\." (regexp-opt sage-shell:file-extensions) "$") name)))))
 
 (defun sage-shell-edit:send-line* ()
   "Like sage-shell-edit:send-line, but insert the line in the process buffer."
