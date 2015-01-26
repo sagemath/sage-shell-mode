@@ -894,11 +894,15 @@ argument."
   "A cached list of user defined variables in the Sage process buffer.")
 (make-variable-buffer-local 'sage-shell-cpl:-cands-in-current-session)
 
+(defvar sage-shell:clear-command-cache-hook nil
+  "A hook that runs each time after sage-shell:clear-command-cache is called.")
+
 (defun sage-shell:clear-command-cache ()
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-cpl:set-cmd-lst "sage" nil)
     (setq sage-shell-cpl:-cands-in-current-session nil)
-    (sage-shell:clear-completion-sync-cached)))
+    (sage-shell:clear-completion-sync-cached)
+    (run-hooks 'sage-shell:clear-command-cache-hook)))
 
 (defun sage-shell:update-sage-commands ()
   (with-current-buffer sage-shell:process-buffer
