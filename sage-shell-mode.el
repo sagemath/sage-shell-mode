@@ -1653,7 +1653,8 @@ function does not highlight the input."
     (setq sage-shell:output-finished-p nil))
 
 (defun sage-shell-update-sage-commands-p (line)
-  (string-match (rx symbol-start (or "import" "reload") symbol-end) line))
+  (string-match (rx symbol-start (or "import" "reload" "attach" "load")
+                    symbol-end) line))
 
 (defvar sage-shell:clear-commands-regexp
   (rx bol "clear" (zero-or-more space) eol))
