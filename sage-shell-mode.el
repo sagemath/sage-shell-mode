@@ -3118,9 +3118,9 @@ inserted in the process buffer before executing the command."
    :switch-p switch-p
    :display-function display-function
    :pre-message (format "%s %s to the Sage process..."
-                        gerund (abbreviate-file-name file-name))
+                        gerund (file-name-nondirectory file-name))
    :post-message (format "%s %s to the Sage process... Done."
-                         gerund (abbreviate-file-name file-name))
+                         gerund (file-name-nondirectory file-name))
    :insert-command-p insert-command-p
    :before-sentence before-sentence)
   (sage-shell:clear-command-cache))
