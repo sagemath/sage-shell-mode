@@ -2766,6 +2766,36 @@ of current Sage process.")
                                (sage-shell-cpl:candidates-sync
                                 sage-shell:completion-candidate-regexp)))))))))
 
+(defun sage-shell:file-name-beg ()
+  (save-excursion
+    (skip-chars-backward "[:alpha:][:nonascii:]-.,~^#$+=0-9_/")
+    (point)))
+
+(defun sage-shell:-completion-fname-conv (f parent parent1)
+  (let ((f (if (file-directory-p (expand-file-name parent))
+               (concat f "/")
+             f)))
+    (concat parent1 f)))
+
+(defun sage-shell:-file-names-completion-at-pt (beg)
+  (let* ((fname-raw (buffer-substring-no-properties beg (point)))
+         (fname (if (file-name-directory fname-raw)
+                    fname-raw
+                  (expand-file-name fname-raw default-directory)))
+         (parent (file-name-directory fname))
+         (parent1 (or (file-name-directory fname-raw) ""))
+         (no-dir (file-name-nondirectory fname)))
+    (when (and parent (file-exists-p parent))
+      (cl-loop for f in (directory-files
+                         parent nil (regexp-opt (list no-dir)))
+               collect (sage-shell:-completion-fname-conv f parent parent1)))))
+
+(defun sage-shell:file-name-completion-at-point-func ()
+  "Used for completion of file names."
+  (let* ((beg (sage-shell:file-name-beg))
+         (cands (sage-shell:-file-names-completion-at-pt beg)))
+    (when cands
+      (list beg (point) cands))))
 
 (defun sage-shell:symbol-beg ()
   (save-excursion
