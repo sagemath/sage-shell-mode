@@ -2527,7 +2527,9 @@ is the buffer for the candidates of attribute."
          (other-interface-p
           (sage-shell:in interface sage-shell-interfaces:other-interfaces)))
     ;; when current line is not in a block and current interface is 'sage'
-    (when (sage-shell:at-top-level-and-in-sage-p)
+    (when (and (sage-shell:at-top-level-and-in-sage-p)
+               (sage-shell:redirect-finished-p)
+               (sage-shell:output-finished-p))
       (cond
        ;; when 'verbose' and 'interface' is installed and cache file
        ;; does not exit
