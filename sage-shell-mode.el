@@ -2368,31 +2368,26 @@ send current line to Sage process buffer."
 
 
 ;;; sage-shell-cpl
-(defvar sage-shell-cpl:info
+(defvar sage-shell-cpl:current-state
   (list
    ;; name of the interface (string)
    (cons 'interface nil)
    ;; nil or the point of the beggining of completion
    (cons 'prefix nil)
    ;; nil or the base name of the variable name
-   (cons 'var-base-name nil)
-   ;; last completed object name, for example NumberField or
-   ;; K.class_number, this is used for popup help.
-   (cons 'last-cmpl-obj nil)
-   ;; last completion time
-   (cons 'last-cmpl-time nil)))
+   (cons 'var-base-name nil)))
 
-(make-variable-buffer-local 'sage-shell-cpl:info)
+(make-variable-buffer-local 'sage-shell-cpl:current-state)
 
 (defun sage-shell-cpl:get (attribute)
-  (sage-shell:aif (assoc attribute sage-shell-cpl:info)
+  (sage-shell:aif (assoc attribute sage-shell-cpl:current-state)
       (cdr-safe it)
     (error (format "No such attribute %S" attribute))))
 
 (defun sage-shell-cpl:set (&rest attributes-values)
   (cl-loop for (att val) in (sage-shell:group attributes-values)
         do
-        (sage-shell:aif (assoc att sage-shell-cpl:info)
+        (sage-shell:aif (assoc att sage-shell-cpl:current-state)
             (setcdr it val)
           (error (format "No such attribute %S" att)))
         finally return val))
@@ -2591,23 +2586,6 @@ is the buffer for the candidates of attribute."
                 (- (cadr (current-time)) time)
                 (sage-shell-interfaces:get "magma" 'cache-file))))))))))
 
-(defvar sage-shell-cpl:doc-mssg-time-dur 10)
-
-;; (defun sage-shell-cpl:show-doc-message-p ()
-;;   (let ((objname (sage-shell-cpl:get 'last-cmpl-obj))
-;;         (last-time (sage-shell-cpl:get 'last-cmpl-time)))
-;;     (and (eq major-mode 'sage-shell-mode)
-;;          (get-buffer-process (current-buffer))
-;;          (or
-;;           ;; if 'objname pt ...'
-;;           (looking-back
-;;            (concat (regexp-opt (list objname)) " *"))
-;;           ;; if 'objname (... pt ...' or 'objname (... pt ...)'
-;;           (sage-shell:in-this-func-p objname))
-;;          (< (nth 1 (current-time))
-;;             (+ sage-shell-cpl:doc-mssg-time-dur
-;;                last-time)))))
-
 (defun sage-shell-cpl:switch-to-another-interface-p (line)
   "Returns non nil when LINE contains %gp, gp.console(), gp.interact(), ..."
   (cl-loop for itf in sage-shell-interfaces:other-interfaces
@@ -2735,13 +2713,13 @@ of current Sage process.")
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
-  (let ((old-int (assoc-default 'interface sage-shell-cpl:info))
-        (old-pref (assoc-default 'prefix sage-shell-cpl:info))
-        (old-name (assoc-default 'var-base-name sage-shell-cpl:info))
+  (let ((old-int (assoc-default 'interface sage-shell-cpl:current-state))
+        (old-pref (assoc-default 'prefix sage-shell-cpl:current-state))
+        (old-name (assoc-default 'var-base-name sage-shell-cpl:current-state))
         (wab (sage-shell:word-at-pt-beg))
         (var-name (assoc-default 'var-base-name
                                  (progn (sage-shell-cpl:prefix)
-                                        sage-shell-cpl:info))))
+                                        sage-shell-cpl:current-state))))
     (cond ((and
             old-int (string= old-int "sage") old-pref
             ;; same line as the last completion
