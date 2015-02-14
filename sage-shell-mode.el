@@ -2379,12 +2379,12 @@ send current line to Sage process buffer."
 
 (make-variable-buffer-local 'sage-shell-cpl:current-state)
 
-(defun sage-shell-cpl:get (attribute)
+(defun sage-shell-cpl:get-current (attribute)
   (sage-shell:aif (assoc attribute sage-shell-cpl:current-state)
       (cdr-safe it)
     (error (format "No such attribute %S" attribute))))
 
-(defun sage-shell-cpl:set (&rest attributes-values)
+(defun sage-shell-cpl:set-current (&rest attributes-values)
   (cl-loop for (att val) in (sage-shell:group attributes-values)
         do
         (sage-shell:aif (assoc att sage-shell-cpl:current-state)
@@ -2500,21 +2500,21 @@ is the buffer for the candidates of attribute."
       (cond
        ;; when the word at point is an attribute
        ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
-        (sage-shell-cpl:set 'var-base-name base-name)
+        (sage-shell-cpl:set-current 'var-base-name base-name)
         (if (sage-shell:in base-name itfcs)
-            (sage-shell-cpl:set 'interface base-name)
-          (sage-shell-cpl:set 'interface "sage"))
-        (sage-shell-cpl:set 'prefix att-beg))
+            (sage-shell-cpl:set-current 'interface base-name)
+          (sage-shell-cpl:set-current 'interface "sage"))
+        (sage-shell-cpl:set-current 'prefix att-beg))
        ;; when current interface is not sage or the point is
        ;; in a function one of gp.eval, gp, gap.eval, ...
        (intf
-        (sage-shell-cpl:set 'interface intf)
-        (sage-shell-cpl:set
+        (sage-shell-cpl:set-current 'interface intf)
+        (sage-shell-cpl:set-current
          'var-base-name nil
          'prefix (sage-shell-interfaces:looking-back-var intf)))
        ;; when current interface is sage
        ((equal cur-intf "sage")
-        (sage-shell-cpl:set
+        (sage-shell-cpl:set-current
          'interface "sage"
          'var-base-name nil
          'prefix
@@ -2627,11 +2627,11 @@ of current Sage process.")
       (error (format "No interface %s" intf))))
 
 (defun sage-shell-cpl:to-objname-to-send (can)
-  (let* ((var-base-name (sage-shell-cpl:get 'var-base-name))
+  (let* ((var-base-name (sage-shell-cpl:get-current 'var-base-name))
          (interface (cond ((sage-shell:in (sage-shell-interfaces:current-interface)
                                     sage-shell-interfaces:other-interfaces)
                            (sage-shell-interfaces:current-interface))
-                          (t (sage-shell-cpl:get 'interface)))))
+                          (t (sage-shell-cpl:get-current 'interface)))))
     (cond (var-base-name (concat var-base-name "." can))
           ((sage-shell:in interface sage-shell-interfaces:other-interfaces)
            (concat interface "." can))
@@ -2651,8 +2651,8 @@ of current Sage process.")
                        collect (match-string 0))))))
       (cl-loop with candidates
                for (buf . intf) in (sage-shell-cpl:completion-buffer-alist
-                                    (sage-shell-cpl:get 'interface)
-                                    (sage-shell-cpl:get 'var-base-name))
+                                    (sage-shell-cpl:get-current 'interface)
+                                    (sage-shell-cpl:get-current 'var-base-name))
                for rgp =
                (concat
                 "^"
@@ -2681,11 +2681,11 @@ of current Sage process.")
   (sage-shell-cpl:prefix)
   (let* ((cur-intf (sage-shell-interfaces:current-interface))
          (interface (cond ((equal cur-intf  "sage")
-                           (sage-shell-cpl:get 'interface))
+                           (sage-shell-cpl:get-current 'interface))
                           (t cur-intf))))
     ;; create candidates in some buffers
     (sage-shell-cpl:completion-init
-     interface (sage-shell-cpl:get 'var-base-name) t)
+     interface (sage-shell-cpl:get-current 'var-base-name) t)
 
     (sage-shell-cpl:candidates
      (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
@@ -2713,13 +2713,13 @@ of current Sage process.")
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
-  (let ((old-int (sage-shell-cpl:get 'interface))
-        (old-pref (sage-shell-cpl:get 'prefix))
-        (old-name (sage-shell-cpl:get 'var-base-name))
+  (let ((old-int (sage-shell-cpl:get-current 'interface))
+        (old-pref (sage-shell-cpl:get-current 'prefix))
+        (old-name (sage-shell-cpl:get-current 'var-base-name))
         (wab (sage-shell:word-at-pt-beg))
         (var-name (progn
                     (sage-shell-cpl:prefix)
-                    (sage-shell-cpl:get 'var-base-name))))
+                    (sage-shell-cpl:get-current 'var-base-name))))
     (cond ((and
             old-int (string= old-int "sage") old-pref
             ;; same line as the last completion
