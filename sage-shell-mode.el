@@ -2713,13 +2713,13 @@ of current Sage process.")
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
-  (let ((old-int (assoc-default 'interface sage-shell-cpl:current-state))
-        (old-pref (assoc-default 'prefix sage-shell-cpl:current-state))
-        (old-name (assoc-default 'var-base-name sage-shell-cpl:current-state))
+  (let ((old-int (sage-shell-cpl:get 'interface))
+        (old-pref (sage-shell-cpl:get 'prefix))
+        (old-name (sage-shell-cpl:get 'var-base-name))
         (wab (sage-shell:word-at-pt-beg))
-        (var-name (assoc-default 'var-base-name
-                                 (progn (sage-shell-cpl:prefix)
-                                        sage-shell-cpl:current-state))))
+        (var-name (progn
+                    (sage-shell-cpl:prefix)
+                    (sage-shell-cpl:get 'var-base-name))))
     (cond ((and
             old-int (string= old-int "sage") old-pref
             ;; same line as the last completion
