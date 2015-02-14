@@ -783,7 +783,7 @@ When sync is nill this return a lambda function to get the result."
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:send-command
-   (mapconcat 'identity (reverse sage-shell:init-command-list) "; ") buffer)
+   (sage-shell:join-command sage-shell:init-command-list) buffer)
   (setq sage-shell:init-finished-p t)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
@@ -1066,6 +1066,9 @@ Match group 1 will be replaced with devel/sage-branch")
             (recenter offset)
             (setq sage-shell:process-buffer proc-buf)))
       (message "Source file not found."))))
+
+(defun sage-shell:join-command (cmds)
+  (mapconcat 'identity (reverse cmds) "; "))
 
 
 ;; comint functions
