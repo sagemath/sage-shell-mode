@@ -2468,17 +2468,18 @@ is the buffer for the candidates of attribute."
           (skip-chars-backward " " com-bol)
           (sage-shell-cpl:base-name-att-beg-rec var-chars))))))
 
-(defun sage-shell-cpl:print-all-att
-  (var-base-name output-buffer &optional process sync)
-  (sage-shell:send-command
-   (format "%s('%s')" sage-shell:print-all-att-sage-fn var-base-name)
-   process output-buffer sync))
+(defvar sage-shell-cpl:-all-att-delim ";; start of attribute list")
+(defvar sage-shell-cpl:-all-cmds-delim
+  (lambda (i) (format ";; start of command list for %s" i)))
 
-(defun sage-shell-cpl:print-all-commands
-  (interface output-buffer &optional process sync)
-  (sage-shell:send-command
-   (format "%s('%s')" sage-shell:print-all-commands-fn interface)
-   process output-buffer sync))
+(defun sage-shell:cpl:print-all-att-code (var-base-name)
+  (format "%s('%s', delim='%s')"
+          sage-shell:print-all-att-sage-fn var-base-name
+          sage-shell-cpl:-all-att-delim))
+
+(defun sage-shell-cpl:print-all-commands-code (interface)
+  (format "%s('%s', delim='%s')" sage-shell:print-all-commands-fn interface
+          (funcall sage-shell-cpl:-all-cmds-delim interface)))
 
 (defun sage-shell-cpl:prefix ()
   (when (and (get-buffer-process sage-shell:process-buffer)
@@ -2523,16 +2524,19 @@ is the buffer for the candidates of attribute."
          'prefix
          (sage-shell-interfaces:looking-back-var "sage")))))))
 
+(defvar sage-shell-cpl:-last-res nil)
+
 (defun sage-shell-cpl:completion-init (interface var-base-name sync)
-  (let* ((cmd-cmp-bufn (sage-shell-interfaces:get interface 'completion-buffer))
-         (att-cmp-bufn sage-shell-cpl:attribute-completion-buffer)
-         (verbose (sage-shell-interfaces:get interface 'verbose))
+  (setq sage-shell-cpl:-last-res nil)
+  (let* ((verbose (sage-shell-interfaces:get interface 'verbose))
          (other-interface-p
-          (sage-shell:in interface sage-shell-interfaces:other-interfaces)))
+          (sage-shell:in interface sage-shell-interfaces:other-interfaces))
+         (cmds nil))
     ;; when current line is not in a block and current interface is 'sage'
     (when (and (sage-shell:at-top-level-and-in-sage-p)
                (sage-shell:redirect-finished-p)
                (sage-shell:output-finished-p))
+      ;; Code for commands.
       (cond
        ;; when 'verbose' and 'interface' is installed and cache file
        ;; does not exit
@@ -2543,30 +2547,31 @@ is the buffer for the candidates of attribute."
              (or (not (sage-shell:in interface
                                      sage-shell-interfaces:optional-interfaces))
                  (executable-find interface)))
-        (unless (get-buffer cmd-cmp-bufn)
-          (get-buffer-create cmd-cmp-bufn)
-          ;; show verbose message, print candidates and make a cache
-          ;; file and print cadidates in completion buffer.
-          (sage-shell-cpl:init-verbose interface verbose cmd-cmp-bufn sync)))
-       (var-base-name
-        ;; when var-base-name is non nil, print all attributes in buffer
-        ;; `sage-shell-cpl:attribute-completion-buffer'
-        (unless (get-buffer att-cmp-bufn)
-          (get-buffer-create att-cmp-bufn))
-        (sage-shell-cpl:print-all-att var-base-name att-cmp-bufn nil sync)))
-      (when (and (not (sage-shell-cpl:get-cmd-lst interface))
-                 (or (not var-base-name) other-interface-p)
-                 (not (get-buffer cmd-cmp-bufn)))
-        (get-buffer-create cmd-cmp-bufn)
-        (sage-shell-cpl:print-all-commands
-         interface cmd-cmp-bufn nil sync)))))
+        ;; Show verbose message and make a cache file.
+        (sage-shell-cpl:init-verbose interface verbose)
+        (unless (string= interface "magma")
+          (add-to-list 'cmds
+                       (sage-shell-cpl:print-all-commands-code interface))))
 
-(defun sage-shell-cpl:init-verbose
-  (interface verbose output-buffer sync)
+       ((and (not (sage-shell-cpl:get-cmd-lst interface))
+             (or (not var-base-name) other-interface-p))
+        (add-to-list 'cmds
+                     (sage-shell-cpl:print-all-commands-code interface))))
+      ;; Code for others.
+      (cond (var-base-name
+             (add-to-list 'cmds
+                          (sage-shell:cpl:print-all-att-code var-base-name))))
+      (let ((cmd (sage-shell:join-command cmds)))
+        (unless (string= cmd "")
+          (lexical-let ((cont (sage-shell:send-command cmd nil nil sync)))
+            (sage-shell:after-redirect-finished
+              (setq sage-shell-cpl:-last-res
+                    (sage-shell:get-value cont)))))))))
+
+(defun sage-shell-cpl:init-verbose (interface verbose)
   (cond
-   ((not (equal interface "magma"))
-    (message verbose)
-    (sage-shell-cpl:print-all-commands interface output-buffer nil sync))
+   ((not (string= interface "magma"))
+    (message verbose))
 
    (t (let* ((tmp-file (make-temp-file "sage" nil ".sage"))
              (proc-name "sage-shell-magma-complete"))
