@@ -21,7 +21,9 @@ interfaces = ip.ev('interfaces')
 _sage_const_regexp = re.compile("_sage_const_")
 
 
-def print_all_commands(interface):
+def print_all_commands(interface, delim=None):
+    if delim:
+        print(delim)
     if interface == 'sage':
         l = ip.ev('dir()')
         l = [a for a in l if _sage_const_regexp.match(a) is None]
@@ -37,7 +39,9 @@ def print_all_commands(interface):
                 print(a)
 
 
-def print_all_attributes(varname):
+def print_all_attributes(varname, delim=None):
+    if delim:
+        print(delim)
     try:
         var = ip.ev('eval(preparse("%s"))' % (varname))
         if varname in interfaces:
