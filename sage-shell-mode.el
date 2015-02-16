@@ -2468,15 +2468,20 @@ is the buffer for the candidates of attribute."
           (skip-chars-backward " " com-bol)
           (sage-shell-cpl:base-name-att-beg-rec var-chars))))))
 
-(defvar sage-shell-cpl:-all-cmds-delim
-  (lambda (i) (format ";; start of command list for %s" i)))
+(defvar sage-shell-cpl:-all-cmds-delim-start
+  (lambda (i) (format ";; Start of command list for %s" i)))
+
+(defvar sage-shell-cpl:-all-cmds-delim-end
+  (lambda (i) (format ";; End of command list for %s" i)))
 
 (defun sage-shell:cpl:print-all-att-code (var-base-name)
   (format "%s('%s')" sage-shell:print-all-att-sage-fn var-base-name))
 
 (defun sage-shell-cpl:print-all-commands-code (interface)
-  (format "%s('%s', delim='%s')" sage-shell:print-all-commands-fn interface
-          (funcall sage-shell-cpl:-all-cmds-delim interface)))
+  (format "%s('%s', delim_start='%s', delim_end='%s')"
+          sage-shell:print-all-commands-fn interface
+          (funcall sage-shell-cpl:-all-cmds-delim-start interface)
+          (funcall sage-shell-cpl:-all-cmds-delim-end interface)))
 
 (defun sage-shell-cpl:prefix ()
   (when (and (get-buffer-process sage-shell:process-buffer)
