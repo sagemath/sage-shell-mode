@@ -2526,10 +2526,9 @@ is the buffer for the candidates of attribute."
          'prefix
          (sage-shell-interfaces:looking-back-var "sage")))))))
 
-(defvar sage-shell-cpl:-last-res nil)
-
-(defun sage-shell-cpl:completion-init (interface var-base-name sync)
-  (setq sage-shell-cpl:-last-res nil)
+(cl-defun sage-shell-cpl:completion-init
+    (interface var-base-name sync &optional
+               (output-buffer sage-shell:output-buffer))
   (let* ((verbose (sage-shell-interfaces:get interface 'verbose))
          (other-interface-p
           (sage-shell:in interface sage-shell-interfaces:other-interfaces))
@@ -2563,12 +2562,11 @@ is the buffer for the candidates of attribute."
       (cond (var-base-name
              (add-to-list 'cmds
                           (sage-shell:cpl:print-all-att-code var-base-name))))
+      (with-current-buffer output-buffer
+        (erase-buffer))
       (let ((cmd (sage-shell:join-command cmds)))
         (unless (string= cmd "")
-          (lexical-let ((cont (sage-shell:send-command cmd nil nil sync)))
-            (sage-shell:after-redirect-finished
-              (setq sage-shell-cpl:-last-res
-                    (sage-shell:get-value cont)))))))))
+          (sage-shell:send-command cmd nil output-buffer sync))))))
 
 (defun sage-shell-cpl:init-verbose (interface verbose)
   (cond
