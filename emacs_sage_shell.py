@@ -39,9 +39,7 @@ def print_all_commands(interface, delim=None):
                 print(a)
 
 
-def print_all_attributes(varname, delim=None):
-    if delim:
-        print(delim)
+def print_all_attributes(varname):
     try:
         var = ip.ev('eval(preparse("%s"))' % (varname))
         if varname in interfaces:
