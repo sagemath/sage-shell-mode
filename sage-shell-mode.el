@@ -907,7 +907,8 @@ argument."
 (defun sage-shell:update-sage-commands ()
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-cpl:set-cmd-lst "sage" nil)
-    (sage-shell-cpl:completion-init "sage" nil t)
+    (sage-shell-cpl:completion-init t :compl-state '((interface . "sage")
+                                                     (var-base-name . nil)))
     (sage-shell-cpl:candidates)
     (sage-shell-cpl:get-cmd-lst "sage")))
 
@@ -1693,7 +1694,8 @@ function does not highlight the input."
       ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
       ;; then create completion buffer
       (sage-shell:awhen (sage-shell-cpl:switch-to-another-interface-p line)
-        (sage-shell-cpl:completion-init it nil t))
+        (sage-shell-cpl:completion-init
+         t :compl-state `((interface . ,it) (var-base-name . nil))))
 
 
       ;; if current line is ***? and current interface is sage then
@@ -2537,9 +2539,11 @@ is the buffer for the candidates of attribute."
          (sage-shell-interfaces:looking-back-var "sage")))))))
 
 (cl-defun sage-shell-cpl:completion-init
-    (interface var-base-name sync &optional
-               (output-buffer sage-shell:output-buffer))
-  (let* ((verbose (sage-shell-interfaces:get interface 'verbose))
+    (sync &key (output-buffer sage-shell:output-buffer)
+          (compl-state sage-shell-cpl:current-state))
+  (let* ((interface (sage-shell-cpl:get 'compl-state 'interface))
+         (var-base-name (sage-shell-cpl:get 'compl-state 'var-base-name))
+         (verbose (sage-shell-interfaces:get interface 'verbose))
          (other-interface-p
           (sage-shell:in interface sage-shell-interfaces:other-interfaces))
          (cmds nil))
@@ -2699,13 +2703,9 @@ of current Sage process.")
 
 (defun sage-shell-cpl:candidates-sync (&optional regexp)
   (sage-shell-cpl:prefix)
-  (let* ((cur-intf (sage-shell-interfaces:current-interface))
-         (interface (cond ((equal cur-intf  "sage")
-                           (sage-shell-cpl:get-current 'interface))
-                          (t cur-intf))))
+  (let ((cur-intf (sage-shell-interfaces:current-interface)))
     ;; create candidates in some buffers
-    (sage-shell-cpl:completion-init
-     interface (sage-shell-cpl:get-current 'var-base-name) t)
+    (sage-shell-cpl:completion-init t)
 
     (sage-shell-cpl:candidates
      (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
