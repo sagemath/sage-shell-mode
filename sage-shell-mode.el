@@ -2382,6 +2382,16 @@ send current line to Sage process buffer."
    ;; nil or the base name of the variable name
    (cons 'var-base-name nil)))
 
+(defun sage-shell:-to-python-dict (alst)
+  "nil is converted to None."
+  (format "{%s}"
+          (mapconcat
+           'identity
+           (cl-loop for (a . b) in alst
+                    collect (format "\"%s\": %s" a
+                                    (if b (format "%S" b) "None")))
+           ", ")))
+
 (make-variable-buffer-local 'sage-shell-cpl:current-state)
 
 (defun sage-shell-cpl:get (state attribute)
