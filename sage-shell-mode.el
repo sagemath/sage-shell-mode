@@ -2604,15 +2604,15 @@ is the buffer for the candidates of attribute."
                        (sage-shell:-to-python-list types)
                        (sage-shell:-to-python-dict compl-state))))
       (let ((cont (sage-shell:send-command cmd nil output-buffer sync)))
+        (lexical-let ((output-buffer output-buffer)
+                      (proc-buf sage-shell:process-buffer))
+          (sage-shell:after-redirect-finished
+            (with-current-buffer output-buffer
+              (goto-char (point-min))
+              (setq sage-shell-cpl:-last-sexp
+                    (read (current-buffer))))))
         (if sync
-            cont
-          (lexical-let ((output-buffer output-buffer)
-                        (proc-buf sage-shell:process-buffer))
-            (sage-shell:after-redirect-finished
-              (with-current-buffer output-buffer
-                (goto-char (point-min))
-                (setq sage-shell-cpl:-last-sexp
-                      (read (current-buffer)))))))))))
+            sage-shell-cpl:-last-sexp)))))
 
 (defun sage-shell-cpl:init-verbose (interface verbose)
   (cond
