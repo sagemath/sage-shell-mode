@@ -2693,46 +2693,6 @@ of current Sage process.")
            (concat interface "." can))
           (t can))))
 
-(defun sage-shell-cpl:candidates (&optional regexp proc-buf)
-  "Collect candidates matching (concat \"^\" regexp)"
-  (with-current-buffer (or proc-buf sage-shell:process-buffer)
-    (sage-shell:labels
-        ((collect-cands
-          (buf)
-          (when (get-buffer buf)
-            (with-current-buffer buf
-              (cl-loop initially
-                       (goto-char (point-min))
-                       while (re-search-forward (rx bol (1+ nonl) eol) nil t)
-                       collect (match-string 0))))))
-      (cl-loop with candidates
-               for (buf . intf) in (sage-shell-cpl:completion-buffer-alist
-                                    (sage-shell-cpl:get-current 'interface)
-                                    (sage-shell-cpl:get-current 'var-base-name))
-               for rgp =
-               (concat
-                "^"
-                (cond ((sage-shell:in
-                        intf sage-shell-interfaces:other-interfaces)
-                       (sage-shell-interfaces:get intf 'cmd-rxp))
-                      (t (or regexp
-                             (sage-shell-interfaces:get "sage" 'cmd-rxp)))))
-               for cmdlist = (sage-shell:aif intf
-                                 (sage-shell-cpl:get-cmd-lst it))
-               do
-               (setq candidates
-                     (append
-                      (cond ((and intf cmdlist) cmdlist)
-                            ((and intf (sage-shell:redirect-finished-p))
-                             (prog1 (sage-shell-cpl:set-cmd-lst
-                                     intf (collect-cands buf))
-                               (when (get-buffer buf) (kill-buffer buf))))
-                            (t (collect-cands buf)))
-                      candidates))
-               finally (return (cl-loop for s in candidates
-                                        if (string-match rgp s)
-                                        collect s))))))
-
 (defun sage-shell-cpl:candidates-sync (&optional regexp)
   (sage-shell-cpl:prefix)
   (let ((cur-intf (sage-shell-interfaces:current-interface)))
@@ -2741,6 +2701,37 @@ of current Sage process.")
 
     (sage-shell-cpl:candidates
      (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
+
+(defun sage-shell-cpl:candidates (&optional regexp proc-buf)
+  "Collect candidates matching (concat \"^\" regexp)"
+  (cl-loop for (tp . ls) in sage-shell-cpl:-last-sexp
+           append
+           (cond ((string= tp "interface")
+                  (let* ((int (sage-shell-cpl:get-current 'interface))
+                         (cmd-lst (sage-shell-cpl:get-cmd-lst int)))
+                    (unless cmd-lst
+                      (let ((regexp-int
+                             (concat
+                              "^"
+                              (cond ((sage-shell:in
+                                      int
+                                      sage-shell-interfaces:other-interfaces)
+                                     (sage-shell-interfaces:get int 'cmd-rxp))
+                                    (t (or regexp
+                                           (sage-shell-interfaces:get
+                                            "sage" 'cmd-rxp)))))))
+                        (sage-shell-cpl:set-cmd-lst
+                         int
+                         (cl-loop for a in ls
+                                  if (string-match regexp-int a)
+                                  collect a))))
+                    (or cmd-lst (sage-shell-cpl:get-cmd-lst int))))
+                 (t (let ((regexp1 (or regexp
+                                       (sage-shell-interfaces:get
+                                        "sage" 'cmd-rxp))))
+                      (cl-loop for a in ls
+                               if (string-match regexp1 a)
+                               collect a))))))
 
 (defvar sage-shell:completion-sync-cached nil)
 (make-variable-buffer-local 'sage-shell:completion-sync-cached)
