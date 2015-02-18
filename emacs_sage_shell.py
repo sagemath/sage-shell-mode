@@ -30,7 +30,7 @@ def print_cpl_sexp(typs, compl_dct):
     alst = [(tp, funcs[tp](compl_dct)) for tp in typs]
     conss = ['("%s" . %s)'%(tp, _to_lisp_str_ls(ls))
              for tp, ls in alst if ls is not None]
-    return "(" + "".join(conss) + ")"
+    print("(" + "".join(conss) + ")")
 
 
 def all_commands(compl_dct):
