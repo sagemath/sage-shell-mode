@@ -21,27 +21,34 @@ interfaces = ip.ev('interfaces')
 _sage_const_regexp = re.compile("_sage_const_")
 
 
-def print_all_commands(interface, delim_start=None, delim_end=None):
-    if delim_start is not None:
-        print(delim_start)
+def print_cpl_sexp(typs, compl_dct):
+    def _to_lisp_str_ls(ls):
+        return "(%s)" % " ".join(['"%s"'%(a, ) for a in ls])
+
+    funcs = {"interface": all_commands,
+             "attributes": all_attributes}
+    alst = [(tp, funcs[tp](compl_dct)) for tp in typs]
+    conss = ['("%s" . %s)'%(tp, _to_lisp_str_ls(ls))
+             for tp, ls in alst if ls is not None]
+    return "(" + "".join(conss) + ")"
+
+
+def all_commands(compl_dct):
+    interface = compl_dct["interface"]
     if interface == 'sage':
         l = ip.ev('dir()')
         l = [a for a in l if _sage_const_regexp.match(a) is None]
-        for a in l:
-            print(a)
+        return l
     else:
         intfc = ip.ev(interface)
         try:
-            for a in intfc.trait_names(verbose=False):
-                print(a)
+            return intfc.trait_names(verbose=False)
         except:
-            for a in intfc.trait_names():
-                print(a)
-    if delim_end is not None:
-        print(delim_end)
+            return intfc.trait_names()
 
 
-def print_all_attributes(varname):
+def all_attributes(compl_dct):
+    varname = compl_dct["var-base-name"]
     try:
         var = ip.ev('eval(preparse("%s"))' % (varname))
         if varname in interfaces:
@@ -58,8 +65,7 @@ def print_all_attributes(varname):
         else:
             ls = dir(var)
 
-        for a in ls:
-            print(a)
+        return ls
     except:
         pass
 
