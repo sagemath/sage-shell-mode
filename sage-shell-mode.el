@@ -2555,41 +2555,21 @@ is the buffer for the candidates of attribute."
          'prefix
          (sage-shell-interfaces:looking-back-var "sage")))))))
 
-(cl-defun sage-shell-cpl:-types (compl-state)
-  "This has side effects if cache file does not exist for an interface."
+(cl-defun sage-shell-cpl:-types (compl-state make-cache-file-p)
   (let* ((interface (sage-shell-cpl:get 'compl-state 'interface))
          (var-base-name (sage-shell-cpl:get 'compl-state 'var-base-name))
-         (verbose (sage-shell-interfaces:get interface 'verbose))
          (other-interface-p
           (sage-shell:in interface sage-shell-interfaces:other-interfaces)))
-    ;; when current line is not in a block and current interface is 'sage'
-    (when (and (sage-shell:at-top-level-and-in-sage-p)
-               (sage-shell:redirect-finished-p)
-               (sage-shell:output-finished-p))
-      (let ((make-cache-file-p
-             ;; 'verbose' and 'interface' is installed and cache file
-             ;; does not exit
-             (and (not (sage-shell-cpl:get-cmd-lst interface))
-                  verbose
-                  (not (file-exists-p (sage-shell-interfaces:get
-                                       interface 'cache-file)))
-                  (or (not (sage-shell:in
-                            interface
-                            sage-shell-interfaces:optional-interfaces))
-                      (executable-find interface))))
-            (no-cache-for-cmds-p
-             (and (not (sage-shell-cpl:get-cmd-lst interface))
-                  (or (not var-base-name) other-interface-p))))
-        (when make-cache-file-p
-          ;; Show verbose message and make a cache file.
-          (sage-shell-cpl:init-verbose interface verbose))
-        (let* ((interface-tp (if (cond (make-cache-file-p
-                                        (not (string= interface "magma")))
-                                       (no-cache-for-cmds-p t))
-                                 "interface"))
-               (att-tp (if var-base-name "attributes")))
-          (cl-loop for a in (list interface-tp att-tp)
-                   if a collect a))))))
+    (let ((no-cache-for-cmds-p
+           (and (not (sage-shell-cpl:get-cmd-lst interface))
+                (or (not var-base-name) other-interface-p))))
+      (let* ((interface-tp (if (cond (make-cache-file-p
+                                      (not (string= interface "magma")))
+                                     (no-cache-for-cmds-p t))
+                               "interface"))
+             (att-tp (if var-base-name "attributes")))
+        (cl-loop for a in (list interface-tp att-tp)
+                 if a collect a)))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
 (cl-defun sage-shell-cpl:completion-init
@@ -2597,22 +2577,43 @@ is the buffer for the candidates of attribute."
           (compl-state sage-shell-cpl:current-state))
   "If SYNC is non-nil, return a sexp. If not return value has no meaning and
 `sage-shell-cpl:-last-sexp' will be set when the redirection is finished."
-  (setq sage-shell-cpl:-last-sexp nil)
-  (let ((types (sage-shell-cpl:-types compl-state)))
-    (let ((cmd (format "%s(%s, %s)"
-                       (sage-shell:py-mod-func "print_cpl_sexp" )
-                       (sage-shell:-to-python-list types)
-                       (sage-shell:-to-python-dict compl-state))))
-      (let ((cont (sage-shell:send-command cmd nil output-buffer sync)))
-        (lexical-let ((output-buffer output-buffer)
-                      (proc-buf sage-shell:process-buffer))
-          (sage-shell:after-redirect-finished
-            (with-current-buffer output-buffer
-              (goto-char (point-min))
-              (setq sage-shell-cpl:-last-sexp
-                    (read (current-buffer))))))
-        (if sync
-            sage-shell-cpl:-last-sexp)))))
+  ;; when current line is not in a block and current interface is 'sage'
+  (when (and (sage-shell:at-top-level-and-in-sage-p)
+             (sage-shell:redirect-finished-p)
+             (sage-shell:output-finished-p))
+    (let* ((interface (sage-shell-cpl:get 'compl-state 'interface))
+           (verbose (sage-shell-interfaces:get interface 'verbose))
+           (make-cache-file-p
+            ;; 'verbose' and 'interface' is installed and cache file
+            ;; does not exit
+            (and (not (sage-shell-cpl:get-cmd-lst interface))
+                 verbose
+                 (not (file-exists-p (sage-shell-interfaces:get
+                                      interface 'cache-file)))
+                 (or (not (sage-shell:in
+                           interface
+                           sage-shell-interfaces:optional-interfaces))
+                     (executable-find interface))))
+           (types (sage-shell-cpl:-types compl-state make-cache-file-p)))
+      (when make-cache-file-p
+        ;; Show verbose message and make a cache file.
+        (sage-shell-cpl:init-verbose interface verbose))
+      (when types
+        (setq sage-shell-cpl:-last-sexp nil)
+        (let ((cmd (format "%s(%s, %s)"
+                           (sage-shell:py-mod-func "print_cpl_sexp" )
+                           (sage-shell:-to-python-list types)
+                           (sage-shell:-to-python-dict compl-state))))
+          (let ((cont (sage-shell:send-command cmd nil output-buffer sync)))
+            (lexical-let ((output-buffer output-buffer)
+                          (proc-buf sage-shell:process-buffer))
+              (sage-shell:after-redirect-finished
+                (with-current-buffer output-buffer
+                  (goto-char (point-min))
+                  (setq sage-shell-cpl:-last-sexp
+                        (read (current-buffer))))))
+            (if sync
+                sage-shell-cpl:-last-sexp)))))))
 
 (defun sage-shell-cpl:init-verbose (interface verbose)
   (cond
