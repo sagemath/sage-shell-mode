@@ -2380,7 +2380,10 @@ send current line to Sage process buffer."
    ;; nil or the point of the beggining of completion
    (cons 'prefix nil)
    ;; nil or the base name of the variable name
-   (cons 'var-base-name nil)))
+   (cons 'var-base-name nil)
+   ;; non-nil means use the command list of the current interface
+   ;; for candidates.
+   (cons 'use-cmd-lst nil)))
 
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
