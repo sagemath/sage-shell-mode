@@ -2392,7 +2392,10 @@ send current line to Sage process buffer."
            'identity
            (cl-loop for (a . b) in alst
                     collect (format "\"%s\": %s" a
-                                    (if b (format "%S" b) "None")))
+                                    (cond ((or (stringp b)
+                                               (numberp b)) (format "%S" b))
+                                          ((eq b t) "True")
+                                          ((eq b nil) "None"))))
            ", ")))
 
 (defun sage-shell:-to-python-list (ls)
