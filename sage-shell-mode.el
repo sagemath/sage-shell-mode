@@ -2537,7 +2537,7 @@ is the buffer for the candidates of attribute."
                                                 (regexp-opt itfcs 1)) nil t)
                              (when (and (<= (match-end 2) pt)
                                         (<= pt it))
-                               (match-string 1)))))))))
+                               (match-string-no-properties 1)))))))))
       (cond
        ;; when the word at point is an attribute
        ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
