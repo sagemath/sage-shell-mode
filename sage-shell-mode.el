@@ -2584,6 +2584,7 @@ is the buffer for the candidates of attribute."
   "If SYNC is non-nil, return a sexp. If not return value has no meaning and
 `sage-shell-cpl:-last-sexp' will be set when the redirection is finished."
   ;; when current line is not in a block and current interface is 'sage'
+  (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:at-top-level-and-in-sage-p)
              (sage-shell:redirect-finished-p)
              (sage-shell:output-finished-p))
@@ -2605,7 +2606,6 @@ is the buffer for the candidates of attribute."
         ;; Show verbose message and make a cache file.
         (sage-shell-cpl:init-verbose interface verbose))
       (when types
-        (setq sage-shell-cpl:-last-sexp nil)
         (let ((cmd (format "%s(%s, %s)"
                            (sage-shell:py-mod-func "print_cpl_sexp" )
                            (sage-shell:-to-python-list types)
