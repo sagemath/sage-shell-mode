@@ -692,12 +692,15 @@ succesive lines in history."
             (+ (- arg) 1 sage-shell:input-ring-index)))))
 
 
+(defun sage-shell:-make-buf-if-needed (buf-maybe)
+  (cond ((or (stringp buf-maybe) (bufferp buf-maybe))
+         (get-buffer-create buf-maybe))
+        (t (get-buffer-create sage-shell:output-buffer))))
 
 (defun sage-shell:send-command-sync
   (command &optional process-buffer output-buffer to-string)
   "internal function"
-  (let ((out-buf
-         (or output-buffer (get-buffer-create sage-shell:output-buffer)))
+  (let ((out-buf (sage-shell:-make-buf-if-needed output-buffer))
         (proc-buf
          (or process-buffer sage-shell:process-buffer)))
     (with-current-buffer proc-buf
@@ -720,7 +723,6 @@ succesive lines in history."
         (while (null comint-redirect-completed)
           (accept-process-output nil 0 msec))))))
 
-
 (defun sage-shell:send-command
   (command &optional process-buffer output-buffer sync)
   "Send COMMAND to PROCESS-BUFFER's process.  PROCESS-BUFFER is a
@@ -731,8 +733,8 @@ When sync is nill this return a lambda function to get the result."
   (if sync
       (sage-shell:send-command-sync command process-buffer output-buffer)
     (let ((proc-buf (or process-buffer sage-shell:process-buffer))
-          (out-buf (or output-buffer
-                       (get-buffer-create sage-shell:output-buffer))))
+          (out-buf (sage-shell:-make-buf-if-needed
+                    output-buffer)))
       (with-current-buffer out-buf (erase-buffer))
       (with-current-buffer proc-buf
         (sage-shell:wait-for-redirection-to-complete)
