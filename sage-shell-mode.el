@@ -2711,8 +2711,7 @@ of current Sage process.")
     (sage-shell-cpl:candidates
      (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
 
-(defun sage-shell-cpl:candidates (&optional regexp proc-buf)
-  "Collect candidates matching (concat \"^\" regexp)"
+(defun sage-shell-cpl:-parse-sexp (regexp sexp)
   (cl-loop for (tp . ls) in sage-shell-cpl:-last-sexp
            append
            (cond ((string= tp "interface")
@@ -2741,6 +2740,16 @@ of current Sage process.")
                       (cl-loop for a in ls
                                if (string-match regexp1 a)
                                collect a))))))
+
+(cl-defun sage-shell-cpl:candidates (&optional regexp proc-buf
+                                               (sexp sage-shell-cpl:-last-sexp))
+  "Collect candidates matching (concat \"^\" regexp)"
+  (let ((cands1 (sage-shell-cpl:-parse-sexp regexp sexp)))
+    (cond ((and (sage-shell-cpl:get-current 'use-cmd-lst)
+                (null (assoc "interface" sage-shell-cpl:-last-sexp)))
+           (append cands1 (sage-shell-cpl:get-cmd-lst
+                           (sage-shell-cpl:get-current 'interface))))
+          (t cands1))))
 
 (defvar sage-shell:completion-sync-cached nil)
 (make-variable-buffer-local 'sage-shell:completion-sync-cached)
