@@ -2543,7 +2543,8 @@ is the buffer for the candidates of attribute."
        ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
         (sage-shell-cpl:set-current 'var-base-name base-name)
         (if (sage-shell:in base-name itfcs)
-            (sage-shell-cpl:set-current 'interface base-name)
+            (sage-shell-cpl:set-current 'interface base-name
+                                        'use-cmd-lst t)
           (sage-shell-cpl:set-current 'interface "sage"))
         (sage-shell-cpl:set-current 'prefix att-beg))
        ;; when current interface is not sage or the point is
@@ -2551,6 +2552,7 @@ is the buffer for the candidates of attribute."
        (intf
         (sage-shell-cpl:set-current 'interface intf)
         (sage-shell-cpl:set-current
+         'use-cmd-lst t
          'var-base-name nil
          'prefix (sage-shell-interfaces:looking-back-var intf)))
        ;; when current interface is sage
