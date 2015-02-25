@@ -2409,14 +2409,17 @@ send current line to Sage process buffer."
 
 (make-variable-buffer-local 'sage-shell-cpl:current-state)
 
-(defun sage-shell-cpl:get (state attribute)
-  (sage-shell:aif (assoc attribute
-                         (buffer-local-value state sage-shell:process-buffer))
+
+(defmacro sage-shell-cpl:get (state attribute)
+  `(sage-shell:aif (assoc ,attribute
+                          (buffer-local-value ',state
+                                              sage-shell:process-buffer))
       (cdr-safe it)
-    (error (format "No such attribute %S" attribute))))
+    (error (format "No such attribute %S" ,attribute))))
+
 
 (defun sage-shell-cpl:get-current (attribute)
-  (sage-shell-cpl:get 'sage-shell-cpl:current-state
+  (sage-shell-cpl:get sage-shell-cpl:current-state
                       attribute))
 
 (defun sage-shell-cpl:set (state &rest attributes-values)
@@ -2566,8 +2569,8 @@ is the buffer for the candidates of attribute."
          (sage-shell-interfaces:looking-back-var "sage")))))))
 
 (cl-defun sage-shell-cpl:-types (compl-state make-cache-file-p)
-  (let* ((interface (sage-shell-cpl:get 'compl-state 'interface))
-         (var-base-name (sage-shell-cpl:get 'compl-state 'var-base-name))
+  (let* ((interface (sage-shell-cpl:get compl-state 'interface))
+         (var-base-name (sage-shell-cpl:get compl-state 'var-base-name))
          (other-interface-p
           (sage-shell:in interface sage-shell-interfaces:other-interfaces)))
     (let ((no-cache-for-cmds-p
@@ -2592,7 +2595,7 @@ is the buffer for the candidates of attribute."
   (when (and (sage-shell:at-top-level-and-in-sage-p)
              (sage-shell:redirect-finished-p)
              (sage-shell:output-finished-p))
-    (let* ((interface (sage-shell-cpl:get 'compl-state 'interface))
+    (let* ((interface (sage-shell-cpl:get compl-state 'interface))
            (verbose (sage-shell-interfaces:get interface 'verbose))
            (make-cache-file-p
             ;; 'verbose' and 'interface' is installed and cache file
@@ -2713,11 +2716,11 @@ of current Sage process.")
     (sage-shell-cpl:candidates
      :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
 
-(defun sage-shell-cpl:-parse-sexp (regexp sexp)
+(defun sage-shell-cpl:-parse-sexp (regexp sexp state)
   (cl-loop for (tp . ls) in sage-shell-cpl:-last-sexp
            append
            (cond ((string= tp "interface")
-                  (let* ((int (sage-shell-cpl:get-current 'interface))
+                  (let* ((int (sage-shell-cpl:get state 'interface))
                          (cmd-lst (sage-shell-cpl:get-cmd-lst int)))
                     (unless cmd-lst
                       (let ((regexp-int
@@ -2743,8 +2746,8 @@ of current Sage process.")
                                           (sexp sage-shell-cpl:-last-sexp)
                                           (state sage-shell-cpl:current-state))
   "Collect candidates matching (concat \"^\" regexp)"
-  (let ((cands1 (sage-shell-cpl:-parse-sexp regexp sexp)))
-    (cond ((and (sage-shell-cpl:get-current 'use-cmd-lst)
+  (let ((cands1 (sage-shell-cpl:-parse-sexp regexp sexp state)))
+    (cond ((and (sage-shell-cpl:get state 'use-cmd-lst)
                 (null (assoc "interface" sage-shell-cpl:-last-sexp)))
            (append cands1 (sage-shell-cpl:get-cmd-lst
                            (sage-shell-cpl:get-current 'interface))))
