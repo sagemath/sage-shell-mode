@@ -2711,7 +2711,7 @@ of current Sage process.")
     (sage-shell-cpl:completion-init t)
 
     (sage-shell-cpl:candidates
-     (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
+     :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
 
 (defun sage-shell-cpl:-parse-sexp (regexp sexp)
   (cl-loop for (tp . ls) in sage-shell-cpl:-last-sexp
@@ -2743,8 +2743,9 @@ of current Sage process.")
                                if (string-match regexp1 a)
                                collect a))))))
 
-(cl-defun sage-shell-cpl:candidates (&optional regexp proc-buf
-                                               (sexp sage-shell-cpl:-last-sexp))
+(cl-defun sage-shell-cpl:candidates (&key (regexp nil)
+                                          (sexp sage-shell-cpl:-last-sexp)
+                                          (state sage-shell-cpl:current-state))
   "Collect candidates matching (concat \"^\" regexp)"
   (let ((cands1 (sage-shell-cpl:-parse-sexp regexp sexp)))
     (cond ((and (sage-shell-cpl:get-current 'use-cmd-lst)
