@@ -2723,22 +2723,18 @@ of current Sage process.")
                       (let ((regexp-int
                              (concat
                               "^"
-                              (cond ((sage-shell:in
-                                      int
-                                      sage-shell-interfaces:other-interfaces)
-                                     (sage-shell-interfaces:get int 'cmd-rxp))
-                                    (t (or regexp
-                                           (sage-shell-interfaces:get
-                                            "sage" 'cmd-rxp)))))))
+                              (or regexp
+                                  (sage-shell-interfaces:get int 'cmd-rxp)))))
                         (sage-shell-cpl:set-cmd-lst
                          int
                          (cl-loop for a in ls
                                   if (string-match regexp-int a)
                                   collect a))))
                     (or cmd-lst (sage-shell-cpl:get-cmd-lst int))))
-                 (t (let ((regexp1 (or regexp
-                                       (sage-shell-interfaces:get
-                                        "sage" 'cmd-rxp))))
+                 (t (let ((regexp1 (concat "^"
+                                           (or regexp
+                                               (sage-shell-interfaces:get
+                                                "sage" 'cmd-rxp)))))
                       (cl-loop for a in ls
                                if (string-match regexp1 a)
                                collect a))))))
