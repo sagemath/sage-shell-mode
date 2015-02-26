@@ -2375,7 +2375,7 @@ send current line to Sage process buffer."
 
 
 ;;; sage-shell-cpl
-(defvar sage-shell-cpl:current-state
+(defvar sage-shell-cpl:current-state-default
   (list
    ;; name of the interface (string)
    (cons 'interface nil)
@@ -2386,6 +2386,12 @@ send current line to Sage process buffer."
    ;; non-nil means use the command list of the current interface
    ;; for candidates.
    (cons 'use-cmd-lst nil)))
+
+(defun sage-shell-cpl:state-default ()
+  (cl-loop for (a . b) in sage-shell-cpl:current-state-default
+           collect (cons a b)))
+
+(defvar sage-shell-cpl:current-state (sage-shell-cpl:state-default))
 
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
@@ -2524,6 +2530,7 @@ is the buffer for the candidates of attribute."
           (funcall sage-shell-cpl:-all-cmds-delim-end interface)))
 
 (defun sage-shell-cpl:prefix ()
+  (setq sage-shell-cpl:current-state (sage-shell-cpl:state-default))
   (when (and (get-buffer-process sage-shell:process-buffer)
              (sage-shell-interfaces:current-interface))
     (let* ((case-fold-search nil)
