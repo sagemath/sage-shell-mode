@@ -2571,6 +2571,7 @@ is the buffer for the candidates of attribute."
        ((equal cur-intf "sage")
         (sage-shell-cpl:set-current
          'interface "sage"
+         'use-cmd-lst t
          'var-base-name nil
          'prefix
          (sage-shell-interfaces:looking-back-var "sage")))))))
