@@ -2725,43 +2725,63 @@ of current Sage process.")
      :sexp (sage-shell-cpl:completion-init t)
      :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
 
-(defun sage-shell-cpl:-parse-sexp (regexp sexp state)
-  (cl-loop for (tp . ls) in sage-shell-cpl:-last-sexp
-           append
-           (cond ((string= tp "interface")
-                  (let* ((int (sage-shell-cpl:get state 'interface))
-                         (cmd-lst (sage-shell-cpl:get-cmd-lst int)))
-                    (unless cmd-lst
-                      (let ((regexp-int
-                             (concat
-                              "^"
-                              (or regexp
-                                  (sage-shell-interfaces:get int 'cmd-rxp)))))
-                        (sage-shell-cpl:set-cmd-lst
-                         int
-                         (cl-loop for a in ls
-                                  if (string-match regexp-int a)
-                                  collect a))))
-                    (or cmd-lst (sage-shell-cpl:get-cmd-lst int))))
-                 (t (let ((regexp1 (concat "^"
-                                           (or regexp
-                                               (sage-shell-interfaces:get
-                                                "sage" 'cmd-rxp)))))
-                      (cl-loop for a in ls
-                               if (string-match regexp1 a)
-                               collect a))))))
+(defun sage-shell-cpl:trans-sexp (sexp state)
+  "Trasnform SEXP so that the union of cdr is an appropriate list
+ of candidates. This function set the command list by using
+ `sage-shell-cpl:set-cmd-lst'"
+  (let ((types (sage-shell-cpl:get state 'types))
+        (int (sage-shell-cpl:get state 'interface)))
+    (cond ((and (sage-shell:in "interface" types)
+                (null (assoc "interface" sexp)))
+           (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
+                 sexp))
+          ((and (sage-shell:in "interface" types)
+                (null (sage-shell-cpl:get-cmd-lst int)))
+           (let ((ls (assoc-default "interface" sexp)))
+             (when ls
+               (sage-shell-cpl:set-cmd-lst int
+                (cl-loop with regexp =
+                         (format "^%s"
+                                 (sage-shell-interfaces:get int 'cmd-rxp))
+                         for s in ls
+                         if (string-match regexp s)
+                         collect s))))
+           (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
+                 sexp))
+          (t sexp))))
 
-(cl-defun sage-shell-cpl:candidates (&key (regexp nil)
-                                          (sexp sage-shell-cpl:-last-sexp)
-                                          (state sage-shell-cpl:current-state))
-  "Collect candidates matching (concat \"^\" regexp).
-This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
-  (let ((cands1 (sage-shell-cpl:-parse-sexp regexp sexp state)))
-    (cond ((and (sage-shell-cpl:get state 'use-cmd-lst)
-                (null (assoc "interface" sage-shell-cpl:-last-sexp)))
-           (append cands1 (sage-shell-cpl:get-cmd-lst
-                           (sage-shell-cpl:get-current 'interface))))
-          (t cands1))))
+(defun sage-shell-cpl:-default-regexp-alst (keys state)
+  (let ((regexp (sage-shell-interfaces:get "sage" 'cmd-rxp)))
+    (cl-loop for k in keys
+             collect
+             (cons k regexp))))
+
+(defun sage-shell-cpl:-use-filter-p (type state)
+  (cond ((string= type "interface")
+         (string= (sage-shell-cpl:get state 'interface) "sage"))
+        (t (sage-shell:in type '("attribute")))))
+
+(cl-defun sage-shell-cpl:candidates
+    (&key (regexp nil) (sexp sage-shell-cpl:-last-sexp)
+          (state sage-shell-cpl:current-state) (keys t))
+  "Collect candidates matching (concat \"^\" REGEXP).
+If KEYS is a list of string, then it collects only cdr of SEXP
+whose key is in KEYS."
+  (let* ((sexp1 (sage-shell-cpl:trans-sexp sexp state))
+         (keys1 (cond ((listp keys) keys)
+                      (t (sage-shell-cpl:get state 'types))))
+         (regexp1 (format "^%s"
+                          (or regexp (sage-shell-interfaces:get
+                                      "sage" 'cmd-rxp)))))
+    (cl-loop for (type . cands) in sexp1
+             if (or (eq keys t)
+                    (sage-shell:in type keys))
+             append
+             (if (sage-shell-cpl:-use-filter-p type state)
+                 (cl-loop for s in cands
+                          if (string-match regexp1 s)
+                          collect s)
+               cands))))
 
 (defvar sage-shell:completion-sync-cached nil)
 (make-variable-buffer-local 'sage-shell:completion-sync-cached)
