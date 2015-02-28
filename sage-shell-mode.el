@@ -2619,7 +2619,7 @@ send current line to Sage process buffer."
       (when make-cache-file-p
         ;; Show verbose message and make a cache file.
         (sage-shell-cpl:init-verbose interface verbose))
-      (when types
+      (when (and types (listp types))
         (let ((cmd (format
                     "%s(%s, %s)"
                     (sage-shell:py-mod-func "print_cpl_sexp" )
