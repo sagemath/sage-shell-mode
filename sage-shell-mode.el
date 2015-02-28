@@ -2747,10 +2747,8 @@ of current Sage process.")
 (defun sage-shell-cpl:candidates-sync (&optional regexp)
   (sage-shell-cpl:prefix)
   (let ((cur-intf (sage-shell-interfaces:current-interface)))
-    ;; create candidates in some buffers
-    (sage-shell-cpl:completion-init t)
-
     (sage-shell-cpl:candidates
+     :sexp (sage-shell-cpl:completion-init t)
      :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
 
 (defun sage-shell-cpl:-parse-sexp (regexp sexp state)
