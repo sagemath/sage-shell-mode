@@ -2380,7 +2380,7 @@ send current line to Sage process buffer."
 
 
 ;;; sage-shell-cpl
-(defvar sage-shell-cpl:current-state-default
+(defvar sage-shell-cpl:current-state
   (list
    ;; name of the interface (string)
    (cons 'interface nil)
@@ -2390,13 +2390,13 @@ send current line to Sage process buffer."
    (cons 'var-base-name nil)
    ;; non-nil means use the command list of the current interface
    ;; for candidates.
-   (cons 'use-cmd-lst nil)))
-
-(defun sage-shell-cpl:state-default ()
-  (cl-loop for (a . b) in sage-shell-cpl:current-state-default
-           collect (cons a b)))
-
-(defvar sage-shell-cpl:current-state (sage-shell-cpl:state-default))
+   (cons 'use-cmd-lst nil)
+   ;; In some cases, we need different kinds of candidates.
+   ;; For example, candidates which follow "gap." should contain
+   ;; gap commands and attributes of a variable gap.
+   ;; An element of types should be eqaul to one of
+   ;; "interface", "attribute".
+   (cons 'types nil)))
 
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
