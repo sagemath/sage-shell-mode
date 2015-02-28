@@ -2408,7 +2408,9 @@ send current line to Sage process buffer."
                                     (cond ((or (stringp b)
                                                (numberp b)) (format "%S" b))
                                           ((eq b t) "True")
-                                          ((eq b nil) "None"))))
+                                          ((eq b nil) "None")
+                                          ((listp b)
+                                           (sage-shell:-to-python-list b)))))
            ", ")))
 
 (defun sage-shell:-to-python-list (ls)
