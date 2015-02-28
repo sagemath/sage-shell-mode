@@ -405,6 +405,15 @@ returned from the function, otherwise, this returns it self. "
 
 (defvar sage-shell:sage-modes '(sage-shell:sage-mode sage-shell-mode))
 
+(defmacro sage-shell:push-elmts (state &rest attributes-values)
+  (declare (indent 2) (debug t))
+  `(setq ,state
+         (append ,(cons 'list
+                        (cl-loop for (a b) in
+                                 (sage-shell:group attributes-values)
+                                 collect (list 'cons a b)))
+                 ,state)))
+
 (require 'compile)
 (require 'ansi-color)
 
