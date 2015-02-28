@@ -2745,7 +2745,7 @@ of current Sage process.")
           (t can))))
 
 (defun sage-shell-cpl:candidates-sync (&optional regexp)
-  (sage-shell-cpl:prefix)
+  (sage-shell-cpl:parse-and-set-state)
   (let ((cur-intf (sage-shell-interfaces:current-interface)))
     (sage-shell-cpl:candidates
      :sexp (sage-shell-cpl:completion-init t)
@@ -2817,7 +2817,7 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
         (old-name (sage-shell-cpl:get-current 'var-base-name))
         (wab (sage-shell:word-at-pt-beg))
         (var-name (progn
-                    (sage-shell-cpl:prefix)
+                    (sage-shell-cpl:parse-and-set-state)
                     (sage-shell-cpl:get-current 'var-base-name))))
     (cond ((and
             old-int (string= old-int "sage") old-pref
