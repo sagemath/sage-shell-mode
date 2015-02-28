@@ -916,12 +916,7 @@ argument."
     (run-hooks 'sage-shell:clear-command-cache-hook)))
 
 (defun sage-shell:update-sage-commands ()
-  (with-current-buffer sage-shell:process-buffer
-    (sage-shell-cpl:set-cmd-lst "sage" nil)
-    (sage-shell-cpl:completion-init t :compl-state '((interface . "sage")
-                                                     (var-base-name . nil)))
-    (sage-shell-cpl:candidates)
-    (sage-shell-cpl:get-cmd-lst "sage")))
+  (sage-shell-interfaces:update-cmd-lst "sage"))
 
 (defalias 'sage-shell:load-file 'sage-shell-edit:load-file)
 (defalias 'sage-shell:attach-file 'sage-shell-edit:attach-file)
@@ -2330,6 +2325,21 @@ send current line to Sage process buffer."
       (sage-shell:aif (assoc attribute alist)
           (cdr-safe it)
         (error (format "No such attribute %S" attribute))))))
+
+(defun sage-shell-interfaces:update-cmd-lst (itfc)
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell-cpl:set-cmd-lst itfc nil)
+    (let ((sexp (sage-shell-cpl:completion-init
+                 t :compl-state
+                 `((interface . ,itfc)
+                   (var-base-name . nil)
+                   (use-cmd-lst . t)))))
+      (sage-shell-cpl:candidates
+       :sexp sexp
+       :state `((interface . ,itfc)
+                (use-cmd-lst . t)
+                (var-base-name)))
+      (sage-shell-cpl:get-cmd-lst itfc))))
 
 (defun sage-shell-interfaces:looking-back-var (interface)
   (let ((rgexp (sage-shell-interfaces:get interface 'cmd-rxp))
