@@ -2590,6 +2590,7 @@ send current line to Sage process buffer."
                  if a collect a)))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
+(defvar sage-shell-cpl:-dict-keys '(interface var-base-name))
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer sage-shell:output-buffer)
           (compl-state sage-shell-cpl:current-state))
@@ -2618,10 +2619,14 @@ send current line to Sage process buffer."
         ;; Show verbose message and make a cache file.
         (sage-shell-cpl:init-verbose interface verbose))
       (when types
-        (let ((cmd (format "%s(%s, %s)"
-                           (sage-shell:py-mod-func "print_cpl_sexp" )
-                           (sage-shell:-to-python-list types)
-                           (sage-shell:-to-python-dict compl-state))))
+        (let ((cmd (format
+                    "%s(%s, %s)"
+                    (sage-shell:py-mod-func "print_cpl_sexp" )
+                    (sage-shell:-to-python-list types)
+                    (sage-shell:-to-python-dict
+                     (cl-loop for (a . b) in compl-state
+                              if (sage-shell:in a sage-shell-cpl:-dict-keys)
+                              collect (cons a b))))))
           (let ((cont (sage-shell:send-command cmd nil output-buffer sync)))
             (lexical-let ((output-buffer output-buffer)
                           (proc-buf sage-shell:process-buffer))
