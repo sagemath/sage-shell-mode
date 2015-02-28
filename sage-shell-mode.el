@@ -397,7 +397,7 @@ returned from the function, otherwise, this returns it self. "
     `(sage-shell:->> (sage-shell:->> ,x ,form) ,@forms)))
 
 (defmacro sage-shell:with-default-directory (directory &rest body)
-  (declare (indent 2) (debug t))
+  (declare (indent 1) (debug t))
   `(let ((default-directory (or (and ,directory
                                      (file-name-as-directory ,directory))
                                 default-directory)))
@@ -406,7 +406,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:sage-modes '(sage-shell:sage-mode sage-shell-mode))
 
 (defmacro sage-shell:push-elmts (state &rest attributes-values)
-  (declare (indent 2) (debug t))
+  (declare (indent 1) (debug t))
   `(setq ,state
          (append ,(cons 'list
                         (cl-loop for (a b) in
