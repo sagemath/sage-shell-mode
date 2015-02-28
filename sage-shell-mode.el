@@ -1692,17 +1692,16 @@ function does not highlight the input."
                  completion-in-region-mode)
         (completion-in-region-mode -1))
 
+      ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
+      ;; then update the command list.
+      (sage-shell:awhen (sage-shell-cpl:switch-to-another-interface-p line)
+        (unless (sage-shell-cpl:get-cmd-lst it)
+          (sage-shell-interfaces:update-cmd-lst it)))
+
       (sage-shell:prepare-for-send)
       ;; Since comint-send-input sets comint-input-ring-index to nil,
       ;; restore its value
       (setq sage-shell:input-ring-index comint-input-ring-index)
-
-      ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
-      ;; then create completion buffer
-      (sage-shell:awhen (sage-shell-cpl:switch-to-another-interface-p line)
-        (sage-shell-cpl:completion-init
-         t :compl-state `((interface . ,it) (var-base-name . nil))))
-
 
       ;; if current line is ***? and current interface is sage then
       ;; show help or find-file-read-only source file.
