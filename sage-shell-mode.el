@@ -494,9 +494,6 @@ returned from the function, otherwise, this returns it self. "
 
 ;; cache buffers
 (defvar sage-shell-indent:indenting-buffer-name " *sage-indent*")
-(defvar sage-shell-cpl:attribute-completion-buffer
-  " *sage-attribute-completion*"
-  "Buffer name used for collect candidates of attributes of a instance.")
 (defvar sage-shell:output-buffer " *sage-output*")
 
 (defvar sage-shell:output-filter-finished-hook nil
@@ -677,8 +674,7 @@ Sends an EOF only if point is at the end of the buffer and there is no input. "
   (process-send-eof)
   ;; kill cache buffes
   (cl-loop for bufn in (list sage-shell:output-buffer
-                          sage-shell-indent:indenting-buffer-name
-                          sage-shell-cpl:attribute-completion-buffer)
+                             sage-shell-indent:indenting-buffer-name)
         if (get-buffer bufn)
         do (kill-buffer bufn))
 
@@ -2298,13 +2294,10 @@ send current line to Sage process buffer."
             ;; command regexp
             (cons 'cmd-rxp "[a-zA-Z0-9_]+")
             (cons 'var-chars "a-zA-Z0-9_")
-            (cons 'completion-buffer nil)
             ;; if 'trait_names' has the argument 'verbose' then its message.
             (cons 'verbose nil)
             ;; cache file
-            (cons 'cache-file nil)
-            ;; Parse document help (used for pop up help)
-            (cons 'doc-trans 'sage-shell-ac:doc-trans-generic))))
+            (cons 'cache-file nil))))
 
 (defun sage-shell-interfaces:set (interface &rest attributes-values)
   (when (sage-shell:in interface (cons "sage" sage-shell-interfaces:other-interfaces))
@@ -2347,12 +2340,6 @@ send current line to Sage process buffer."
       (when (and (not (equal (skip-chars-backward chars) 0))
                  (looking-at rgexp))
         (point)))))
-
-;; set completion buffer name
-(cl-loop for itf in (append '("sage") sage-shell-interfaces:other-interfaces)
-      do (sage-shell-interfaces:set itf
-                                    'completion-buffer
-                                    (format " *sage-%s-compeltion*" itf)))
 
 ;; set verbose message and cache-file name
 (cl-loop for itf in '("maple" "maxima")
@@ -2454,27 +2441,6 @@ send current line to Sage process buffer."
 (defun sage-shell-cpl:set-current (&rest attributes-values)
   (apply 'sage-shell-cpl:set sage-shell-cpl:current-state
          attributes-values))
-
-(defun sage-shell-cpl:completion-buffer-alist (interface var-base-name)
-  "Return the alist of completion buffers. If cdr is nil, then it
-is the buffer for the candidates of attribute."
-  (let* ((other-interface-p
-          (sage-shell:in interface sage-shell-interfaces:other-interfaces))
-         (alst
-          (list
-           (cons var-base-name
-                 (cons sage-shell-cpl:attribute-completion-buffer nil))
-           (cons other-interface-p
-                 (cons (sage-shell-interfaces:get
-                        interface 'completion-buffer) interface))
-           (cons (and (not other-interface-p) (not var-base-name))
-                 (cons (sage-shell-interfaces:get
-                        "sage" 'completion-buffer) "sage")))))
-    (cl-loop with lst
-          for (predicate . buffer) in alst
-          if predicate
-          do (push buffer lst)
-          finally return lst)))
 
 (defun sage-shell-cpl:var-base-name-and-att-start (&optional pt)
   "Returns cons of the base name of the variable and the point of
