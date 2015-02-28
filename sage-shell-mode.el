@@ -2416,12 +2416,9 @@ send current line to Sage process buffer."
 (make-variable-buffer-local 'sage-shell-cpl:current-state)
 
 
-(defmacro sage-shell-cpl:get (state attribute)
-  `(sage-shell:aif (assoc ,attribute
-                          (buffer-local-value ',state
-                                              sage-shell:process-buffer))
-      (cdr-safe it)
-    (error (format "No such attribute %S" ,attribute))))
+(defun sage-shell-cpl:get (state attribute)
+  (sage-shell:aif (assoc attribute state)
+      (cdr-safe it)))
 
 
 (defun sage-shell-cpl:get-current (attribute)
@@ -2429,13 +2426,12 @@ send current line to Sage process buffer."
                       attribute))
 
 (defun sage-shell-cpl:set (state &rest attributes-values)
-  (with-current-buffer sage-shell:process-buffer
-    (cl-loop for (att val) in (sage-shell:group attributes-values)
+  (cl-loop for (att val) in (sage-shell:group attributes-values)
              do
              (sage-shell:aif (assoc att state)
                  (setcdr it val)
                (error (format "No such attribute %S" att)))
-             finally return val)))
+             finally return val))
 
 (defun sage-shell-cpl:set-current (&rest attributes-values)
   (apply 'sage-shell-cpl:set sage-shell-cpl:current-state
