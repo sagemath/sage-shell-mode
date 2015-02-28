@@ -2534,52 +2534,67 @@ is the buffer for the candidates of attribute."
           (funcall sage-shell-cpl:-all-cmds-delim-start interface)
           (funcall sage-shell-cpl:-all-cmds-delim-end interface)))
 
+(defun sage-shell-cpl:parse-current-state ()
+  "Returns the current state as an alist. Used in a repl buffer."
+  (let* ((case-fold-search nil)
+         (base-and-beg (sage-shell-cpl:var-base-name-and-att-start))
+         (base-name (car-safe base-and-beg))
+         (att-beg (cdr-safe base-and-beg))
+         (cur-intf (sage-shell-interfaces:current-interface))
+         (itfcs sage-shell-interfaces:other-interfaces)
+         (intf (unless att-beg
+                 (or (sage-shell:in cur-intf itfcs)
+                     (save-excursion
+                       (let ((pt (point)))
+                         (forward-line 0)
+                         (sage-shell:awhen
+                             (re-search-forward
+                              (format "\\<%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
+                                      (regexp-opt itfcs 1)) nil t)
+                           (when (and (<= (match-end 2) pt)
+                                      (<= pt it))
+                             (match-string-no-properties 1))))))))
+         (state nil))
+    ;; Code for side effects.
+    (cond
+     ;; when the word at point is an attribute
+     ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
+      (sage-shell:push-elmts state
+        'var-base-name base-name
+        'prefix att-beg)
+      (if (sage-shell:in base-name itfcs)
+          (sage-shell:push-elmts state
+            'interface base-name
+            'use-cmd-lst t)
+        (sage-shell:push-elmts state
+          'interface "sage")))
+     ;; when current interface is not sage or the point is
+     ;; in a function one of gp.eval, gp, gap.eval, ...
+     (intf
+      (sage-shell:push-elmts state
+        'interface intf
+        'use-cmd-lst t
+        'var-base-name nil
+        'prefix (sage-shell-interfaces:looking-back-var intf)))
+     ;; when current interface is sage
+     ((equal cur-intf "sage")
+      (sage-shell:push-elmts state
+        'interface "sage"
+        'use-cmd-lst t
+        'var-base-name nil
+        'prefix (sage-shell-interfaces:looking-back-var "sage"))))
+    ;; Returns state.
+    state))
+
+(defun sage-shell-cpl:parse-and-set-state ()
+  "Parse the current state and set the state."
+  (setq sage-shell-cpl:current-state (sage-shell-cpl:parse-current-state)))
+
 (defun sage-shell-cpl:prefix ()
-  (setq sage-shell-cpl:current-state (sage-shell-cpl:state-default))
   (when (and (get-buffer-process sage-shell:process-buffer)
              (sage-shell-interfaces:current-interface))
-    (let* ((case-fold-search nil)
-           (base-and-beg (sage-shell-cpl:var-base-name-and-att-start))
-           (base-name (car-safe base-and-beg))
-           (att-beg (cdr-safe base-and-beg))
-           (cur-intf (sage-shell-interfaces:current-interface))
-           (itfcs sage-shell-interfaces:other-interfaces)
-           (intf (unless att-beg
-                   (or (sage-shell:in cur-intf itfcs)
-                       (save-excursion
-                         (let ((pt (point)))
-                           (forward-line 0)
-                           (sage-shell:awhen (re-search-forward
-                                        (format "\\<%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
-                                                (regexp-opt itfcs 1)) nil t)
-                             (when (and (<= (match-end 2) pt)
-                                        (<= pt it))
-                               (match-string-no-properties 1)))))))))
-      (cond
-       ;; when the word at point is an attribute
-       ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
-        (sage-shell-cpl:set-current 'var-base-name base-name)
-        (if (sage-shell:in base-name itfcs)
-            (sage-shell-cpl:set-current 'interface base-name
-                                        'use-cmd-lst t)
-          (sage-shell-cpl:set-current 'interface "sage"))
-        (sage-shell-cpl:set-current 'prefix att-beg))
-       ;; when current interface is not sage or the point is
-       ;; in a function one of gp.eval, gp, gap.eval, ...
-       (intf
-        (sage-shell-cpl:set-current 'interface intf)
-        (sage-shell-cpl:set-current
-         'use-cmd-lst t
-         'var-base-name nil
-         'prefix (sage-shell-interfaces:looking-back-var intf)))
-       ;; when current interface is sage
-       ((equal cur-intf "sage")
-        (sage-shell-cpl:set-current
-         'interface "sage"
-         'use-cmd-lst t
-         'var-base-name nil
-         'prefix
-         (sage-shell-interfaces:looking-back-var "sage")))))))
+    (sage-shell-cpl:parse-and-set-state)
+    (sage-shell-cpl:get-current 'prefix)))
 
 (cl-defun sage-shell-cpl:-types (compl-state make-cache-file-p)
   (let* ((interface (sage-shell-cpl:get compl-state 'interface))
