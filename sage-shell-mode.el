@@ -2325,12 +2325,12 @@ send current line to Sage process buffer."
                  t :compl-state
                  `((interface . ,itfc)
                    (var-base-name . nil)
-                   (use-cmd-lst . t)))))
+                   (types "interface")))))
       (sage-shell-cpl:candidates
        :sexp sexp
        :state `((interface . ,itfc)
-                (use-cmd-lst . t)
-                (var-base-name)))
+                (types "interface")
+                (var-base-name . nil)))
       (sage-shell-cpl:get-cmd-lst itfc))))
 
 (defun sage-shell-interfaces:looking-back-var (interface)
@@ -2388,9 +2388,6 @@ send current line to Sage process buffer."
    (cons 'prefix nil)
    ;; nil or the base name of the variable name
    (cons 'var-base-name nil)
-   ;; non-nil means use the command list of the current interface
-   ;; for candidates.
-   (cons 'use-cmd-lst nil)
    ;; In some cases, we need different kinds of candidates.
    ;; For example, candidates which follow "gap." should contain
    ;; gap commands and attributes of a variable gap.
@@ -2531,35 +2528,42 @@ send current line to Sage process buffer."
                            (when (and (<= (match-end 2) pt)
                                       (<= pt it))
                              (match-string-no-properties 1))))))))
-         (state nil))
+         (state nil)
+         (types nil))
     ;; Code for side effects.
     (cond
-     ;; when the word at point is an attribute
+     ;; When the word at point is an attribute
      ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
       (sage-shell:push-elmts state
         'var-base-name base-name
         'prefix att-beg)
-      (if (sage-shell:in base-name itfcs)
-          (sage-shell:push-elmts state
-            'interface base-name
-            'use-cmd-lst t)
-        (sage-shell:push-elmts state
-          'interface "sage")))
-     ;; when current interface is not sage or the point is
+      (push "attribute" types)
+      (cond ((sage-shell:in base-name itfcs)
+             (sage-shell:push-elmts state
+               'interface base-name)
+             (push "interface" types))
+            (t (sage-shell:push-elmts state
+                 'interface "sage"))))
+
+     ;; When the current interface is not sage or the point is
      ;; in a function one of gp.eval, gp, gap.eval, ...
      (intf
       (sage-shell:push-elmts state
         'interface intf
-        'use-cmd-lst t
         'var-base-name nil
-        'prefix (sage-shell-interfaces:looking-back-var intf)))
-     ;; when current interface is sage
-     ((equal cur-intf "sage")
+        'prefix (sage-shell-interfaces:looking-back-var intf))
+      (push "interface" types))
+
+     ;; When the current interface is sage
+     ((string= cur-intf "sage")
       (sage-shell:push-elmts state
         'interface "sage"
-        'use-cmd-lst t
         'var-base-name nil
-        'prefix (sage-shell-interfaces:looking-back-var "sage"))))
+        'prefix (sage-shell-interfaces:looking-back-var "sage"))
+      (push "interface" types)))
+
+    (sage-shell:push-elmts state
+      'types types)
     ;; Returns state.
     state))
 
@@ -2574,20 +2578,17 @@ send current line to Sage process buffer."
     (sage-shell-cpl:get-current 'prefix)))
 
 (cl-defun sage-shell-cpl:-types (compl-state make-cache-file-p)
-  (let* ((interface (sage-shell-cpl:get compl-state 'interface))
-         (var-base-name (sage-shell-cpl:get compl-state 'var-base-name))
-         (other-interface-p
-          (sage-shell:in interface sage-shell-interfaces:other-interfaces)))
-    (let ((no-cache-for-cmds-p
-           (and (not (sage-shell-cpl:get-cmd-lst interface))
-                (or (not var-base-name) other-interface-p))))
-      (let* ((interface-tp (if (cond (make-cache-file-p
-                                      (not (string= interface "magma")))
-                                     (no-cache-for-cmds-p t))
-                               "interface"))
-             (att-tp (if var-base-name "attributes")))
-        (cl-loop for a in (list interface-tp att-tp)
-                 if a collect a)))))
+  (let* ((types (sage-shell-cpl:get compl-state 'types))
+         (interface (sage-shell-cpl:get compl-state 'interface))
+         (update-cmd-p
+          (cond (make-cache-file-p
+                 (not (string= interface "magma")))
+                (t (null (sage-shell-cpl:get-cmd-lst interface))))))
+    (if update-cmd-p
+        types
+      (cl-loop for a in types
+               unless (string= a "interface")
+               collect a))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
 (defvar sage-shell-cpl:-dict-keys '(interface var-base-name))
