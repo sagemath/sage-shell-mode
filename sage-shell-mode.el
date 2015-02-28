@@ -2773,7 +2773,8 @@ of current Sage process.")
 (cl-defun sage-shell-cpl:candidates (&key (regexp nil)
                                           (sexp sage-shell-cpl:-last-sexp)
                                           (state sage-shell-cpl:current-state))
-  "Collect candidates matching (concat \"^\" regexp)"
+  "Collect candidates matching (concat \"^\" regexp).
+This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
   (let ((cands1 (sage-shell-cpl:-parse-sexp regexp sexp state)))
     (cond ((and (sage-shell-cpl:get state 'use-cmd-lst)
                 (null (assoc "interface" sage-shell-cpl:-last-sexp)))
