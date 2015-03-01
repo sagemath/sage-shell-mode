@@ -1,5 +1,5 @@
 EMACS = emacs
-CASK = cask
+CASK = $(HOME)/.cask/bin/cask
 
 compile:
 	$(CASK) exec $(EMACS) -Q -batch -f batch-byte-compile sage-shell-mode.el
