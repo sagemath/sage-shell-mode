@@ -2640,7 +2640,11 @@ using `sage-shell-cpl:set-cmd-lst'"
               (with-current-buffer output-buffer
                 (goto-char (point-min))
                 (setq sage-shell-cpl:-last-sexp
-                      (read (current-buffer))))
+                      (condition-case err
+                          (read (current-buffer))
+                        (end-of-file (unless (= (buffer-size) 0)
+                                       (signal (car err) (cdr err))))
+                        (error (signal (car err) (cdr err))))))
               (sage-shell-cpl:-set-cmd-lst
                compl-state sage-shell-cpl:-last-sexp)
               (when cont
