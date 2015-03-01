@@ -2441,29 +2441,28 @@ send current line to Sage process buffer."
   (apply 'sage-shell-cpl:set sage-shell-cpl:current-state
          attributes-values))
 
-(defun sage-shell-cpl:var-base-name-and-att-start (&optional pt)
+(defun sage-shell-cpl:var-base-name-and-att-start ()
   "Returns cons of the base name of the variable and the point of
    beginig of the attribute. For example, if there is a python
    code 'abc.de' and the point is at 'd' or 'e' and 'abc' does
    not call any functions, this returns cons of a string 'abc'
    and the point at 'd', otherwise nil."
-  (let ((pt (or pt (point)))
-        (cm-bol (save-excursion (comint-bol)))
+  (let ((bol (line-beginning-position))
         (var-chars (sage-shell-interfaces:get
                     (sage-shell-interfaces:current-interface)
                     'var-chars))
         att-beg base-end)
     (save-excursion
-      (goto-char pt)
-      (skip-chars-backward var-chars)
+      (skip-chars-backward var-chars bol)
       (setq att-beg (point))
-      (when (looking-back (rx "." (0+ whitespace)))
+      (when (looking-back (rx "." (0+ whitespace)) bol)
         (save-excursion
-          (skip-chars-backward " " cm-bol)
+          (skip-chars-backward " " bol)
           (forward-char -1)
-          (skip-chars-backward " " cm-bol)
+          (skip-chars-backward " " bol)
           (setq base-end (point)))
-        (sage-shell:awhen (sage-shell-cpl:base-name-att-beg-rec var-chars)
+        (sage-shell:awhen (sage-shell-cpl:base-name-att-beg-rec
+                           var-chars bol)
           (let ((base-name (buffer-substring-no-properties it base-end)))
             (unless (or (string= base-name "")
                         ;; when base-name does not call any functions
@@ -2478,20 +2477,19 @@ send current line to Sage process buffer."
                                       base-name))
               (cons base-name att-beg))))))))
 
-(defun sage-shell-cpl:base-name-att-beg-rec (var-chars)
-  (let ((com-bol (save-excursion (comint-bol))))
-    (save-excursion
-      (skip-chars-backward var-chars)
-      (if (not (looking-back (rx "." (0+ whitespace))))
+(defun sage-shell-cpl:base-name-att-beg-rec (var-chars bol)
+  (save-excursion
+      (skip-chars-backward var-chars bol)
+      (if (not (looking-back (rx "." (0+ whitespace)) bol))
           (point)
         (forward-char -1)
-        (skip-chars-backward " " com-bol)
-        (if (looking-back (rx (or ")" "]")))
+        (skip-chars-backward " " bol)
+        (if (looking-back (rx (or ")" "]")) bol)
             (when (ignore-errors (backward-list))
-              (skip-chars-backward " " com-bol)
-              (sage-shell-cpl:base-name-att-beg-rec var-chars))
-          (skip-chars-backward " " com-bol)
-          (sage-shell-cpl:base-name-att-beg-rec var-chars))))))
+              (skip-chars-backward " " bol)
+              (sage-shell-cpl:base-name-att-beg-rec var-chars bol))
+          (skip-chars-backward " " bol)
+          (sage-shell-cpl:base-name-att-beg-rec var-chars bol)))))
 
 (defvar sage-shell-cpl:-all-cmds-delim-start
   (lambda (i) (format ";; Start of command list for %s" i)))
