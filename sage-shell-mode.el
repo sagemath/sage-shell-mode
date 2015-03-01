@@ -2392,7 +2392,7 @@ send current line to Sage process buffer."
    ;; For example, candidates which follow "gap." should contain
    ;; gap commands and attributes of a variable gap.
    ;; An element of types should be eqaul to one of
-   ;; "interface", "attribute".
+   ;; "interface", "attributes".
    (cons 'types nil)))
 
 (defun sage-shell:-to-python-dict (alst)
@@ -2537,7 +2537,7 @@ send current line to Sage process buffer."
       (sage-shell:push-elmts state
         'var-base-name base-name
         'prefix att-beg)
-      (push "attribute" types)
+      (push "attributes" types)
       (cond ((sage-shell:in base-name itfcs)
              (sage-shell:push-elmts state
                'interface base-name)
@@ -2759,7 +2759,7 @@ of current Sage process.")
 (defun sage-shell-cpl:-use-filter-p (type state)
   (cond ((string= type "interface")
          (string= (sage-shell-cpl:get state 'interface) "sage"))
-        (t (sage-shell:in type '("attribute")))))
+        (t (sage-shell:in type '("attributes")))))
 
 (cl-defun sage-shell-cpl:candidates
     (&key (regexp nil) (sexp sage-shell-cpl:-last-sexp)
