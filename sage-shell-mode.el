@@ -1801,10 +1801,11 @@ function does not highlight the input."
         (cl-loop for i in sage-shell-interfaces:other-interfaces
               thereis (looking-at (format "^%s: " i))))))
 
-(defun sage-shell:at-top-level-and-in-sage-p ()
+(cl-defun sage-shell:at-top-level-and-in-sage-p
+    (&optional (cur-intf (sage-shell-interfaces:current-interface)))
   "returns non nil if and only if current interface is sage and
 the current line is not in a block."
-  (and (equal (sage-shell-interfaces:current-interface) "sage")
+  (and (string= cur-intf "sage")
        (save-excursion
          (forward-line 0)
          (looking-at sage-shell:prompt1-regexp))))
@@ -2441,16 +2442,14 @@ send current line to Sage process buffer."
   (apply 'sage-shell-cpl:set sage-shell-cpl:current-state
          attributes-values))
 
-(defun sage-shell-cpl:var-base-name-and-att-start ()
+(defun sage-shell-cpl:var-base-name-and-att-start (cur-intf)
   "Returns cons of the base name of the variable and the point of
    beginig of the attribute. For example, if there is a python
    code 'abc.de' and the point is at 'd' or 'e' and 'abc' does
    not call any functions, this returns cons of a string 'abc'
    and the point at 'd', otherwise nil."
   (let ((bol (line-beginning-position))
-        (var-chars (sage-shell-interfaces:get
-                    (sage-shell-interfaces:current-interface)
-                    'var-chars))
+        (var-chars (sage-shell-interfaces:get cur-intf 'var-chars))
         att-beg base-end)
     (save-excursion
       (skip-chars-backward var-chars bol)
@@ -2491,13 +2490,13 @@ send current line to Sage process buffer."
           (skip-chars-backward " " bol)
           (sage-shell-cpl:base-name-att-beg-rec var-chars bol)))))
 
-(defun sage-shell-cpl:parse-current-state ()
+(cl-defun sage-shell-cpl:parse-current-state
+    (&optional (cur-intf (sage-shell-interfaces:current-interface)))
   "Returns the current state as an alist. Used in a repl buffer."
   (let* ((case-fold-search nil)
-         (base-and-beg (sage-shell-cpl:var-base-name-and-att-start))
+         (base-and-beg (sage-shell-cpl:var-base-name-and-att-start cur-intf))
          (base-name (car-safe base-and-beg))
          (att-beg (cdr-safe base-and-beg))
-         (cur-intf (sage-shell-interfaces:current-interface))
          (itfcs sage-shell-interfaces:other-interfaces)
          (intf (unless att-beg
                  (or (sage-shell:in cur-intf itfcs)
@@ -2516,7 +2515,7 @@ send current line to Sage process buffer."
     ;; Code for side effects.
     (cond
      ;; When the word at point is an attribute
-     ((and att-beg (sage-shell:at-top-level-and-in-sage-p))
+     ((and att-beg (sage-shell:at-top-level-and-in-sage-p cur-intf))
       (sage-shell:push-elmts state
         'var-base-name base-name
         'prefix att-beg)
