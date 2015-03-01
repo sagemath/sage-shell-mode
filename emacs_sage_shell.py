@@ -4,7 +4,7 @@ import re
 import os
 from contextlib import contextmanager
 import sage
-from sage.repl.preparse import preparse
+from sage.all import preparse
 
 try:
     ip = get_ipython()
