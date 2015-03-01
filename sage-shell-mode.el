@@ -2515,7 +2515,7 @@ send current line to Sage process buffer."
     ;; Code for side effects.
     (cond
      ;; When the word at point is an attribute
-     ((and att-beg (sage-shell:at-top-level-and-in-sage-p cur-intf))
+     (att-beg
       (sage-shell:push-elmts state
         'var-base-name base-name
         'prefix att-beg)
