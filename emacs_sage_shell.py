@@ -4,6 +4,7 @@ import re
 import os
 from contextlib import contextmanager
 import sage
+from sage.repl.preparse import preparse
 
 try:
     ip = get_ipython()
@@ -181,11 +182,11 @@ def sage_getdef(name, base_name=None):
                                is not None):
         gd_name = "sage.misc.sageinspect.sage_getdef"
         try:
-            name_ob = ip.ev(name)
+            name_ob = ip.ev(preparse(name))
             if inspect.isclass(name_ob):
                 df = ip.ev("%s(%s.__init__)"%(gd_name, name))
             else:
-                df = ip.ev("%s(%s)"%(gd_name, name))
+                df = ip.ev("%s(%s)"%(gd_name, preparse(name)))
             return "%s%s"%(name, df)
         except NameError:
             pass
@@ -197,9 +198,9 @@ _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
 
 def _should_be_ignored(name, base_name):
-    name_ob = ip.ev(name)
+    name_ob = ip.ev(preparse(name))
     if isinstance(base_name, str):
-        base_ob = ip.ev(base_name)
+        base_ob = ip.ev(preparse(base_name))
     else:
         base_ob = None
     if any(isinstance(base_ob, cls) or isinstance(name_ob, cls)
@@ -217,7 +218,7 @@ def short_doc(name, base_name=None):
     sd_name = "sage.misc.sageinspect.sage_getdoc"
     if _is_safe_str(name) and (_should_be_ignored(name, base_name)
                                is not None):
-        dc = ip.ev("%s(%s)"%(sd_name, name))
+        dc = ip.ev("%s(%s)"%(sd_name, preparse(name)))
         m = _doc_delim_regexp.search(dc)
         if m is not None:
             res = dc[:m.start()]
