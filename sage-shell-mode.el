@@ -2592,9 +2592,14 @@ send current line to Sage process buffer."
 (defvar sage-shell-cpl:-dict-keys '(interface var-base-name))
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer sage-shell:output-buffer)
-          (compl-state sage-shell-cpl:current-state))
-  "If SYNC is non-nil, return a sexp. If not return value has no meaning and
-`sage-shell-cpl:-last-sexp' will be set when the redirection is finished."
+          (compl-state sage-shell-cpl:current-state)
+          (cont nil))
+  "If SYNC is non-nil, return a sexp. If not return value has no
+meaning and `sage-shell-cpl:-last-sexp' will be set when the
+redirection is finished.  If CONT is non-nil, it should be a
+function with no arguments.  CONT will be called when the
+redirection is finished.  This function set the command list by
+using `sage-shell-cpl:set-cmd-lst'"
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:at-top-level-and-in-sage-p)
@@ -2626,16 +2631,38 @@ send current line to Sage process buffer."
                      (cl-loop for (a . b) in compl-state
                               if (sage-shell:in a sage-shell-cpl:-dict-keys)
                               collect (cons a b))))))
-          (let ((cont (sage-shell:send-command cmd nil output-buffer sync)))
-            (lexical-let ((output-buffer output-buffer)
-                          (proc-buf sage-shell:process-buffer))
-              (sage-shell:after-redirect-finished
-                (with-current-buffer output-buffer
-                  (goto-char (point-min))
-                  (setq sage-shell-cpl:-last-sexp
-                        (read (current-buffer))))))
-            (if sync
-                sage-shell-cpl:-last-sexp)))))))
+          (sage-shell:send-command cmd nil output-buffer sync)
+          (lexical-let ((output-buffer output-buffer)
+                        (proc-buf sage-shell:process-buffer)
+                        (cont cont)
+                        (compl-state compl-state))
+            (sage-shell:after-redirect-finished
+              (with-current-buffer output-buffer
+                (goto-char (point-min))
+                (setq sage-shell-cpl:-last-sexp
+                      (read (current-buffer))))
+              (sage-shell-cpl:-set-cmd-lst
+               compl-state sage-shell-cpl:-last-sexp)
+              (when cont
+                (funcall cont))))
+          (if sync
+              sage-shell-cpl:-last-sexp))))))
+
+(defun sage-shell-cpl:-set-cmd-lst (state sexp)
+  (let ((int (sage-shell-cpl:get state 'interface)))
+    (when (and (sage-shell:in
+                "interface" (sage-shell-cpl:get state 'types))
+               (null (sage-shell-cpl:get-cmd-lst int)))
+      (let ((ls (assoc-default "interface" sexp)))
+        (when ls
+          (sage-shell-cpl:set-cmd-lst
+           int
+           (cl-loop with regexp =
+                    (format "^%s"
+                            (sage-shell-interfaces:get int 'cmd-rxp))
+                    for s in ls
+                    if (string-match regexp s)
+                    collect s)))))))
 
 (defun sage-shell-cpl:init-verbose (interface verbose)
   (cond
@@ -2725,25 +2752,11 @@ of current Sage process.")
 
 (defun sage-shell-cpl:trans-sexp (sexp state)
   "Trasnform SEXP so that the union of cdr is an appropriate list
- of candidates. This function set the command list by using
- `sage-shell-cpl:set-cmd-lst'"
+ of candidates."
   (let ((types (sage-shell-cpl:get state 'types))
         (int (sage-shell-cpl:get state 'interface)))
     (cond ((and (sage-shell:in "interface" types)
                 (null (assoc "interface" sexp)))
-           (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
-                 sexp))
-          ((and (sage-shell:in "interface" types)
-                (null (sage-shell-cpl:get-cmd-lst int)))
-           (let ((ls (assoc-default "interface" sexp)))
-             (when ls
-               (sage-shell-cpl:set-cmd-lst int
-                (cl-loop with regexp =
-                         (format "^%s"
-                                 (sage-shell-interfaces:get int 'cmd-rxp))
-                         for s in ls
-                         if (string-match regexp s)
-                         collect s))))
            (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
                  sexp))
           (t sexp))))
