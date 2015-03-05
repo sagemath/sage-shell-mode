@@ -2576,14 +2576,25 @@ send current line to Sage process buffer."
 (defvar sage-shell-cpl:-dict-keys '(interface var-base-name))
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer sage-shell:output-buffer)
-          (compl-state sage-shell-cpl:current-state)
-          (cont nil))
+          (compl-state (sage-shell-cpl:parse-and-set-state))
+          (cont nil)
+          (pred nil))
   "If SYNC is non-nil, return a sexp. If not return value has no
 meaning and `sage-shell-cpl:-last-sexp' will be set when the
 redirection is finished.  If CONT is non-nil, it should be a
 function with no arguments.  CONT will be called when the
 redirection is finished.  This function set the command list by
-using `sage-shell-cpl:set-cmd-lst'"
+using `sage-shell-cpl:set-cmd-lst'
+When PRED is non-nil and its return value is nil, then
+this function does nothing."
+  (when (or (null pred) (funcall pred))
+    (sage-shell-cpl:-completion-init
+     sync :output-buffer output-buffer :compl-state compl-state :cont cont)))
+
+(cl-defun sage-shell-cpl:-completion-init
+    (sync &key (output-buffer sage-shell:output-buffer)
+          (compl-state (sage-shell-cpl:parse-and-set-state))
+          (cont nil))
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:at-top-level-and-in-sage-p)
