@@ -954,6 +954,7 @@ returns a lamda function with no args to obtain the result."
 (defun sage-shell:help1 ()
   (sage-shell-help:describe-symbol
    (sage-shell-cpl:to-objname-to-send
+    ;; This function set the current state.
     (sage-shell:completing-read-commands))))
 
 (defun sage-shell:complete ()
