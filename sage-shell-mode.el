@@ -73,7 +73,8 @@
 
 (defcustom sage-shell:input-history-cache-file
   nil
-  "If non nil, after invoking `sage-shell:send-eof',`comint-input-ring' is saved to this file."
+  "If non nil, after invoking
+`sage-shell:send-eof',`comint-input-ring' is saved to this file."
   :group 'sage-shell
   :type '(choice (file :tag "file")
                  (const :tag "Off" nil)))
@@ -90,9 +91,10 @@
 (defcustom sage-shell:help-completion-function 'sage-shell:help1
   "Completion function used for `sage-shell:help'."
   :group 'sage-shell
-  :type '(choice (const :tag "default" sage-shell:help1)
-                 (const :tag "anything" anything-sage-shell-describe-object-at-point)
-                 (const :tag "helm" helm-sage-shell-describe-object-at-point)))
+  :type '(choice
+          (const :tag "default" sage-shell:help1)
+          (const :tag "anything" anything-sage-shell-describe-object-at-point)
+          (const :tag "helm" helm-sage-shell-describe-object-at-point)))
 
 
 (defcustom sage-shell:use-unicode-banner t
@@ -111,12 +113,15 @@
   :group 'sage-shell)
 
 (defcustom sage-shell:make-error-link-p t
-  "If non-nil and the output contains an error line, output-filter-function creates a link to the file where the error is raised."
+  "If non-nil and the output contains an error line,
+output-filter-function creates a link to the file where the error
+is raised."
   :type 'boolean
   :group 'sage-shell)
 
 (defcustom sage-shell:prefer-development-file-p t
-  "If non nil, prefer a source file in src directory rather than site-packages directory."
+  "If non nil, prefer a source file in src directory rather than
+site-packages directory."
   :group 'sage-shell
   :type 'boolean)
 
@@ -190,7 +195,8 @@ will be ignored."
                  (string :tag "LaTeX command")))
 
 (defcustom sage-shell-sagetex:add-to-texinputs-p t
-  "Non-nil means sage-shell-mode adds $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
+  "Non-nil means sage-shell-mode adds
+$SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
   :type 'boolean
   :group 'sage-shell-sagetex)
 
@@ -507,28 +513,30 @@ returned from the function, otherwise, this returns it self. "
 
 ;;; Menu
 (defvar sage-shell:in-out-menu-spec
-      '("In/Out"
-        ["Expand History Before Point" comint-replace-by-expanded-history t]
-        ["List Input History" comint-dynamic-list-input-ring t]
-        ["Previous Input" comint-previous-input t]
-        ["Next Input" sage-shell:next-input t]
-        ["Previous Matching Current Input" comint-previous-matching-input-from-input t]
-        ["Next Matching Current Input" comint-next-matching-input-from-input t]
-        ["Previous Matching Input..." comint-previous-matching-input t]
-        ["Next Matching Input..." comint-next-matching-input t]
-        ["Backward Matching Input..." comint-backward-matching-input t]
-        ["Forward Matching Input..." comint-forward-matching-input t]
-        ["Isearch Input String Backward..." comint-history-isearch-backward t]
-        ["Isearch Input Regexp Backward..." comint-history-isearch-backward-regexp t]
-        ["Copy Old Input" comint-copy-old-input t]
-        ["Kill Current Input" comint-kill-input t]
-        ["Show Current Output Group" comint-show-output t]
-        ["Show Maximum Output" comint-show-maximum-output t]
-        ["Backward Output Group" comint-previous-prompt t]
-        ["Forward Output Group" comint-next-prompt t]
-        ["Write Current Output Group to File" comint-write-output t]
-        ["Append Current Output Group to File" comint-append-output-to-file t]
-        ["Delete Current Output Group" comint-delete-output t]))
+  '("In/Out"
+    ["Expand History Before Point" comint-replace-by-expanded-history t]
+    ["List Input History" comint-dynamic-list-input-ring t]
+    ["Previous Input" comint-previous-input t]
+    ["Next Input" sage-shell:next-input t]
+    ["Previous Matching Current Input"
+     comint-previous-matching-input-from-input t]
+    ["Next Matching Current Input" comint-next-matching-input-from-input t]
+    ["Previous Matching Input..." comint-previous-matching-input t]
+    ["Next Matching Input..." comint-next-matching-input t]
+    ["Backward Matching Input..." comint-backward-matching-input t]
+    ["Forward Matching Input..." comint-forward-matching-input t]
+    ["Isearch Input String Backward..." comint-history-isearch-backward t]
+    ["Isearch Input Regexp Backward..."
+     comint-history-isearch-backward-regexp t]
+    ["Copy Old Input" comint-copy-old-input t]
+    ["Kill Current Input" comint-kill-input t]
+    ["Show Current Output Group" comint-show-output t]
+    ["Show Maximum Output" comint-show-maximum-output t]
+    ["Backward Output Group" comint-previous-prompt t]
+    ["Forward Output Group" comint-next-prompt t]
+    ["Write Current Output Group to File" comint-write-output t]
+    ["Append Current Output Group to File" comint-append-output-to-file t]
+    ["Delete Current Output Group" comint-delete-output t]))
 (defvar sage-shell:singal-menu-spec
       '("Signals"
         ["EOF"    sage-shell:send-eof t]
@@ -1295,7 +1303,8 @@ This ring remebers the parts.")
     (sage-shell:output-filter proc replacement)))
 
 (defun sage-shell:clear-current-buffer ()
-  "Delete all output in the current buffer. This does not delete the last prompt."
+  "Delete all output in the current buffer. This does not delete
+the last prompt."
   (interactive)
   (sage-shell:-delete-output (point-min)))
 
@@ -1455,7 +1464,8 @@ Does not delete the prompt."
             (sage-shell:redirect-cleanup)
             (sage-shell:run-hook-and-remove
              'sage-shell:redirect-filter-finished-hook process))
-          ;; sage-shell:redirect-filter-finished-hook may change the current buffer
+          ;; sage-shell:redirect-filter-finished-hook may change the current
+          ;; buffer
           (with-current-buffer proc-buf
               (setq sage-shell:redirect-last-point (point))))))))
 
@@ -1479,8 +1489,8 @@ Does not delete the prompt."
      nil))                              ; Echo input
 
   (when filter
-    ;; Set the filter
-    (setq sage-shell:comint-redirect-original-filter-function ; Save the old filter
+    ;; Save the old filter
+    (setq sage-shell:comint-redirect-original-filter-function
           (process-filter proc))
     (set-process-filter proc filter)))
 
@@ -2274,18 +2284,20 @@ send current line to Sage process buffer."
     ;; goto last prompt
     (goto-char (process-mark (get-buffer-process (current-buffer))))
     (forward-line 0)
-    (sage-shell:->> (sage-shell:aif (cl-loop for str in sage-shell-interfaces:other-interfaces
-                              if (looking-at (concat str ": ")) return str)
-                  it
-                (if (looking-at sage-shell:prompt-regexp)
-                    "sage"
-                  ;; otherwise
-                  (let ((lstline (ring-ref comint-input-ring 0)))
-                    (when (string-match
-                           (rx (group (1+ alnum)) (or "." "_") "console")
-                           lstline)
-                      (match-string-no-properties 1 lstline)))))
-              sage-shell-cpl:interface-trans)))
+    (sage-shell:->>
+     (sage-shell:aif
+         (cl-loop for str in sage-shell-interfaces:other-interfaces
+                  if (looking-at (concat str ": ")) return str)
+         it
+       (if (looking-at sage-shell:prompt-regexp)
+           "sage"
+         ;; otherwise
+         (let ((lstline (ring-ref comint-input-ring 0)))
+           (when (string-match
+                  (rx (group (1+ alnum)) (or "." "_") "console")
+                  lstline)
+             (match-string-no-properties 1 lstline)))))
+     sage-shell-cpl:interface-trans)))
 
 ;; Define many global variables
 (cl-loop for i in (append sage-shell-interfaces:other-interfaces '("sage"))
@@ -2301,7 +2313,8 @@ send current line to Sage process buffer."
             (cons 'cache-file nil))))
 
 (defun sage-shell-interfaces:set (interface &rest attributes-values)
-  (when (sage-shell:in interface (cons "sage" sage-shell-interfaces:other-interfaces))
+  (when (sage-shell:in
+         interface (cons "sage" sage-shell-interfaces:other-interfaces))
     (let ((alist (symbol-value
                   (intern (format "sage-shell-cpl:%s-info" interface)))))
       (cl-loop for (att val) in (sage-shell:group attributes-values)
@@ -2312,7 +2325,8 @@ send current line to Sage process buffer."
             finally return val))))
 
 (defun sage-shell-interfaces:get (interface attribute)
-  (when (sage-shell:in interface (cons "sage" sage-shell-interfaces:other-interfaces))
+  (when (sage-shell:in interface
+                       (cons "sage" sage-shell-interfaces:other-interfaces))
     (let ((alist (symbol-value
                   (intern (format "sage-shell-cpl:%s-info" interface)))))
       (sage-shell:aif (assoc attribute alist)
@@ -2719,22 +2733,27 @@ of current Sage process.")
 
 (defun sage-shell-cpl:set-cmd-lst (intf lst)
   (if (sage-shell:in intf (cons "sage" sage-shell-interfaces:other-interfaces))
-      (sage-shell:awhen (sage-shell:aand sage-shell:process-buffer (get-buffer it))
+      (sage-shell:awhen (sage-shell:aand
+                          sage-shell:process-buffer
+                          (get-buffer it))
         (with-current-buffer it
           (set (sage-shell-cpl:cmds-symbol intf) lst)))
     (error (format "No interface %s" intf))))
 
 (defun sage-shell-cpl:get-cmd-lst (intf)
   (if (sage-shell:in intf (cons "sage" sage-shell-interfaces:other-interfaces))
-      (sage-shell:awhen (sage-shell:aand sage-shell:process-buffer (get-buffer it))
+      (sage-shell:awhen (sage-shell:aand
+                          sage-shell:process-buffer
+                          (get-buffer it))
         (with-current-buffer it
           (symbol-value (sage-shell-cpl:cmds-symbol intf))))
       (error (format "No interface %s" intf))))
 
 (defun sage-shell-cpl:to-objname-to-send (can)
   (let* ((var-base-name (sage-shell-cpl:get-current 'var-base-name))
-         (interface (cond ((sage-shell:in (sage-shell-interfaces:current-interface)
-                                    sage-shell-interfaces:other-interfaces)
+         (interface (cond ((sage-shell:in
+                            (sage-shell-interfaces:current-interface)
+                            sage-shell-interfaces:other-interfaces)
                            (sage-shell-interfaces:current-interface))
                           (t (sage-shell-cpl:get-current 'interface)))))
     (cond (var-base-name (concat var-base-name "." can))
@@ -2806,13 +2825,13 @@ whose key is in KEYS."
     "delattr" "dict" "dir" "divmod" "elif" "else" "enumerate" "eval" "except"
     "exec" "execfile" "file" "filter" "finally" "float" "for" "format" "from"
     "frozenset" "getattr" "global" "globals" "hasattr" "hash" "help" "hex"
-    "id" "if" "import" "in" "input" "int" "intern" "is" "isinstance" "issubclass"
-    "iter" "lambda" "len" "list" "locals" "long" "map" "max" "memoryview" "min"
-    "next" "not" "object" "oct" "open" "or" "ord" "pass" "pow" "print" "print"
-    "property" "raise" "range" "raw_input" "reduce" "reload" "repr" "return"
-    "reversed" "round" "set" "setattr" "slice" "sorted" "staticmethod" "str"
-    "sum" "super" "try" "tuple" "type" "unichr" "unicode" "vars"
-    "while" "with" "xrange" "yield" "zip"))
+    "id" "if" "import" "in" "input" "int" "intern" "is" "isinstance"
+    "issubclass" "iter" "lambda" "len" "list" "locals" "long" "map" "max"
+    "memoryview" "min" "next" "not" "object" "oct" "open" "or" "ord" "pass"
+    "pow" "print" "print" "property" "raise" "range" "raw_input" "reduce"
+    "reload" "repr" "return" "reversed" "round" "set" "setattr" "slice"
+    "sorted" "staticmethod" "str" "sum" "super" "try" "tuple" "type"
+    "unichr" "unicode" "vars" "while" "with" "xrange" "yield" "zip"))
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
@@ -2990,8 +3009,9 @@ inserted in the process buffer before executing the command."
             (when (and (windowp win)
                        (window-live-p win))
               (with-selected-window win
-                (goto-char (process-mark
-                            (get-buffer-process sage-shell:process-buffer))))))))
+                (goto-char
+                 (process-mark
+                  (get-buffer-process sage-shell:process-buffer))))))))
       (sage-shell:after-output-finished
         (with-current-buffer sage-shell:process-buffer
           (sage-shell:change-mode-line-process nil))))
@@ -3113,10 +3133,11 @@ inserted in the process buffer before executing the command."
           (cons 'region (list :beg 'beg :end 'end :name "region"
                               :interactive "r"
                               :args '(beg end)))
-          (cons 'defun (list :beg '(sage-shell-edit:beg-of-defun-position)
-                             :end '(sage-shell-edit:end-of-defun-position)
-                             :name '(format "block: %s" (sage-shell-edit:block-name))
-                             :doc-name "def (or class)"))
+          (cons 'defun
+                (list :beg '(sage-shell-edit:beg-of-defun-position)
+                      :end '(sage-shell-edit:end-of-defun-position)
+                      :name '(format "block: %s" (sage-shell-edit:block-name))
+                      :doc-name "def (or class)"))
           (cons 'line (list :beg '(line-beginning-position)
                             :end '(line-end-position)
                             :name "line")))))
