@@ -2400,15 +2400,25 @@ send current line to Sage process buffer."
   (list
    ;; name of the interface (string)
    (cons 'interface nil)
+
    ;; nil or the point of the beggining of completion
    (cons 'prefix nil)
+
    ;; nil or the base name of the variable name
    (cons 'var-base-name nil)
+
+   ;; nil or string.
+   (cons 'module-name nil)
+
    ;; In some cases, we need different kinds of candidates.
    ;; For example, candidates which follow "gap." should contain
    ;; gap commands and attributes of a variable gap.
-   ;; An element of types should be eqaul to one of
-   ;; "interface", "attributes".
+   ;; An element of tyjpes should be equal to one of
+   ;; "interface", "attributes", "modules", "vars-in-module".
+
+   ;; When "modules" in in type and module-name is nil, then candidates shoud
+   ;; contain top level modules in sys.path.  If module-name is non-nil, it
+   ;; should contain sub-modules in module-name.
    (cons 'types nil)))
 
 (defun sage-shell:-to-python-dict (alst)
@@ -2505,11 +2515,8 @@ send current line to Sage process buffer."
           (skip-chars-backward " " bol)
           (sage-shell-cpl:base-name-att-beg-rec var-chars bol)))))
 
-(cl-defun sage-shell-cpl:parse-current-state
-    (&optional (cur-intf (sage-shell-interfaces:current-interface)))
-  "Returns the current state as an alist. Used in a repl buffer."
-  (let* ((case-fold-search nil)
-         (base-and-beg (sage-shell-cpl:var-base-name-and-att-start cur-intf))
+(defun sage-shell-cpl:-parse-state-args (cur-intf)
+  (let* ((base-and-beg (sage-shell-cpl:var-base-name-and-att-start cur-intf))
          (base-name (car-safe base-and-beg))
          (att-beg (cdr-safe base-and-beg))
          (itfcs sage-shell-interfaces:other-interfaces)
@@ -2525,44 +2532,114 @@ send current line to Sage process buffer."
                            (when (and (<= (match-end 2) pt)
                                       (<= pt it))
                              (match-string-no-properties 1))))))))
-         (state nil)
-         (types nil))
-    ;; Code for side effects.
-    (cond
-     ;; When the word at point is an attribute
-     (att-beg
-      (sage-shell:push-elmts state
-        'var-base-name base-name
-        'prefix att-beg)
-      (push "attributes" types)
-      (cond ((sage-shell:in base-name itfcs)
-             (sage-shell:push-elmts state
-               'interface base-name)
-             (push "interface" types))
-            (t (sage-shell:push-elmts state
-                 'interface "sage"))))
+         (import-state-p (and (save-excursion
+                                (beginning-of-line)
+                                (looking-at (rx (0+ space)
+                                                (group (or "import" "from"))
+                                                (1+ space))))
+                              (string= cur-intf "sage")))
+         (from-state-p (and import-state-p
+                            (string= (match-string-no-properties 1) "from"))))
+    (list base-name att-beg intf import-state-p from-state-p)))
 
-     ;; When the current interface is not sage or the point is
-     ;; in a function one of gp.eval, gp, gap.eval, ...
-     (intf
-      (sage-shell:push-elmts state
-        'interface intf
-        'var-base-name nil
-        'prefix (sage-shell-interfaces:looking-back-var intf))
-      (push "interface" types))
+(cl-defun sage-shell-cpl:parse-current-state
+    (&optional (cur-intf (sage-shell-interfaces:current-interface)))
+  "Returns the current state as an alist. Used in a repl buffer."
+  (cl-destructuring-bind
+      (base-name att-beg intf import-state-p from-state-p)
+      (sage-shell-cpl:-parse-state-args cur-intf)
+    (let* ((case-fold-search nil) (state nil) (types nil)
+           (itfcs sage-shell-interfaces:other-interfaces))
+      (cl-destructuring-bind (types . state)
+          (cond
+           ;; import statement
+           (import-state-p
+            (sage-shell-cpl:-parse-import-state
+             base-name att-beg intf import-state-p from-state-p))
+           ;; When the word at point is an attribute
+           (att-beg
+            (sage-shell:push-elmts state
+              'var-base-name base-name
+              'prefix att-beg)
+            (push "attributes" types)
+            (cond ((sage-shell:in base-name itfcs)
+                   (sage-shell:push-elmts state
+                     'interface base-name)
+                   (push "interface" types))
+                  (t (sage-shell:push-elmts state
+                       'interface "sage")))
+            (cons types state))
 
-     ;; When the current interface is sage
-     ((string= cur-intf "sage")
-      (sage-shell:push-elmts state
-        'interface "sage"
-        'var-base-name nil
-        'prefix (sage-shell-interfaces:looking-back-var "sage"))
-      (push "interface" types)))
+           ;; When the current interface is not sage or the point is
+           ;; in a function one of gp.eval, gp, gap.eval, ...
+           (intf
+            (sage-shell:push-elmts state
+              'interface intf
+              'var-base-name nil
+              'prefix (sage-shell-interfaces:looking-back-var intf))
+            (push "interface" types)
+            (cons types state))
 
+           ;; When the current interface is sage
+           ((string= cur-intf "sage")
+            (sage-shell:push-elmts state
+              'interface "sage"
+              'var-base-name nil
+              'prefix (sage-shell-interfaces:looking-back-var "sage"))
+            (push "interface" types)
+            (cons types state)))
+
+        (sage-shell:push-elmts state
+          'types types)
+        ;; Returns state.
+        state))))
+
+(defun sage-shell-cpl:-parse-import-state
+    (base-name att-beg intf import-state-p from-state-p)
+  (let ((state nil) (types nil)
+        (var-chars (sage-shell-interfaces:get "sage" 'var-chars))
+        (bol (line-beginning-position))
+        (prefix nil))
     (sage-shell:push-elmts state
-      'types types)
-    ;; Returns state.
-    state))
+      'interface "sage"
+      'prefix (sage-shell-interfaces:looking-back-var "sage"))
+    (cond
+     ;; Top level modules in sys.path
+     ((save-excursion
+        (or (and (not from-state-p)
+                 (progn
+                   (skip-chars-backward var-chars)
+                   (skip-chars-backward " ")
+                   (skip-chars-backward var-chars)
+                   (looking-at (rx "import"))))
+            (and from-state-p
+                 (progn
+                   (skip-chars-backward var-chars)
+                   (skip-chars-backward " ")
+                   (skip-chars-backward var-chars)
+                   (looking-at (rx "from"))))))
+      (push "modules" types))
+     ;; sub-modules in a module
+     (base-name
+      (push "modules" types)
+      (sage-shell:push-elmts state
+        'module-name base-name))
+     ((save-excursion
+        (and from-state-p
+             (progn
+               (skip-chars-backward var-chars)
+               (skip-chars-backward " ")
+               (skip-chars-backward var-chars)
+               (looking-at (rx "import")))
+             (progn
+               (beginning-of-line)
+               (re-search-forward
+                (rx "from" (1+ space) (group (1+ (or alnum "_" "."))))
+                (line-end-position) t))))
+      (push "vars-in-module" types)
+      (sage-shell:push-elmts state
+        'module-name (match-string-no-properties 1))))
+    (cons types state)))
 
 (defun sage-shell-cpl:parse-and-set-state ()
   "Parse the current state and set the state."
