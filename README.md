@@ -146,6 +146,16 @@ The basic key-bidings in `sage-shell:sage-mode` are as follows:
 If you run multiple Sage processes, you can choose which process to send
 by `M-x sage-shell:set-process-buffer`.
 
+## Input history
+If the variable `sage-shell:input-history-cache-file` is `non-nil` and it is a file
+name, then the input history (`comint-input-ring`) will be saved to
+the file.  Here is a sample configuration:
+
+```lisp
+(setq sage-shell:input-history-cache-file "~/.sage/.sage_shell_input_history")
+```
+
+
 # SageTeX
 ### TEXINPUTS
 When a Sage process is spawned by `sage-shell:run-sage` or
