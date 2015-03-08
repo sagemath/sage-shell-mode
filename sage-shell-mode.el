@@ -2631,6 +2631,7 @@ send current line to Sage process buffer."
       (push "modules" types)
       (sage-shell:push-elmts state
         'module-name base-name))
+     ;; Top level objects in a module
      ((save-excursion
         (and from-state-p
              (progn
