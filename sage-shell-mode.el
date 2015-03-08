@@ -2947,10 +2947,18 @@ whose key is in KEYS."
                                         sage-shell:completion-candidate-regexp))
                                  sage-shell:completion-sync-cached))
                      (assoc-default var-name sage-shell:completion-sync-cached))
-                    (t (append sage-shell:-python-builtins
-                               sage-shell-cpl:-cands-in-current-session
-                               (sage-shell-cpl:candidates-sync
-                                sage-shell:completion-candidate-regexp)))))))))
+                    (t (sage-shell:-completion-at-pt-func-append
+                        (sage-shell-cpl:candidates-sync
+                         sage-shell:completion-candidate-regexp)))))))))
+
+(defun sage-shell:-completion-at-pt-func-append (ls)
+  (append
+   (when (and (sage-shell:in "interface"
+                             (sage-shell-cpl:get-current 'types))
+              (string= (sage-shell-cpl:get-current 'interface) "sage"))
+     sage-shell:-python-builtins)
+   sage-shell-cpl:-cands-in-current-session ls))
+
 
 (defun sage-shell:symbol-beg ()
   (save-excursion
