@@ -2480,7 +2480,9 @@ send current line to Sage process buffer."
     (save-excursion
       (skip-chars-backward var-chars bol)
       (setq att-beg (point))
-      (when (looking-back (rx "." (0+ whitespace)) bol)
+      (when (save-excursion
+              (skip-chars-backward " ")
+              (= (char-after (1- (point))) ?.))
         (save-excursion
           (skip-chars-backward " " bol)
           (forward-char -1)
@@ -2505,11 +2507,14 @@ send current line to Sage process buffer."
 (defun sage-shell-cpl:base-name-att-beg-rec (var-chars bol)
   (save-excursion
       (skip-chars-backward var-chars bol)
-      (if (not (looking-back (rx "." (0+ whitespace)) bol))
+      (if (not (save-excursion
+                 (skip-chars-backward " ")
+                 (= (char-after (1- (point))) ?.)))
           (point)
         (forward-char -1)
         (skip-chars-backward " " bol)
-        (if (looking-back (rx (or ")" "]")) bol)
+        ;; 93 and 41 are chars of closed parens.
+        (if (sage-shell:in (char-after (1- (point))) (list 93 41))
             (when (ignore-errors (backward-list))
               (skip-chars-backward " " bol)
               (sage-shell-cpl:base-name-att-beg-rec var-chars bol))
