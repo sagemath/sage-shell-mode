@@ -882,7 +882,8 @@ argument."
   (interactive)
   (cond
    ((and (not (sage-shell:at-top-level-p))
-         (looking-back (concat sage-shell:prompt-regexp " *")))
+         (looking-back (concat sage-shell:prompt-regexp " *")
+                       (sage-shell:line-beginning-position)))
     (sage-shell-indent:indent-line))
    (t (sage-shell:complete))))
 
