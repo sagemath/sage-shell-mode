@@ -412,7 +412,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:sage-modes '(sage-shell:sage-mode sage-shell-mode))
 
 (defmacro sage-shell:push-elmts (state &rest attributes-values)
-  (declare (indent 1) (debug t))
+  (declare (indent 1))
   `(setq ,state
          (append ,(cons 'list
                         (cl-loop for (a b) in
