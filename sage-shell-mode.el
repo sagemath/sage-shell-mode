@@ -2055,30 +2055,29 @@ python-mode"
          (cmd-str (format cmd symbol))
          (str (sage-shell:send-command-to-string cmd-str))
          (proc (current-buffer)))
-    (when (string-match sage-shell-help:symbol-not-found-regexp str)
-      (error (format "Object %s not found." symbol)))
+    (cond ((string-match sage-shell-help:symbol-not-found-regexp str)
+           (message (format "Object %s not found." symbol)))
+          (t (let ((inhibit-read-only t)
+                   (help-window-select t)
+                   (view-read-only nil))
+               (with-help-window (buffer-name buf)
+                 (with-current-buffer buf
+                   (erase-buffer) (sage-shell:help-mode)
+                   (setq sage-shell:process-buffer proc)
+                   (make-marker)
+                   (insert str)
+                   (sage-shell-help:help-buffer-init symbol)
 
-    (let ((inhibit-read-only t)
-          (help-window-select t)
-          (view-read-only nil))
-      (with-help-window (buffer-name buf)
-        (with-current-buffer buf
-          (erase-buffer) (sage-shell:help-mode)
-          (setq sage-shell:process-buffer proc)
-          (make-marker)
-          (insert str)
-          (sage-shell-help:help-buffer-init symbol)
-
-          ;; add to history list
-          (let ((contents (buffer-substring (point-min) (point-max)))
-                (lst sage-shell-help:help-contents-list))
-            (unless (equal (car lst) contents)
-              (setq sage-shell-help:help-contents-list
-                    (cons contents lst))))
-          ;; update history index
-          (setq sage-shell-help:help-contents-list-index 0)
-          ;; make forward or backward button
-          (sage-shell-help:make-forward-back-button))))))
+                   ;; add to history list
+                   (let ((contents (buffer-substring (point-min) (point-max)))
+                         (lst sage-shell-help:help-contents-list))
+                     (unless (equal (car lst) contents)
+                       (setq sage-shell-help:help-contents-list
+                             (cons contents lst))))
+                   ;; update history index
+                   (setq sage-shell-help:help-contents-list-index 0)
+                   ;; make forward or backward button
+                   (sage-shell-help:make-forward-back-button))))))))
 
 (defun sage-shell-help:send-current-line ()
   "In the help buffer, if current line contains a string 'sage:',
