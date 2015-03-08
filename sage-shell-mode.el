@@ -2539,7 +2539,7 @@ send current line to Sage process buffer."
                              (re-search-forward
                               (format "\\<%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
                                       (regexp-opt itfcs 1))
-                              (line-end-position) t)
+                              nil t)
                            (when (and (<= (match-end 2) pt)
                                       (<= pt it))
                              (match-string-no-properties 1))))))))
@@ -2561,7 +2561,7 @@ send current line to Sage process buffer."
       (sage-shell-cpl:-parse-state-args cur-intf)
     (let* ((case-fold-search nil) (state nil) (types nil)
            (itfcs sage-shell-interfaces:other-interfaces))
-      (cl-destructuring-bind (types . state)
+      (cl-destructuring-bind (types state)
           (cond
            ;; import statement
            (import-state-p
@@ -2579,7 +2579,7 @@ send current line to Sage process buffer."
                    (push "interface" types))
                   (t (sage-shell:push-elmts state
                        'interface "sage")))
-            (cons types state))
+            (list types state))
 
            ;; When the current interface is not sage or the point is
            ;; in a function one of gp.eval, gp, gap.eval, ...
@@ -2589,7 +2589,7 @@ send current line to Sage process buffer."
               'var-base-name nil
               'prefix (sage-shell-interfaces:looking-back-var intf))
             (push "interface" types)
-            (cons types state))
+            (list types state))
 
            ;; When the current interface is sage
            ((string= cur-intf "sage")
@@ -2598,7 +2598,7 @@ send current line to Sage process buffer."
               'var-base-name nil
               'prefix (sage-shell-interfaces:looking-back-var "sage"))
             (push "interface" types)
-            (cons types state)))
+            (list types state)))
 
         (sage-shell:push-elmts state
           'types types)
@@ -2651,7 +2651,7 @@ send current line to Sage process buffer."
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
         'module-name (match-string-no-properties 1))))
-    (cons types state)))
+    (list types state)))
 
 (defun sage-shell-cpl:parse-and-set-state ()
   "Parse the current state and set the state."
