@@ -17,6 +17,12 @@ except:                         # Older versions
 # Disable color.
 ip.run_line_magic('colors', 'NoColor')
 
+# Disable the SQLite history.
+try:
+    ip.run_line_magic("config", "HistoryManager.enabled = False")
+except:
+    pass
+
 interfaces = ip.ev('interfaces')
 
 _sage_const_regexp = re.compile("_sage_const_")
