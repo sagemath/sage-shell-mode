@@ -2717,15 +2717,15 @@ this function does nothing."
       (when make-cache-file-p
         ;; Show verbose message and make a cache file.
         (sage-shell-cpl:init-verbose interface verbose))
-      (when (and types (listp types))
+      (when types
         (let ((cmd (format
                     "%s(%s, %s)"
-                    (sage-shell:py-mod-func "print_cpl_sexp" )
+                    (sage-shell:py-mod-func "print_cpl_sexp")
                     (sage-shell:-to-python-list types)
                     (sage-shell:-to-python-dict
-                     (cl-loop for (a . b) in compl-state
-                              if (sage-shell:in a sage-shell-cpl:-dict-keys)
-                              collect (cons a b))))))
+                     (cl-loop for a in sage-shell-cpl:-dict-keys
+                              collect
+                              (cons a (assoc-default a compl-state)))))))
           (sage-shell:send-command cmd nil output-buffer sync)
           (lexical-let ((output-buffer output-buffer)
                         (proc-buf sage-shell:process-buffer)

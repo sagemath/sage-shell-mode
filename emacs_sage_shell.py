@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import re
+import sys
 import os
 from contextlib import contextmanager
 import sage
@@ -22,16 +23,75 @@ interfaces = ip.ev('interfaces')
 _sage_const_regexp = re.compile("_sage_const_")
 
 
+class Memorize(object):
+    def __init__(self, f):
+        self._f = f
+        self._cached = {}
+
+    def __call__(self, *args):
+        if args in self._cached:
+            return self._cached[args]
+        else:
+            res = self._f(*args)
+            self._cached[args] = res
+            return res
+
+memorize = Memorize
+
 def print_cpl_sexp(typs, compl_dct):
     def _to_lisp_str_ls(ls):
         return "(%s)" % " ".join(['"%s"'%(a, ) for a in ls])
 
     funcs = {"interface": all_commands,
-             "attributes": all_attributes}
+             "attributes": all_attributes,
+             "modules": all_modules,
+             "vars-in-module": all_vars_in_module}
     alst = [(tp, funcs[tp](compl_dct)) for tp in typs]
     conss = ['("%s" . %s)'%(tp, _to_lisp_str_ls(ls))
              for tp, ls in alst if ls is not None]
     print("(" + "".join(conss) + ")")
+
+
+def all_modules(compl_dct):
+    module_name = compl_dct["module-name"]
+    return _all_modules(module_name)
+
+def _all_modules(module_name):
+    if module_name is None:
+        return list_modules_in_syspath()
+    else:
+        mod_path = resolve_module_path(module_name)
+        if mod_path is None:
+            return []
+        else:
+            return list_modules_in(mod_path)
+
+def all_vars_in_module(compl_dct):
+    module_name = compl_dct["module-name"]
+    return _all_vars_in_module(module_name)
+
+def _all_vars_in_module(module_name):
+    if module_name is None:
+        return []
+    p = resolve_module_path(module_name)
+    if p is None:
+        return []
+    res = None
+    # If imported module, use dir.
+    if module_name in sys.modules:
+        res = dir(sys.modules[module_name])
+
+    # Ohterwise, parse the file.
+    if res is None:
+        res = []
+        regexp = re.compile("^{name} *= *|^def +{name}|^class +{name}".format(
+            name="([a-zA-Z0-9_]+)"))
+        with open(p) as f:
+            for l in f:
+                m = regexp.match(l)
+                if m is not None:
+                    res.extend([c for c in m.groups() if c is not None])
+    return res
 
 
 def all_commands(compl_dct):
@@ -62,7 +122,11 @@ def all_attributes(compl_dct):
             except:
                 ls = dir(var)
         elif hasattr(var, '__file__'):
-            ls = list_submodules(var) + dir(var)
+            fname = var.__file__
+            if os.path.splitext(os.path.basename(fname))[0] != "__init__":
+                ls = dir(var)
+            else:
+                ls = list_modules_in(os.path.dirname(fname)) + dir(var)
         else:
             ls = dir(var)
 
@@ -70,30 +134,62 @@ def all_attributes(compl_dct):
     except:
         pass
 
+def list_modules_in(p):
+    res = [os.path.basename(a) for a in list_module_paths_in(p)]
+    return [os.path.splitext(a)[0] for a in res]
 
-
-def list_submodules(module):
-    fl = module.__file__
-    if os.path.splitext(os.path.basename(fl))[0] != "__init__":
+def list_module_paths_in(p):
+    if not os.path.exists(p):
         return []
-    try:
-        drct = os.path.dirname(fl)
-        def is_submodule(p):
-            if os.path.isfile(p):
-                return  os.path.splitext(p)[1] in [".py", ".pyc"]
-            elif os.path.isdir(p):
-                init_file = os.path.join(p, "__init__.py")
-                return os.path.exists(init_file)
-            else:
-                return False
-
-        l = [os.path.basename(f) for f in os.listdir(drct)
-             if is_submodule(os.path.join(drct, f))]
-        l = [os.path.splitext(p)[0] for p in l]
-        return sorted(list(set(l)))
-    except:
+    elif os.path.isdir(p):
+        res = []
+        for f in os.listdir(p):
+            a = is_module(os.path.join(p, f))
+            if a:
+                res.append(a)
+        return res
+    else:
         return []
 
+mod_regexp = re.compile("^[A-Za-z0-9_.]+$")
+
+def is_module(p):
+    if not re.match(mod_regexp, os.path.basename(p)):
+        return False
+    elif os.path.isfile(p):
+        if p.endswith("py"):
+            return p
+    elif os.path.isdir(p):
+        if os.path.exists(os.path.join(p, "__init__.py")):
+            return p
+
+@memorize
+def list_module_paths_in_syspath():
+    res = []
+    for p in sys.path:
+        res.extend(list_module_paths_in(p))
+    return res
+
+def list_modules_in_syspath():
+    return [os.path.splitext(os.path.basename(p))[0]
+            for p in list_module_paths_in_syspath()]
+
+@memorize
+def resolve_module_path(modname):
+    lmis = list_module_paths_in_syspath()
+    root_mod_name = modname.split(".")[0]
+    ls = [a for a in lmis if os.path.basename(a) == root_mod_name]
+    if ls == []:
+        return None
+    root_path = ls[0]
+    pth = os.path.join(os.path.dirname(root_path),
+                       os.path.sep.join(modname.split(".")))
+    if os.path.isdir(pth):
+        return pth
+    for ext in [".py", ".pyx"]:
+        _pth = pth + ext
+        if os.path.isfile(_pth):
+            return _pth
 
 def source_line(obj):
     return sage.misc.sageinspect.sage_getsourcelines(obj)[-1]
