@@ -57,13 +57,17 @@
   :group 'sage-shell)
 
 (defcustom sage-shell:sage-root nil
-  "SAGE_ROOT directory. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
+  "SAGE_ROOT directory. If the Sage executable in your PATH
+  and (exeutable-find \"sage\") is non-nil, then you do not have
+  to set this variable."
   :group 'sage-shell
   :type '(choice (directory :tag "Directory")
                  (const :tag "Not specified" nil)))
 
 (defcustom sage-shell:sage-executable nil
-  "Name of the Sage executable. If the Sage executable in your PATH and (exeutable-find \"sage\") is non-nil, then you do not have to set this variable."
+  "Name of the Sage executable. If the Sage executable in your
+  PATH and (exeutable-find \"sage\") is non-nil, then you do not
+  have to set this variable."
   :group 'sage-shell
   :type '(choice (string :tag "Executable file of Sage")
                  (const :tag "Not specified" nil)))
