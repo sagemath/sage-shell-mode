@@ -2659,6 +2659,26 @@ send current line to Sage process buffer."
     (sage-shell-cpl:parse-and-set-state)
     (sage-shell-cpl:get-current 'prefix)))
 
+
+(defvar sage-shell-cpl:-modules-cached nil)
+
+
+(defun sage-shell-cpl:-mod-type (compl-state)
+  (let ((types (sage-shell-cpl:get compl-state 'types)))
+    (cl-loop for tp in '("modules" "vars-in-module")
+             thereis (sage-shell:in tp types))))
+
+(defun sage-shell-cpl:-cached-mod-key (mod-tp compl-state)
+  (cons mod-tp (sage-shell-cpl:get compl-state 'module-name)))
+
+(defun sage-shell-cpl:-push-cache-modules (compl-state sexp)
+  (let* ((mod-tp (sage-shell-cpl:-mod-type compl-state))
+         (res (assoc-default mod-tp sexp)))
+    (sage-shell:awhen mod-tp
+      (push (cons (sage-shell-cpl:-cached-mod-key mod-tp compl-state)
+                  res)
+            sage-shell-cpl:-modules-cached))))
+
 (cl-defun sage-shell-cpl:-types (compl-state make-cache-file-p)
   (let* ((types (sage-shell-cpl:get compl-state 'types))
          (interface (sage-shell-cpl:get compl-state 'interface))
@@ -2666,14 +2686,22 @@ send current line to Sage process buffer."
           (cond (make-cache-file-p
                  (not (string= interface "magma")))
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
-    (if update-cmd-p
-        types
-      (cl-loop for a in types
-               unless (string= a "interface")
-               collect a))))
+    (let ((types (if update-cmd-p
+                     types
+                   (delete "interface" types))))
+      (if (sage-shell:aand
+            (sage-shell-cpl:-mod-type compl-state)
+            (assoc-default
+             (sage-shell-cpl:-cached-mod-key it compl-state)
+             sage-shell-cpl:-modules-cached))
+          (sage-shell:->> types
+                          (delete "modules")
+                          (delete "vars-in-module"))
+        types))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
-(defvar sage-shell-cpl:-dict-keys '(interface var-base-name))
+(defvar sage-shell-cpl:-dict-keys '(interface var-base-name module-name))
+
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer sage-shell:output-buffer)
           (compl-state (sage-shell-cpl:parse-and-set-state))
@@ -2742,10 +2770,15 @@ this function does nothing."
                                         (signal (car err) (cdr err))))
                          (error (signal (car err) (cdr err))))
                        compl-state)))
+
+              ;; Code for side effects
+              (sage-shell-cpl:-push-cache-modules
+               compl-state sage-shell-cpl:-last-sexp)
               (sage-shell-cpl:-set-cmd-lst
                compl-state sage-shell-cpl:-last-sexp)
               (when cont
                 (funcall cont))))
+
           (if sync
               sage-shell-cpl:-last-sexp))))))
 
@@ -2860,12 +2893,22 @@ of current Sage process.")
   "Trasnform SEXP so that the union of cdr is an appropriate list
  of candidates."
   (let ((types (sage-shell-cpl:get state 'types))
-        (int (sage-shell-cpl:get state 'interface)))
-    (cond ((and (sage-shell:in "interface" types)
-                (null (assoc "interface" sexp)))
-           (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
-                 sexp))
-          (t sexp))))
+        (int (sage-shell-cpl:get state 'interface))
+        (mod-tp (sage-shell-cpl:-mod-type state)))
+    (let ((sexp (cond ((and (sage-shell:in "interface" types)
+                            (null (assoc "interface" sexp)))
+                       (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
+                             sexp))
+                      (t sexp))))
+      (cond ((and mod-tp
+                  (assoc-default
+                   (sage-shell-cpl:-cached-mod-key mod-tp state)
+                   sage-shell-cpl:-modules-cached))
+             (cons (cons mod-tp (assoc-default
+                                 (sage-shell-cpl:-cached-mod-key mod-tp state)
+                                 sage-shell-cpl:-modules-cached))
+                   sexp))
+            (t sexp)))))
 
 (defun sage-shell-cpl:-default-regexp-alst (keys state)
   (let ((regexp (sage-shell-interfaces:get "sage" 'cmd-rxp)))
