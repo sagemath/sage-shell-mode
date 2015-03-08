@@ -279,6 +279,12 @@ def _is_safe_str(s):
     else:
         return False
 
+def print_info(name):
+    if _is_safe_str(name):
+        ip.run_cell("%s?"%(name,))
+        # In some cases, the next line is not blank.
+        ip.set_next_input("")
+
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 
