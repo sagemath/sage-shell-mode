@@ -87,6 +87,9 @@ def _all_vars_in_module(module_name):
     if module_name in sys.modules:
         res = dir(sys.modules[module_name])
 
+    if os.path.isdir(p):
+        res = list_modules_in(p)
+
     # Ohterwise, parse the file.
     if res is None:
         res = []
@@ -184,7 +187,8 @@ def list_modules_in_syspath():
 def resolve_module_path(modname):
     lmis = list_module_paths_in_syspath()
     root_mod_name = modname.split(".")[0]
-    ls = [a for a in lmis if os.path.basename(a) == root_mod_name]
+    ls = [a for a in lmis
+          if os.path.splitext(os.path.basename(a))[0] == root_mod_name]
     if ls == []:
         return None
     root_path = ls[0]
