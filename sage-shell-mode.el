@@ -2651,6 +2651,7 @@ send current line to Sage process buffer."
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
         'module-name (match-string-no-properties 1)))
+     ;; Else let type be "interfaces".
      (t (push "interface" types)))
     (list types state)))
 
