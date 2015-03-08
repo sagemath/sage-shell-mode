@@ -2767,13 +2767,11 @@ this function does nothing."
               (with-current-buffer output-buffer
                 (goto-char (point-min))
                 (setq sage-shell-cpl:-last-sexp
-                      (sage-shell-cpl:trans-sexp
-                       (condition-case err
+                      (condition-case err
                            (read (current-buffer))
                          (end-of-file (unless (= (buffer-size) 0)
                                         (signal (car err) (cdr err))))
-                         (error (signal (car err) (cdr err))))
-                       compl-state)))
+                         (error (signal (car err) (cdr err))))))
 
               ;; Code for side effects
               (sage-shell-cpl:-push-cache-modules
@@ -2931,12 +2929,13 @@ of current Sage process.")
   "Collect candidates matching (concat \"^\" REGEXP).
 If KEYS is a list of string, then it collects only cdr of SEXP
 whose key is in KEYS."
-  (let* ((keys1 (cond ((listp keys) keys)
+  (let* ((sexp1 (sage-shell-cpl:trans-sexp sexp state))
+         (keys1 (cond ((listp keys) keys)
                       (t (sage-shell-cpl:get state 'types))))
          (regexp1 (format "^%s"
                           (or regexp (sage-shell-interfaces:get
                                       "sage" 'cmd-rxp)))))
-    (cl-loop for (type . cands) in sexp
+    (cl-loop for (type . cands) in sexp1
              if (or (eq keys t)
                     (sage-shell:in type keys))
              append
