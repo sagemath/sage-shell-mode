@@ -2534,7 +2534,8 @@ send current line to Sage process buffer."
                          (sage-shell:awhen
                              (re-search-forward
                               (format "\\<%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
-                                      (regexp-opt itfcs 1)) nil t)
+                                      (regexp-opt itfcs 1))
+                              (line-end-position) t)
                            (when (and (<= (match-end 2) pt)
                                       (<= pt it))
                              (match-string-no-properties 1))))))))
