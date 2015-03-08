@@ -152,7 +152,7 @@ name, then the input history (`comint-input-ring`) will be saved to
 the file.  Here is a sample configuration:
 
 ```lisp
-(setq sage-shell:input-history-cache-file "~/.sage/.sage_shell_input_history")
+(setq sage-shell:input-history-cache-file "~/.emacs.d/.sage_shell_input_history")
 ```
 
 
