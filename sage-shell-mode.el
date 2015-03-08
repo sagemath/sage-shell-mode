@@ -2650,7 +2650,8 @@ send current line to Sage process buffer."
                 (line-end-position) t))))
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
-        'module-name (match-string-no-properties 1))))
+        'module-name (match-string-no-properties 1)))
+     (t (push "interface" types)))
     (list types state)))
 
 (defun sage-shell-cpl:parse-and-set-state ()
