@@ -1719,14 +1719,20 @@ function does not highlight the input."
       ;; show help or find-file-read-only source file.
       (cond
        ((and at-tl-in-sage-p
-             (string-match (rx bol (zero-or-more blank)
-                               (group (1+ (or alnum "_" "." "[" "]")))
-                               (zero-or-more blank)
-                               (group (1+ "?"))
-                               (zero-or-more blank) eol) line))
-        (if (> (length (match-string 2 line)) 1)
-            (sage-shell:find-source-in-view-mode (match-string 1 line))
-          (sage-shell-help:describe-symbol (match-string 1 line)))
+             (string-match
+              (rx (or (and bol (group (1+ nonl)) "??" (0+ blank) eol)
+                      (and bol (0+ blank) "??" (group (1+ nonl)) eol)))
+              line))
+        (sage-shell:find-source-in-view-mode (or (match-string 1 line)
+                                                 (match-string 2 line)))
+        (sage-shell:send-blank-line))
+       ((and at-tl-in-sage-p
+             (string-match
+              (rx (or (and bol (group (1+ nonl)) "?" (0+ blank) eol)
+                      (and bol (0+ blank) "?" (group (1+ nonl)) eol)))
+              line))
+        (sage-shell-help:describe-symbol (or (match-string 1 line)
+                                             (match-string 2 line)))
         (sage-shell:send-blank-line))
        ((and at-tl-in-sage-p
              (string-match (rx bol (zero-or-more blank)

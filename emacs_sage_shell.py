@@ -120,7 +120,7 @@ def all_commands(compl_dct):
 def all_attributes(compl_dct):
     varname = compl_dct["var-base-name"]
     try:
-        var = ip.ev('eval(preparse("%s"))' % (varname))
+        var = ip.ev(preparse(varname))
         if varname in interfaces:
             ls = ip.ev('dir(%s)' % (varname))
         elif hasattr(var, 'trait_names'):
@@ -280,10 +280,9 @@ def _is_safe_str(s):
         return False
 
 def print_info(name):
-    if _is_safe_str(name):
-        ip.run_cell("%s?"%(name,))
-        # In some cases, the next line is not blank.
-        ip.set_next_input("")
+    ip.run_cell("%s?"%(name,))
+    # In some cases, the next line is not blank.
+    ip.set_next_input("")
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
