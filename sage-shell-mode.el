@@ -2059,7 +2059,7 @@ python-mode"
 
 (cl-defun sage-shell-help:describe-symbol
     (symbol &optional
-            (cmd (format "%s('%%s')" (sage-shell:py-mod-func "print_info"))))
+            (cmd (format "%s(%%S)" (sage-shell:py-mod-func "print_info"))))
   "Describe symbol, display help buffer and select the window."
   (let* ((buf (get-buffer-create sage-shell-help:help-buffer-name))
          (cmd-str (format cmd symbol))
