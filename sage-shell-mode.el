@@ -1723,16 +1723,18 @@ function does not highlight the input."
               (rx (or (and bol (group (1+ nonl)) "??" (0+ blank) eol)
                       (and bol (0+ blank) "??" (group (1+ nonl)) eol)))
               line))
-        (sage-shell:find-source-in-view-mode (or (match-string 1 line)
-                                                 (match-string 2 line)))
+        (sage-shell:find-source-in-view-mode
+         (or (match-string-no-properties 1 line)
+             (match-string-no-properties 2 line)))
         (sage-shell:send-blank-line))
        ((and at-tl-in-sage-p
              (string-match
               (rx (or (and bol (group (1+ nonl)) "?" (0+ blank) eol)
                       (and bol (0+ blank) "?" (group (1+ nonl)) eol)))
               line))
-        (sage-shell-help:describe-symbol (or (match-string 1 line)
-                                             (match-string 2 line)))
+        (sage-shell-help:describe-symbol
+         (or (match-string-no-properties 1 line)
+             (match-string-no-properties 2 line)))
         (sage-shell:send-blank-line))
        ((and at-tl-in-sage-p
              (string-match (rx bol (zero-or-more blank)
@@ -1743,7 +1745,8 @@ function does not highlight the input."
                                (zero-or-more blank) ")"
                                (zero-or-more blank)
                                eol) line))
-        (sage-shell-help:describe-symbol (match-string 1 line) "help(%s)")
+        (sage-shell-help:describe-symbol
+         (match-string-no-properties 1 line) "help(%s)")
         (sage-shell:send-blank-line))
 
        ;; send current line to indenting buffer and to process normally
@@ -2072,7 +2075,7 @@ python-mode"
 
 (cl-defun sage-shell-help:describe-symbol
     (symbol &optional
-            (cmd (format "%s('%%s')" (sage-shell:py-mod-func "print_info"))))
+            (cmd (format "%s(%%S)" (sage-shell:py-mod-func "print_info"))))
   "Describe symbol, display help buffer and select the window."
   (let* ((buf (get-buffer-create sage-shell-help:help-buffer-name))
          (cmd-str (format cmd symbol))
