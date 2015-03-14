@@ -253,7 +253,10 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
 
     def format_func(obj):
         try:
-            return ip.display_formatter.format(obj)[0]['text/plain']
+            if hasattr(obj, "show"):
+                return repr(obj)
+            else:
+                return ip.display_formatter.format(obj)[0]['text/plain']
         except:
             return repr(obj)
 
