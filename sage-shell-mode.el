@@ -1758,7 +1758,8 @@ function does not highlight the input."
 
         (sage-shell-cpl:-add-to-cands-in-cur-session line)
         (when (string-match sage-shell:clear-commands-regexp line)
-          (sage-shell:clear-current-buffer))))))
+          (sage-shell:clear-current-buffer))))
+    (sage-shell:-inputs-outputs-clear-cache)))
 
 (defun sage-shell-cpl:-add-to-cands-in-cur-session (line)
   (let ((regexp-asg
@@ -2220,18 +2221,25 @@ send current line to Sage process buffer."
                       (cons 1 (butlast pts)))))))))))
 
 
+(defvar sage-shell:-inputs-outputs-cached nil)
+(defun sage-shell:-inputs-outputs-clear-cache ()
+  (setq sage-shell:-inputs-outputs-cached nil))
+(make-variable-buffer-local 'sage-shell:-inputs-outputs-cached)
 (defun sage-shell:-inputs-outputs ()
-  (let ((s (sage-shell:send-command-to-string
-            (sage-shell:py-mod-func
-             (format "print_inputs_outputs(%s, '%s', %s)"
-                     (or sage-shell:list-outputs-max-line-num
-                         "None")
-                     sage-shell:lo-delim
-                     (if sage-shell:list-outputs-reversed-order-p
-                         "True"
-                       "False"))))))
-    (butlast (split-string s sage-shell:lo-delim))))
-
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell:aif sage-shell:-inputs-outputs-cached
+        it
+      (setq sage-shell:-inputs-outputs-cached
+            (let ((s (sage-shell:send-command-to-string
+                      (sage-shell:py-mod-func
+                       (format "print_inputs_outputs(%s, '%s', %s)"
+                               (or sage-shell:list-outputs-max-line-num
+                                   "None")
+                               sage-shell:lo-delim
+                               (if sage-shell:list-outputs-reversed-order-p
+                                   "True"
+                                 "False"))))))
+              (butlast (split-string s sage-shell:lo-delim)))))))
 
 (defun sage-shell:output-forward (arg)
   (interactive "p")
