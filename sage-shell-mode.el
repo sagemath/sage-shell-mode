@@ -2226,19 +2226,20 @@ send current line to Sage process buffer."
   (setq sage-shell:-inputs-outputs-cached nil))
 (make-variable-buffer-local 'sage-shell:-inputs-outputs-cached)
 (defun sage-shell:-inputs-outputs ()
-  (sage-shell:aif sage-shell:-inputs-outputs-cached
-      it
-    (setq sage-shell:-inputs-outputs-cached
-          (let ((s (sage-shell:send-command-to-string
-                    (sage-shell:py-mod-func
-                     (format "print_inputs_outputs(%s, '%s', %s)"
-                             (or sage-shell:list-outputs-max-line-num
-                                 "None")
-                             sage-shell:lo-delim
-                             (if sage-shell:list-outputs-reversed-order-p
-                                 "True"
-                               "False"))))))
-            (butlast (split-string s sage-shell:lo-delim))))))
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell:aif sage-shell:-inputs-outputs-cached
+        it
+      (setq sage-shell:-inputs-outputs-cached
+            (let ((s (sage-shell:send-command-to-string
+                      (sage-shell:py-mod-func
+                       (format "print_inputs_outputs(%s, '%s', %s)"
+                               (or sage-shell:list-outputs-max-line-num
+                                   "None")
+                               sage-shell:lo-delim
+                               (if sage-shell:list-outputs-reversed-order-p
+                                   "True"
+                                 "False"))))))
+              (butlast (split-string s sage-shell:lo-delim)))))))
 
 (defun sage-shell:output-forward (arg)
   (interactive "p")
