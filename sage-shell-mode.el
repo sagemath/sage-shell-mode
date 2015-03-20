@@ -1671,6 +1671,7 @@ function does not highlight the input."
 ;; * (comint-send-input)
 ;; * change default-directory
 
+(defvar sage-shell:-send-input-hook nil)
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
@@ -1758,7 +1759,8 @@ function does not highlight the input."
 
         (sage-shell-cpl:-add-to-cands-in-cur-session line)
         (when (string-match sage-shell:clear-commands-regexp line)
-          (sage-shell:clear-current-buffer))))))
+          (sage-shell:clear-current-buffer))))
+    (run-hooks 'sage-shell:-send-input-hook)))
 
 (defun sage-shell-cpl:-add-to-cands-in-cur-session (line)
   (let ((regexp-asg
