@@ -2653,11 +2653,11 @@ send current line to Sage process buffer."
      ;; Top level objects in a module
      ((save-excursion
         (and from-state-p
-             (sage-shell-cpl:-scb-and-looking-at var-chars (rx "import"))
              (progn
                (beginning-of-line)
                (when (re-search-forward
-                      (rx "from" (1+ space) (group (1+ (or alnum "_" "."))))
+                      (rx "from" (1+ space) (group (1+ (or alnum "_" ".")))
+                          (1+ space) "import" (1+ space))
                       (line-end-position) t)
                  (and (<= (match-end 1) (point))
                       (save-match-data
@@ -2665,7 +2665,7 @@ send current line to Sage process buffer."
                         (or (null (re-search-forward
                                    (rx symbol-start "as" symbol-end)
                                    (line-end-position) t))
-                            (<= (point) (match-beginning 1)))))))))
+                            (<= (point) (match-beginning 0)))))))))
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
         'module-name (match-string-no-properties 1)))
