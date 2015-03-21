@@ -2659,7 +2659,13 @@ send current line to Sage process buffer."
                (when (re-search-forward
                       (rx "from" (1+ space) (group (1+ (or alnum "_" "."))))
                       (line-end-position) t)
-                 (= (match-end 1) (point))))))
+                 (and (<= (match-end 1) (point))
+                      (save-match-data
+                        (beginning-of-line)
+                        (or (null (re-search-forward
+                                   (rx symbol-start "as" symbol-end)
+                                   (line-end-position) t))
+                            (<= (point) (match-beginning 1)))))))))
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
         'module-name (match-string-no-properties 1)))
