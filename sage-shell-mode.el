@@ -2622,6 +2622,12 @@ send current line to Sage process buffer."
         ;; Returns state.
         state))))
 
+(defun sage-shell-cpl:-scb-and-looking-at (chars regexp)
+  (skip-chars-backward chars)
+  (skip-chars-backward " ")
+  (skip-chars-backward chars)
+  (looking-at regexp))
+
 (defun sage-shell-cpl:-parse-import-state
     (base-name att-beg intf import-state-p from-state-p)
   (let ((state nil) (types nil)
@@ -2635,17 +2641,9 @@ send current line to Sage process buffer."
      ;; Top level modules in sys.path
      ((save-excursion
         (or (and (not from-state-p)
-                 (progn
-                   (skip-chars-backward var-chars)
-                   (skip-chars-backward " ")
-                   (skip-chars-backward var-chars)
-                   (looking-at (rx "import"))))
+                 (sage-shell-cpl:-scb-and-looking-at var-chars (rx "import")))
             (and from-state-p
-                 (progn
-                   (skip-chars-backward var-chars)
-                   (skip-chars-backward " ")
-                   (skip-chars-backward var-chars)
-                   (looking-at (rx "from"))))))
+                 (sage-shell-cpl:-scb-and-looking-at var-chars (rx "from")))))
       (push "modules" types))
      ;; sub-modules in a module
      (base-name
@@ -2655,16 +2653,13 @@ send current line to Sage process buffer."
      ;; Top level objects in a module
      ((save-excursion
         (and from-state-p
-             (progn
-               (skip-chars-backward var-chars)
-               (skip-chars-backward " ")
-               (skip-chars-backward var-chars)
-               (looking-at (rx "import")))
+             (sage-shell-cpl:-scb-and-looking-at var-chars (rx "import"))
              (progn
                (beginning-of-line)
-               (re-search-forward
-                (rx "from" (1+ space) (group (1+ (or alnum "_" "."))))
-                (line-end-position) t))))
+               (when (re-search-forward
+                      (rx "from" (1+ space) (group (1+ (or alnum "_" "."))))
+                      (line-end-position) t)
+                 (= (match-end 1) (point))))))
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
         'module-name (match-string-no-properties 1)))
