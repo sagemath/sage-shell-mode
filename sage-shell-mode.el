@@ -2653,25 +2653,28 @@ send current line to Sage process buffer."
      ;; Top level objects in a module
      ((save-excursion
         (and from-state-p
-             (progn
-               (beginning-of-line)
-               (when (re-search-forward
-                      (rx "from" (1+ space) (group (1+ (or alnum "_" ".")))
-                          (1+ space) "import" (1+ space))
-                      (line-end-position) t)
-                 (and (<= (match-end 1) (point))
-                      (save-match-data
-                        (beginning-of-line)
-                        (or (null (re-search-forward
-                                   (rx symbol-start "as" symbol-end)
-                                   (line-end-position) t))
-                            (<= (point) (match-beginning 0)))))))))
+             (sage-shell-cpl:-from-import-state-one-line (point))))
       (push "vars-in-module" types)
       (sage-shell:push-elmts state
         'module-name (match-string-no-properties 1)))
      ;; Else let type be "interfaces".
      (t (push "interface" types)))
     (list types state)))
+
+(defun sage-shell-cpl:-from-import-state-one-line (pt)
+  "(match-begining 1) is the module name."
+  (beginning-of-line)
+  (when (re-search-forward
+         (rx "from" (1+ space) (group (1+ (or alnum "_" ".")))
+             (1+ space) "import" (1+ space))
+         (line-end-position) t)
+    (and (<= (match-end 1) pt)
+         (save-match-data
+           (beginning-of-line)
+           (or (null (re-search-forward
+                      (rx symbol-start "as" symbol-end)
+                      (line-end-position) t))
+               (<= pt (match-beginning 0)))))))
 
 (defun sage-shell-cpl:parse-and-set-state ()
   "Parse the current state and set the state."
