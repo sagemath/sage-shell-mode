@@ -1087,6 +1087,26 @@ Match group 1 will be replaced with devel/sage-branch")
 (defun sage-shell:join-command (cmds)
   (mapconcat 'identity (reverse cmds) "; "))
 
+
+(defun sage-shell:-in-func-call-p (&optional pt)
+  "Returns a list of beginning of function, end of function and function name
+if the PT is in function call."
+  (let* ((bol (line-beginning-position))
+         (pt (or pt (point)))
+         (pps (parse-partial-sexp bol pt))
+         (beg-of-ls (cadr pps)))
+    (save-excursion
+      (when beg-of-ls
+        (goto-char beg-of-ls)
+        (cond
+         ((looking-at (rx "["))
+          (sage-shell:-in-func-call-p beg-of-ls))
+         (t (skip-chars-backward
+             (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bol)
+            (unless (looking-at (rx (or "." "(" "[")))
+              (list (point) beg-of-ls
+                    (buffer-substring-no-properties (point) beg-of-ls)))))))))
+
 
 ;; comint functions
 (defun sage-shell:nullify-ring (ring)
