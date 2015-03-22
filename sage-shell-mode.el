@@ -3514,7 +3514,9 @@ inserted in the process buffer before executing the command."
                         (sage-shell-cpl:-from-import-state-one-line pt))))
           (push "vars-in-module" types)
           (sage-shell:push-elmts state
-            'module-name (match-string-no-properties 1)))))))
+            'module-name (match-string-no-properties 1))))))
+     ;; Else type is '("interface")
+     (t (push "interface" types)))
 
     (sage-shell:push-elmts state
       'types types)
