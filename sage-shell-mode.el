@@ -2645,10 +2645,11 @@ send current line to Sage process buffer."
         state))))
 
 (defun sage-shell-cpl:-scb-and-looking-at (chars regexp)
-  (skip-chars-backward chars)
-  (skip-chars-backward " ")
-  (skip-chars-backward chars)
-  (looking-at regexp))
+  (let ((bol (line-beginning-position)))
+    (skip-chars-backward chars bol)
+    (skip-chars-backward " " bol)
+    (skip-chars-backward chars bol)
+    (looking-at regexp)))
 
 (defun sage-shell-cpl:-parse-import-state
     (base-name att-beg intf import-state-p from-state-p)
