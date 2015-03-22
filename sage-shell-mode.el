@@ -1103,7 +1103,7 @@ if the PT is in function call."
         (goto-char beg-of-ls)
         (cond
          ((looking-at (rx "["))
-          (sage-shell:-in-func-call-p beg-of-ls))
+          nil)
          (t (skip-chars-backward
              (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bol)
             (unless (looking-at (rx (or "." "(" "[")))
