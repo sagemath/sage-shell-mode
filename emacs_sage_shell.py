@@ -76,6 +76,8 @@ def all_vars_in_module(compl_dct):
     module_name = compl_dct["module-name"]
     return _all_vars_in_module(module_name)
 
+special_att_regexp = re.compile("__[a-zA-Z0-9_]+__")
+
 def _all_vars_in_module(module_name):
     if module_name is None:
         return []
@@ -102,6 +104,7 @@ def _all_vars_in_module(module_name):
                     m = regexp.match(l)
                     if m is not None:
                         res.extend([c for c in m.groups() if c is not None])
+    res = [a for a in res if special_att_regexp.match(a) is None]
     return res
 
 
