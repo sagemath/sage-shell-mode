@@ -79,27 +79,29 @@ def all_vars_in_module(compl_dct):
 def _all_vars_in_module(module_name):
     if module_name is None:
         return []
-    p = resolve_module_path(module_name)
-    if p is None:
-        return []
-    res = None
+
     # If imported module, use dir.
     if module_name in sys.modules:
         res = dir(sys.modules[module_name])
+    else:
+        p = resolve_module_path(module_name)
+        if p is None:
+            return []
+        res = None
+        if os.path.isdir(p):
+            res = list_modules_in(p)
 
-    if os.path.isdir(p):
-        res = list_modules_in(p)
-
-    # Ohterwise, parse the file.
-    if res is None:
-        res = []
-        regexp = re.compile("^{name} *= *|^def +{name}|^class +{name}".format(
-            name="([a-zA-Z0-9_]+)"))
-        with open(p) as f:
-            for l in f:
-                m = regexp.match(l)
-                if m is not None:
-                    res.extend([c for c in m.groups() if c is not None])
+        # Ohterwise, parse the file.
+        if res is None:
+            res = []
+            regexp = re.compile(
+                "^{name} *= *|^def +{name}|^class +{name}".format(
+                name="([a-zA-Z0-9_]+)"))
+            with open(p) as f:
+                for l in f:
+                    m = regexp.match(l)
+                    if m is not None:
+                        res.extend([c for c in m.groups() if c is not None])
     return res
 
 
