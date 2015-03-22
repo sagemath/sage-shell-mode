@@ -2769,7 +2769,7 @@ send current line to Sage process buffer."
 
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer sage-shell:output-buffer)
-          (compl-state (sage-shell-cpl:parse-and-set-state))
+          (compl-state sage-shell-cpl:current-state)
           (cont nil))
   "If SYNC is non-nil, return a sexp. If not return value has no
 meaning and `sage-shell-cpl:-last-sexp' will be set when the
@@ -2779,7 +2779,8 @@ redirection is finished.  This function set the command list by
 using `sage-shell-cpl:set-cmd-lst'"
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
-  (when (and (sage-shell:at-top-level-and-in-sage-p)
+  (when (and (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+                 (sage-shell:at-top-level-and-in-sage-p))
              (sage-shell:redirect-finished-p)
              (sage-shell:output-finished-p))
     (let* ((interface (sage-shell-cpl:get compl-state 'interface))
