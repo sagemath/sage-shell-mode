@@ -2737,6 +2737,9 @@ send current line to Sage process buffer."
          (update-cmd-p
           (cond (make-cache-file-p
                  (not (string= interface "magma")))
+                ((sage-shell:in interface
+                                sage-shell-interfaces:optional-interfaces)
+                 (executable-find interface))
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
     (let ((types (if update-cmd-p
                      types
