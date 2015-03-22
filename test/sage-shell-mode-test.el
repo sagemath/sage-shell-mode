@@ -28,12 +28,19 @@
     (goto-char (or pt (point-max)))
     (sage-shell-cpl:parse-current-state int)))
 
+(defun sage-shell-test:sage-mode-temp-state (code &optional pt)
+  (with-temp-buffer
+    (insert code)
+    (goto-char (or pt (point-max)))
+    (sage-shell-edit:parse-current-state)))
+
 (defmacro sage-shell-test:state-assert (state &rest args)
   (declare (indent 1) (debug t))
   (let ((test-fns '((prefix . =)
                     (var-base-name . equal)
                     (types . equal)
-                    (interface . string=))))
+                    (interface . string=)
+                    (module-name . equal))))
     (cons 'and
           (cl-loop for (a b) in (sage-shell:group args)
                    collect
@@ -77,3 +84,33 @@
               types '("interface")
               interface "sage"
               prefix 32))))
+
+(ert-deftest sage-shell:parse-state-edit-from-top-level ()
+  (should (let ((state (sage-shell-test:sage-mode-temp-state
+                        "from foo")))
+            (sage-shell-test:state-assert state
+              types '("modules")
+              module-name nil))))
+
+(ert-deftest sage-shell:parse-state-edit-from-sub-module ()
+  (should (let ((state (sage-shell-test:sage-mode-temp-state
+                        "from foo.bar.baz")))
+            (sage-shell-test:state-assert state
+              types '("modules")
+              module-name "foo.bar"))))
+
+(ert-deftest sage-shell:parse-state-edit-from-sub-module-in-block ()
+  (should (let ((state (sage-shell-test:sage-mode-temp-state
+                        "def foo():
+    from foo.bar.baz")))
+            (sage-shell-test:state-assert state
+              types '("modules")
+              module-name "foo.bar"))))
+
+(ert-deftest sage-shell:parse-state-edit-from-vars-in-module ()
+  (should (let ((state (sage-shell-test:sage-mode-temp-state
+                        "from foo.bar import (Foo,
+                     Bar, B")))
+            (sage-shell-test:state-assert state
+              types '("vars-in-module")
+              module-name "foo.bar"))))
