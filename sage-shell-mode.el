@@ -2353,7 +2353,9 @@ send current line to Sage process buffer."
             ;; if 'trait_names' has the argument 'verbose' then its message.
             (cons 'verbose nil)
             ;; cache file
-            (cons 'cache-file nil))))
+            (cons 'cache-file nil)
+            ;; name of executable
+            (cons 'executable nil))))
 
 (defun sage-shell-interfaces:set (interface &rest attributes-values)
   (when (sage-shell:in
@@ -2398,6 +2400,14 @@ send current line to Sage process buffer."
       (when (and (not (equal (skip-chars-backward chars) 0))
                  (looking-at rgexp))
         (point)))))
+
+(defun sage-shell-interfaces:executable-find (int)
+  (sage-shell:aif (sage-shell-interfaces:get int 'executable)
+      (executable-find it)
+    (executable-find int)))
+
+;; Executble of mathematica is math.
+(sage-shell-interfaces:set "mathematica" 'executable "math")
 
 ;; set verbose message and cache-file name
 (cl-loop for itf in '("maple" "maxima")
