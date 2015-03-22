@@ -2569,17 +2569,19 @@ send current line to Sage process buffer."
          (itfcs sage-shell-interfaces:other-interfaces)
          (intf (unless att-beg
                  (or (sage-shell:in cur-intf itfcs)
-                     (save-excursion
-                       (let ((pt (point)))
-                         (forward-line 0)
-                         (sage-shell:awhen
-                             (re-search-forward
-                              (format "\\<%s\\(?:\\.eval\\)? *\\((\\)[^)\n]+"
-                                      (regexp-opt itfcs 1))
-                              nil t)
-                           (when (and (<= (match-end 2) pt)
-                                      (<= pt it))
-                             (match-string-no-properties 1))))))))
+                     (sage-shell:aif (sage-shell:-in-func-call-p)
+                         (let ((func-name (caddr it)))
+                           (when (and
+                                  func-name
+                                  ;; Inside string?
+                                  (nth 3 (parse-partial-sexp
+                                          (line-beginning-position)
+                                          (point)))
+                                  (string-match
+                                   (rx-to-string
+                                    `(and (regexp ,(regexp-opt itfcs 1))
+                                          (zero-or-one ".eval"))) func-name))
+                             (match-string-no-properties 1 func-name)))))))
          (import-state-p (and (save-excursion
                                 (beginning-of-line)
                                 (looking-at (rx (0+ space)
