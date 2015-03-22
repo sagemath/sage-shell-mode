@@ -1027,7 +1027,10 @@ Match group 1 will be replaced with devel/sage-branch")
                  (base (if (string-match (rx "so" eol) base1)
                            (concat (file-name-sans-extension base1) ".pyx")
                          base1)))
-            (concat dr branch base))
+            (let ((-fname (concat dr branch base)))
+              (if (file-exists-p -fname)
+                  -fname
+                filename)))
         filename))))
 
 (defun sage-shell:site-package-version (filename)
