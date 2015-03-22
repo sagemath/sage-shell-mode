@@ -2646,7 +2646,9 @@ send current line to Sage process buffer."
                  (sage-shell-cpl:-scb-and-looking-at var-chars (rx "from")))))
       (push "modules" types))
      ;; sub-modules in a module
-     (base-name
+     ((and base-name (save-excursion
+                       (sage-shell-cpl:-scb-and-looking-at
+                        (concat var-chars ".") (rx (or "import" "from") " "))))
       (push "modules" types)
       (sage-shell:push-elmts state
         'module-name base-name))
