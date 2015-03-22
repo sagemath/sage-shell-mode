@@ -2749,7 +2749,7 @@ send current line to Sage process buffer."
                  (not (string= interface "magma")))
                 ((sage-shell:in interface
                                 sage-shell-interfaces:optional-interfaces)
-                 (executable-find interface))
+                 (sage-shell-interfaces:executable-find interface))
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
     (let ((types (if update-cmd-p
                      types
@@ -2794,7 +2794,7 @@ using `sage-shell-cpl:set-cmd-lst'"
                  (or (not (sage-shell:in
                            interface
                            sage-shell-interfaces:optional-interfaces))
-                     (executable-find interface))))
+                     (sage-shell-interfaces:executable-find interface))))
            (types (sage-shell-cpl:-types compl-state make-cache-file-p)))
       (when make-cache-file-p
         ;; Show verbose message and make a cache file.
