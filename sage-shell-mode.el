@@ -2533,7 +2533,8 @@ send current line to Sage process buffer."
       (setq att-beg (point))
       (when (save-excursion
               (skip-chars-backward " ")
-              (= (char-after (1- (point))) ?.))
+              (and (not (bobp))
+                   (= (char-after (1- (point))) ?.)))
         (save-excursion
           (skip-chars-backward " " bol)
           (forward-char -1)
