@@ -3415,6 +3415,74 @@ inserted in the process buffer before executing the command."
   (interactive)
   (pop-to-buffer sage-shell:process-buffer))
 
+
+(defvar sage-shell-edit:-parse-pps-backward-limit 3000)
+(defun sage-shell-edit:parse-current-state ()
+  "Parse completion state in sage-shell:sage-mode."
+  (let* ((pt (point))
+         (bd (sage-shell:aif sage-shell-edit:-parse-pps-backward-limit
+                 (max (point-min) (- pt it))
+               (point-min)))
+         ;; Nearest top level block
+         (beg-of-block (save-excursion
+                         (when (re-search-backward (rx bol (or "_" alnum)) bd t)
+                           (match-beginning 0))))
+         (state
+          (list (cons 'interface "sage")
+                (cons 'prefix (sage-shell-interfaces:looking-back-var "sage"))))
+         (types nil)
+         (chars (sage-shell-interfaces:get "sage" 'var-chars))
+         (base-att-beg (sage-shell-cpl:var-base-name-and-att-start "sage"))
+         (base-name (car base-att-beg))
+         (att-beg (cdr base-att-beg))
+         (in-import-line-p
+          (save-excursion
+            (beginning-of-line)
+            (looking-at (rx (0+ space) (group (or "from" "import")) space))))
+         (import-or-from (if in-import-line-p
+                             (match-string-no-properties 1))))
+    (cond
+     ;; Import statement
+     ((or in-import-line-p
+          (and beg-of-block
+               (save-excursion
+                 (goto-char beg-of-block)
+                 (looking-at (rx bol (group (or "from" "import")) space)))))
+      (let* ((import-or-from (or import-or-from (match-string-no-properties 1)))
+             (from-state-p (string= import-or-from "from")))
+        (cond
+         ;; Top level modules in sys.path
+         ((save-excursion
+            (and
+             in-import-line-p
+             (or (and (not from-state-p)
+                      (sage-shell-cpl:-scb-and-looking-at chars (rx "import")))
+                 (and from-state-p
+                      (sage-shell-cpl:-scb-and-looking-at chars (rx "from"))))))
+          (push "modules" types))
+         ;; Sub-modules in a module
+         ((save-excursion
+            (and in-import-line-p base-name
+                 (sage-shell-cpl:-scb-and-looking-at
+                  (concat chars ".") (rx (or "import" "from") " "))))
+          (push "modules" types)
+          (sage-shell:push-elmts state 'module-name base-name))
+         ;; Top level objects in a module
+         ((save-excursion
+            (and from-state-p
+                 (progn (unless in-import-line-p
+                          (goto-char beg-of-block))
+                        (sage-shell-cpl:-from-import-state-one-line pt))))
+          (push "vars-in-module" types)
+          (sage-shell:push-elmts state
+            'module-name (match-string-no-properties 1)))))))
+
+    (sage-shell:push-elmts state
+      'types types)
+    ;; Returns state.
+    state))
+
+
 
 ;;; sage-shell:sage-mode
 ;;;###autoload
