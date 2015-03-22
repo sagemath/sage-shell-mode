@@ -2957,15 +2957,11 @@ of current Sage process.")
                        (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
                              sexp))
                       (t sexp))))
-      (cond ((and mod-tp
-                  (assoc-default
-                   (sage-shell-cpl:-cached-mod-key mod-tp state)
-                   sage-shell-cpl:-modules-cached))
-             (cons (cons mod-tp (assoc-default
-                                 (sage-shell-cpl:-cached-mod-key mod-tp state)
-                                 sage-shell-cpl:-modules-cached))
-                   sexp))
-            (t sexp)))))
+      (let* ((ky (sage-shell-cpl:-cached-mod-key mod-tp state))
+             (val (assoc-default ky sage-shell-cpl:-modules-cached)))
+        (cond ((and mod-tp val (null (assoc-default mod-tp sexp)))
+               (cons (cons mod-tp val) sexp))
+              (t sexp))))))
 
 (defun sage-shell-cpl:-default-regexp-alst (keys state)
   (let ((regexp (sage-shell-interfaces:get "sage" 'cmd-rxp)))
@@ -2990,9 +2986,9 @@ whose key is in KEYS."
          (regexp1 (format "^%s"
                           (or regexp (sage-shell-interfaces:get
                                       "sage" 'cmd-rxp)))))
-    (cl-loop for (type . cands) in sexp1
-             if (or (eq keys t)
-                    (sage-shell:in type keys))
+    (cl-loop for type in keys1
+             for cands = (assoc-default type sexp1)
+             when cands
              append
              (if (sage-shell-cpl:-use-filter-p type state)
                  (cl-loop for s in cands
