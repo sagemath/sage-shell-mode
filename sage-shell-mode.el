@@ -2646,13 +2646,15 @@ send current line to Sage process buffer."
 
            ;; When the current interface is sage
            ((string= cur-intf "sage")
-            (sage-shell:push-elmts state
-              'interface "sage"
-              'var-base-name nil
-              'prefix (sage-shell-interfaces:looking-back-var "sage"))
-            (push "interface" types)
+            (let ((pfx (sage-shell-interfaces:looking-back-var "sage")))
+              (sage-shell:push-elmts state
+                'interface "sage"
+                'var-base-name nil
+                'prefix pfx)
+              ;; Unless parsing failed,
+              (unless (= (char-before pfx) 46)
+                (push "interface" types)))
             (list types state)))
-
         (sage-shell:push-elmts state
           'types types)
         ;; Returns state.
