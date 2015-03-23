@@ -949,7 +949,7 @@ returns a lamda function with no args to obtain the result."
   (save-excursion
     (when pt (goto-char pt))
     (let ((chars (sage-shell-interfaces:get
-                  (sage-shell-interfaces:current-interface)
+                  (or (sage-shell-interfaces:current-interface) "sage")
                   'var-chars)))
       (skip-chars-backward chars) (point))))
 
