@@ -2268,17 +2268,18 @@ send current line to Sage process buffer."
   (with-current-buffer sage-shell:process-buffer
     (sage-shell:aif sage-shell:-inputs-outputs-cached
         it
-      (setq sage-shell:-inputs-outputs-cached
-            (let ((s (sage-shell:send-command-to-string
-                      (sage-shell:py-mod-func
-                       (format "print_inputs_outputs(%s, '%s', %s)"
-                               (or sage-shell:list-outputs-max-line-num
-                                   "None")
-                               sage-shell:lo-delim
-                               (if sage-shell:list-outputs-reversed-order-p
-                                   "True"
-                                 "False"))))))
-              (butlast (split-string s sage-shell:lo-delim)))))))
+      (when (sage-shell:redirect-and-output-finished-p)
+        (setq sage-shell:-inputs-outputs-cached
+              (let ((s (sage-shell:send-command-to-string
+                        (sage-shell:py-mod-func
+                         (format "print_inputs_outputs(%s, '%s', %s)"
+                                 (or sage-shell:list-outputs-max-line-num
+                                     "None")
+                                 sage-shell:lo-delim
+                                 (if sage-shell:list-outputs-reversed-order-p
+                                     "True"
+                                   "False"))))))
+                (butlast (split-string s sage-shell:lo-delim))))))))
 
 (defun sage-shell:output-forward (arg)
   (interactive "p")
@@ -2773,6 +2774,10 @@ send current line to Sage process buffer."
 (defvar sage-shell-cpl:-last-sexp nil)
 (defvar sage-shell-cpl:-dict-keys '(interface var-base-name module-name))
 
+(defun sage-shell:redirect-and-output-finished-p ()
+  (and (sage-shell:redirect-finished-p)
+       (sage-shell:output-finished-p)))
+
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer sage-shell:output-buffer)
           (compl-state sage-shell-cpl:current-state)
@@ -2787,8 +2792,7 @@ using `sage-shell-cpl:set-cmd-lst'"
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:with-current-buffer-safe sage-shell:process-buffer
                  (sage-shell:at-top-level-and-in-sage-p))
-             (sage-shell:redirect-finished-p)
-             (sage-shell:output-finished-p))
+             (sage-shell:redirect-and-output-finished-p))
     (let* ((interface (sage-shell-cpl:get compl-state 'interface))
            (verbose (sage-shell-interfaces:get interface 'verbose))
            (make-cache-file-p
@@ -2942,11 +2946,12 @@ of current Sage process.")
           (t can))))
 
 (defun sage-shell-cpl:candidates-sync (&optional regexp)
-  (sage-shell-cpl:parse-and-set-state)
-  (let ((cur-intf (sage-shell-interfaces:current-interface)))
-    (sage-shell-cpl:candidates
-     :sexp (sage-shell-cpl:completion-init t)
-     :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp)))))
+  (when (sage-shell:redirect-and-output-finished-p)
+    (sage-shell-cpl:parse-and-set-state)
+    (let ((cur-intf (sage-shell-interfaces:current-interface)))
+      (sage-shell-cpl:candidates
+       :sexp (sage-shell-cpl:completion-init t)
+       :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp))))))
 
 (defun sage-shell-cpl:trans-sexp (sexp state)
   "Trasnform SEXP so that the union of cdr is an appropriate list
