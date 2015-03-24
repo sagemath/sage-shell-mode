@@ -2189,7 +2189,7 @@ send current line to Sage process buffer."
                       (and (looking-at (rx bol (1+ whitespace)
                                            (1+ num)))
                            (when (sage-shell:research-forward-w-bd
-                                  (rx bol (1+ "-") ">"
+                                  (rx bol (0+ "-") ">"
                                       (1+ whitespace)
                                       (group (1+ num)))
                                   end)
