@@ -1194,10 +1194,12 @@ This ring remebers the parts.")
                     sage-shell:use-unicode-banner))
            (sage-shell:->> res
                            (replace-regexp-in-string (rx (or "─" "━"
-                                                             "└" "┌"
-                                                             "┐" "┘"))
+                                                             "┌" "┐"
+                                                             "└" "┘"
+                                                             "┏" "┓"
+                                                             "┗" "┛"))
                                                      "-")
-                           (replace-regexp-in-string (rx "│") "|")))
+                           (replace-regexp-in-string (rx (or "│" "┃")) "|")))
           (t res))))
 
 ;; In recent version comint.el,
