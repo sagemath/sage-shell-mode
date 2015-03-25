@@ -1218,6 +1218,7 @@ This ring remebers the parts.")
         (when sage-shell:output-finished-p
           (when sage-shell:scroll-to-the-bottom
             (comint-postoutput-scroll-to-bottom string))
+          (setq buffer-undo-list nil)
           (sage-shell:run-hook-and-remove
            'sage-shell:output-filter-finished-hook process))))))
 
