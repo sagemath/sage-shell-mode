@@ -3181,6 +3181,15 @@ inserted in the process buffer before executing the command."
   ;; set sage process buffer
   (sage-shell-edit:set-sage-proc-buf-internal)
 
+  (sage-shell:when-process-alive
+    (sage-shell-edit:-exec-command-base
+     command pre-message post-message switch-p
+     display-function insert-command-p before-sentence)))
+
+(defun sage-shell-edit:-exec-command-base
+    (command pre-message post-message switch-p
+             display-function insert-command-p before-sentence)
+
   (with-current-buffer sage-shell:process-buffer
     (sage-shell:change-mode-line-process t)
     (force-mode-line-update))
