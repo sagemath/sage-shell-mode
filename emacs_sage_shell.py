@@ -116,10 +116,13 @@ def all_commands(compl_dct):
         return l
     else:
         intfc = ip.ev(interface)
-        try:
-            return intfc.trait_names(verbose=False)
-        except:
-            return intfc.trait_names()
+        if isinstance(intfc, sage.interfaces.expect.Expect):
+            try:
+                return intfc.trait_names(verbose=False)
+            except:
+                return intfc.trait_names()
+        else:
+            return []
 
 
 def all_attributes(compl_dct):
