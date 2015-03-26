@@ -6,6 +6,7 @@ import os
 from contextlib import contextmanager
 import sage
 from sage.all import preparse
+import inspect
 
 try:
     ip = get_ipython()
@@ -299,7 +300,6 @@ ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 
 def sage_getdef(name, base_name=None):
-    import inspect
     if _is_safe_str(name) and (_should_be_ignored(name, base_name)
                                is not None):
         gd_name = "sage.misc.sageinspect.sage_getdef"
