@@ -2552,10 +2552,7 @@ send current line to Sage process buffer."
           (let ((base-name (buffer-substring-no-properties it base-end)))
             (unless (or (string= base-name "")
                         ;; when base-name does not call any functions
-                        (string-match (rx (or (group (or alnum "_")
-                                                     (0+ whitespace)
-                                                     "(")
-                                              "%"
+                        (string-match (rx (or "(" "%"
                                               ;; There exists a possibility
                                               ;; that base-name contains '..'.
                                               (and "." (0+ whitespace)
