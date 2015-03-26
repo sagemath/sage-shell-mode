@@ -129,7 +129,7 @@ def all_commands(compl_dct):
 def all_attributes(compl_dct):
     varname = compl_dct["var-base-name"]
     try:
-        regexp = re.compile("^[ a-zA-Z0-9\\[\\]]+$")
+        regexp = re.compile("^[ a-zA-Z0-9._\\[\\]]+$")
         if regexp.match(varname) is None:
             return []
         var = ip.ev(preparse(varname))
