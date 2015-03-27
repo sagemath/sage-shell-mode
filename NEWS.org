@@ -1,4 +1,7 @@
 * History of user-visible changes.
 
+** 0.0.6.1 (2015-3-27)
+  - =undo= does not rewind inserted prompts.
+  - Some fixes for safer evaluating Python code.
 ** 0.0.6 (2015-03-24)
-*** Improve completion in import statements.
+  - Improve completion in import statements.
