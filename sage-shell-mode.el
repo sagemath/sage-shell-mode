@@ -899,12 +899,6 @@ argument."
           (setq sage-shell:sage-version
                 (string-to-number (match-string 1 str)))))))
 
-(defvar sage-shell:print-all-att-sage-fn
-  (sage-shell:py-mod-func "print_all_attributes"))
-
-(defvar sage-shell:print-all-commands-fn
-  (sage-shell:py-mod-func "print_all_commands"))
-
 (defvar sage-shell:dot-sage "~/.sage" "DOT_SAGE directory.")
 
 (defun sage-shell:redirect-finished-p ()
