@@ -2938,8 +2938,9 @@ whose key is in KEYS."
    (when (and (sage-shell:in "interface"
                              (sage-shell-cpl:get-current 'types))
               (string= (sage-shell-cpl:get-current 'interface) "sage"))
-     sage-shell:-python-builtins)
-   sage-shell-cpl:-cands-in-current-session ls))
+     (append sage-shell:-python-builtins
+             sage-shell-cpl:-cands-in-current-session))
+    ls))
 
 
 (defun sage-shell:symbol-beg ()
