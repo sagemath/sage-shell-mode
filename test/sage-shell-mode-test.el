@@ -60,7 +60,7 @@
     (should (let ((state (sage-shell-test:temp-state "sage: f().foo" "sage")))
             (sage-shell-test:state-assert state
               var-base-name nil
-              types '("interface")
+              types nil
               interface "sage"))))
 
 (ert-deftest sage-shell:parse-state-repl-intf ()
