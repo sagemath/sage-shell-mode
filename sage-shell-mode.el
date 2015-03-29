@@ -912,11 +912,12 @@ argument."
   "A hook that runs each time after sage-shell:clear-command-cache is called.")
 
 (defun sage-shell:clear-command-cache ()
-  (with-current-buffer sage-shell:process-buffer
-    (sage-shell-cpl:set-cmd-lst "sage" nil)
-    (setq sage-shell-cpl:-cands-in-current-session nil)
-    (sage-shell:clear-completion-sync-cached)
-    (run-hooks 'sage-shell:clear-command-cache-hook)))
+  (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+    (sage-shell:when-process-alive
+      (sage-shell-cpl:set-cmd-lst "sage" nil)
+      (setq sage-shell-cpl:-cands-in-current-session nil)
+      (sage-shell:clear-completion-sync-cached)
+      (run-hooks 'sage-shell:clear-command-cache-hook))))
 
 (defun sage-shell:update-sage-commands ()
   (sage-shell-interfaces:update-cmd-lst "sage"))
