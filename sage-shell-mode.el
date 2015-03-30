@@ -1348,26 +1348,54 @@ Does not delete the prompt."
              (looking-at sage-shell:prompt-regexp)))
      ,@forms))
 
-(defun sage-shell:font-lock-matcher-keywords (lim)
-  (sage-shell:font-lock-when-sage-line
-   (re-search-forward
-    (rx symbol-start
-        (or
-         "and" "del" "from" "not" "while" "as" "elif" "global" "or" "with"
-         "assert" "else" "if" "pass" "yield" "break" "except" "import" "class"
-         "in" "raise" "continue" "finally" "is" "return" "def" "for" "lambda"
-         "try"
-         ;; Python 2:
-         "print" "exec"
-         ;; Python 3:
-         ;; False, None, and True are listed as keywords on the Python 3
-         ;; documentation, but since they also qualify as constants they are
-         ;; fontified like that in order to keep font-lock consistent between
-         ;; Python versions.
-         "nonlocal"
-         ;; Extra:
-         "self") symbol-end)
-    lim t)))
+(defmacro sage-shell:-define-font-lock-matcher (name keywords)
+  `(defun ,name (lim)
+     (sage-shell:font-lock-when-sage-line
+      (let ((match
+             (re-search-forward
+              (rx symbol-start
+                  (or ,@keywords) symbol-end)
+              lim t)))
+        (sage-shell:awhen match
+          (let ((chbf (char-before (match-beginning 0))))
+            (if (null chbf)
+                it
+              (and (/= chbf ?.) it))))))))
+
+(sage-shell:-define-font-lock-matcher sage-shell:font-lock-matcher-keywords
+  ("and" "del" "from" "not" "while" "as" "elif"
+   "global" "or" "with" "assert" "else" "if" "pass" "yield"
+   "break" "except" "import" "class" "in" "raise" "continue"
+   "finally" "is" "return" "def" "for" "lambda"
+   "try"
+   ;; Python 2:
+   "print" "exec"
+   ;; Python 3: False, None, and True are listed as keywords on the
+   ;; Python 3 documentation, but since they also qualify as
+   ;; constants they are fontified like that in order to keep
+   ;; font-lock consistent between Python versions.
+   "nonlocal"
+   ;; Extra:
+   "self"))
+
+(sage-shell:-define-font-lock-matcher sage-shell:font-lock-matcher-builtin
+  ("abs" "all" "any" "bin" "bool" "callable" "chr" "classmethod"
+   "compile" "complex" "delattr" "dict" "dir" "divmod" "enumerate"
+   "eval" "filter" "float" "format" "frozenset" "getattr" "globals"
+   "hasattr" "hash" "help" "hex" "id" "input" "int" "isinstance"
+   "issubclass" "iter" "len" "list" "locals" "map" "max" "memoryview"
+   "min" "next" "object" "oct" "open" "ord" "pow" "print" "property"
+   "range" "repr" "reversed" "round" "set" "setattr" "slice" "sorted"
+   "staticmethod" "str" "sum" "super" "tuple" "type" "vars" "zip"
+   "__import__"
+   ;; Python 2:
+   "basestring" "cmp" "execfile" "file" "long" "raw_input" "reduce"
+   "reload" "unichr" "unicode" "xrange" "apply" "buffer" "coerce"
+   "intern"
+   ;; Python 3:
+   "ascii" "bytearray" "bytes" "exec"
+   ;; Extra:
+   "__all__" "__doc__" "__name__" "__package__"))
 
 (defun sage-shell:font-lock-matcher-def (lim)
   (sage-shell:font-lock-when-sage-line
@@ -1379,31 +1407,6 @@ Does not delete the prompt."
   (sage-shell:font-lock-when-sage-line
    (re-search-forward
     (rx symbol-start "class" (1+ space) (group (1+ (or word ?_))))
-    lim t)))
-
-(defun sage-shell:font-lock-matcher-builtin (lim)
-  (sage-shell:font-lock-when-sage-line
-   (re-search-forward
-    (rx symbol-start
-        (or
-         "abs" "all" "any" "bin" "bool" "callable" "chr" "classmethod"
-         "compile" "complex" "delattr" "dict" "dir" "divmod" "enumerate"
-         "eval" "filter" "float" "format" "frozenset" "getattr" "globals"
-         "hasattr" "hash" "help" "hex" "id" "input" "int" "isinstance"
-         "issubclass" "iter" "len" "list" "locals" "map" "max" "memoryview"
-         "min" "next" "object" "oct" "open" "ord" "pow" "print" "property"
-         "range" "repr" "reversed" "round" "set" "setattr" "slice" "sorted"
-         "staticmethod" "str" "sum" "super" "tuple" "type" "vars" "zip"
-         "__import__"
-         ;; Python 2:
-         "basestring" "cmp" "execfile" "file" "long" "raw_input" "reduce"
-         "reload" "unichr" "unicode" "xrange" "apply" "buffer" "coerce"
-         "intern"
-         ;; Python 3:
-         "ascii" "bytearray" "bytes" "exec"
-         ;; Extra:
-         "__all__" "__doc__" "__name__" "__package__")
-        symbol-end)
     lim t)))
 
 (defvar sage-shell:font-lock-keywords
