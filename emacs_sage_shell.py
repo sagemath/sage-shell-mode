@@ -142,12 +142,6 @@ def all_attributes(compl_dct):
                 ls = var.trait_names() + dir(var)
             except:
                 ls = dir(var)
-        elif hasattr(var, '__file__'):
-            fname = var.__file__
-            if os.path.splitext(os.path.basename(fname))[0] != "__init__":
-                ls = dir(var)
-            else:
-                ls = list_modules_in(os.path.dirname(fname)) + dir(var)
         else:
             ls = dir(var)
 
