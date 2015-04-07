@@ -839,12 +839,21 @@ When sync is nill this return a lambda function to get the result."
                 (let ((case-fold-search nil))
                   (re-search-forward (rx bow "Sage" eow) nil t)))))))
 
+(defun sage-shlel:-shell-buf-name-new-num (&optional host-name)
+  (let ((num 0))
+    (while (get-buffer (sage-shell:-shell-buffer-name num host-name))
+      (setq num (1+ num)))
+    num))
 
-(defun sage-shell:shell-buffer-name (new)
-  (let* ((buffer-base-name "*Sage*"))
-    (if new (generate-new-buffer buffer-base-name)
-      (sage-shell:aif (get-buffer buffer-base-name) it
-        (generate-new-buffer buffer-base-name)))))
+(defun sage-shell:-shell-buffer-name (&optional num host-name)
+  (let ((num-s (if (and num (/= num 0)) (format "<%d>" num) ""))
+        (host-name-s (if host-name (format "@%s" host-name) "")))
+    (format "*Sage%s%s*" num-s host-name-s)))
+
+(defun sage-shell:shell-buffer-name (new &optional host-name)
+  (cond (new (let ((num (sage-shlel:-shell-buf-name-new-num host-name)))
+               (sage-shell:-shell-buffer-name num host-name)))
+        (t (sage-shell:-shell-buffer-name))))
 
 (defun sage-shell:read-command ()
   (unless (and (sage-shell:sage-executable)
@@ -862,7 +871,7 @@ When sync is nill this return a lambda function to get the result."
   "Running Sage function internal.
 SIWTCH-FUNCTION is 'no-switch, or a function with one
 argument."
-  (let ((buf (sage-shell:shell-buffer-name new)))
+  (let ((buf (get-buffer-create (sage-shell:shell-buffer-name new))))
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
@@ -2999,9 +3008,12 @@ whose key is in KEYS."
                                        (buffer-name it))
                  for proc-name = (process-name proc)
                  if (and buffer-name
-                         (string-match (rx bol "*Sage*"
-                                           (zero-or-one "<" (1+ num) ">") eol)
-                                       buffer-name))
+                         (string-match
+                          (rx bol "*Sage"
+                              (zero-or-one "<" (1+ num) ">")
+                              (zero-or-one "@" (1+ nonl)) "*"
+                              eol)
+                          buffer-name))
                  collect (cons proc-name proc)))))
 
 (defun sage-shell:set-process-buffer ()
@@ -3042,7 +3054,8 @@ whose key is in KEYS."
                      (concat
                       "There are multiple Sage processes. "
                       "Please select the process buffer: ")
-                     buffer-names nil nil (car (last buffer-names))))
+                     buffer-names nil nil
+                     (try-completion "" buffer-names)))
                    (proc (get-buffer-process buffer-name)))
               (setq sage-shell:process-buffer (process-buffer proc)))))
          ;; if there is exactly one process
