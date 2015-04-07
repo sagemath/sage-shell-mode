@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import sage
 from sage.all import preparse
 import inspect
+from IPython.core.completerlib import module_completion
 
 try:
     ip = get_ipython()
@@ -67,11 +68,15 @@ def _all_modules(module_name):
     if module_name is None:
         return list_modules_in_syspath()
     else:
+        # Prefer naive implementation because module_completion seem to have
+        # side effect.
         mod_path = resolve_module_path(module_name)
         if mod_path is None:
-            return []
+            return [a.split(".")[-1] for a in
+                    module_completion("import %s."%(module_name, ))]
         else:
             return list_modules_in(mod_path)
+
 
 def all_vars_in_module(compl_dct):
     module_name = compl_dct["module-name"]
@@ -89,7 +94,8 @@ def _all_vars_in_module(module_name):
     else:
         p = resolve_module_path(module_name)
         if p is None:
-            return []
+            # If resolving fails, use module_completion.
+            return module_completion("from %s import "%(module_name, ))
         res = None
         if os.path.isdir(p):
             res = list_modules_in(p)
@@ -186,8 +192,7 @@ def list_module_paths_in_syspath():
     return res
 
 def list_modules_in_syspath():
-    return [os.path.splitext(os.path.basename(p))[0]
-            for p in list_module_paths_in_syspath()]
+    return module_completion("import ")
 
 @memorize
 def resolve_module_path(modname):
