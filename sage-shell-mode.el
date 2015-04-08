@@ -839,7 +839,7 @@ When sync is nill this return a lambda function to get the result."
                 (let ((case-fold-search nil))
                   (re-search-forward (rx bow "Sage" eow) nil t)))))))
 
-(defun sage-shlel:-shell-buf-name-new-num (&optional host-name)
+(defun sage-shell:-shell-buf-name-new-num (&optional host-name)
   (let ((num 0))
     (while (get-buffer (sage-shell:-shell-buffer-name num host-name))
       (setq num (1+ num)))
@@ -851,7 +851,7 @@ When sync is nill this return a lambda function to get the result."
     (format "*Sage%s%s*" num-s host-name-s)))
 
 (defun sage-shell:shell-buffer-name (new &optional host-name)
-  (cond (new (let ((num (sage-shlel:-shell-buf-name-new-num host-name)))
+  (cond (new (let ((num (sage-shell:-shell-buf-name-new-num host-name)))
                (sage-shell:-shell-buffer-name num host-name)))
         (t (sage-shell:-shell-buffer-name))))
 
@@ -2221,7 +2221,7 @@ send current line to Sage process buffer."
       (list comint-last-input-end
             (1- (sage-shell:line-beginning-position))))))
 
-(defun sagse-shell:copy-previous-output-to-kill-ring ()
+(defun sage-shell:copy-previous-output-to-kill-ring ()
   "Save the previous visible output to `kill-ring'."
   (interactive)
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
