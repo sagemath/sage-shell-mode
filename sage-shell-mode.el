@@ -2214,6 +2214,19 @@ send current line to Sage process buffer."
   "n" 'sage-shell:output-forward
   "p" 'sage-shell:output-backward)
 
+(defun sage-shell:last-output-beg-end ()
+  (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+    (save-excursion
+      (goto-char (process-mark (get-buffer-process sage-shell:process-buffer)))
+      (list comint-last-input-end
+            (1- (sage-shell:line-beginning-position))))))
+
+(defun sagse-shell:copy-previous-output-to-kill-ring ()
+  "Save the previous visible output to `kill-ring'."
+  (interactive)
+  (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+    (apply #'kill-ring-save (sage-shell:last-output-beg-end))))
+
 
 ;;; sage-shell-interfaces
 
