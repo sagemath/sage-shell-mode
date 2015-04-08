@@ -2439,7 +2439,8 @@ send current line to Sage process buffer."
       (when (save-excursion
               (skip-chars-backward " " bol)
               (and (not (bobp))
-                   (= (char-after (1- (point))) ?.)))
+                   (let ((chr-after (char-after (1- (point)))))
+                     (and chr-after (= chr-after ?.)))))
         (save-excursion
           (skip-chars-backward " " bol)
           (forward-char -1)
@@ -2463,7 +2464,8 @@ send current line to Sage process buffer."
     (skip-chars-backward var-chars bol)
     (if (not (save-excursion
                (skip-chars-backward " ")
-               (= (char-after (1- (point))) ?.)))
+               (let ((chr-after (char-after (1- (point)))))
+                 (and chr-after (= chr-after ?.)))))
         (point)
       (forward-char -1)
       (skip-chars-backward " " bol)
