@@ -2193,7 +2193,7 @@ send current line to Sage process buffer."
     (let* ((l-cr (length cr))
            (l-pts (length sage-shell:list-outputs-points))
            (dest (cond ((>= arg l-cr) (car (last cr)))
-                       ((equal arg 0) (car cr))
+                       ((= arg 0) (car cr))
                        ((> arg 0) (nth arg cr))
                        ((>= marg (- l-pts l-cr)) 1)
                        (t (nth (- l-pts l-cr marg)
@@ -2302,7 +2302,7 @@ send current line to Sage process buffer."
   (let ((rgexp (sage-shell-interfaces:get interface 'cmd-rxp))
         (chars (sage-shell-interfaces:get interface 'var-chars)))
     (save-excursion
-      (when (and (not (equal (skip-chars-backward chars) 0))
+      (when (and (not (= (skip-chars-backward chars) 0))
                  (looking-at rgexp))
         (point)))))
 
@@ -2439,8 +2439,7 @@ send current line to Sage process buffer."
       (when (save-excursion
               (skip-chars-backward " " bol)
               (and (not (bobp))
-                   (let ((chr-after (char-after (1- (point)))))
-                     (and chr-after (= chr-after ?.)))))
+                   (eq (char-after (1- (point))) ?.)))
         (save-excursion
           (skip-chars-backward " " bol)
           (forward-char -1)
@@ -2464,8 +2463,7 @@ send current line to Sage process buffer."
     (skip-chars-backward var-chars bol)
     (if (not (save-excursion
                (skip-chars-backward " ")
-               (let ((chr-after (char-after (1- (point)))))
-                 (and chr-after (= chr-after ?.)))))
+               (eq (char-after (1- (point))) ?.)))
         (point)
       (forward-char -1)
       (skip-chars-backward " " bol)
