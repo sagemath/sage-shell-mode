@@ -657,7 +657,8 @@ returned from the function, otherwise, this returns it self. "
   "C-c C-h" 'sage-shell:help
   "C-c C-l" 'sage-shell:load-file
   "C-c M-o" 'sage-shell:clear-current-buffer
-  "C-c o" 'sage-shell:list-outputs)
+  "C-c o" 'sage-shell:list-outputs
+  "C-c M-w" 'sage-shell:copy-previous-output-to-kill-ring)
 
 (define-key sage-shell-mode-map [remap comint-next-input]
   'sage-shell:next-input)
