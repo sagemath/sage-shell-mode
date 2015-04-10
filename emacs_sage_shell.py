@@ -322,13 +322,14 @@ _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
 
 def _should_be_ignored(name, base_name):
-    name_ob = ip.ev(preparse(name))
     if isinstance(base_name, str):
         base_ob = ip.ev(preparse(base_name))
+        if any((isinstance(base_ob, cls) for cls in ignore_classes)):
+            return None
     else:
         base_ob = None
-    if any(isinstance(base_ob, cls) or isinstance(name_ob, cls)
-           for cls in ignore_classes):
+    name_ob = ip.ev(preparse(name))
+    if any((isinstance(name_ob, cls) for cls in ignore_classes)):
         return None
     else:
         return True
