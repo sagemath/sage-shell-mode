@@ -425,6 +425,12 @@ returned from the function, otherwise, this returns it self. "
                                  collect (list 'cons a b)))
                  ,state)))
 
+(defmacro sage-shell:chain (var &rest forms)
+  (append '(progn)
+          (cl-loop for f in forms
+                   collect
+                   `(setq ,var ,f))))
+
 (require 'compile)
 (require 'ansi-color)
 
@@ -2731,17 +2737,18 @@ send current line to Sage process buffer."
                                 sage-shell-interfaces:optional-interfaces)
                  (sage-shell-interfaces:executable-find interface))
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
-    (let ((types (if update-cmd-p
-                     types
-                   (cl-remove-if (lambda (s) (string= s "interface")) types))))
+    (sage-shell:chain types
+      (if update-cmd-p
+          types
+        (cl-remove-if (lambda (s) (string= s "interface")) types))
       (if (sage-shell:aand
             (sage-shell-cpl:-mod-type compl-state)
             (assoc-default
              (sage-shell-cpl:-cached-mod-key it compl-state)
              sage-shell-cpl:-modules-cached))
-          (sage-shell:->> types
-                          (cl-remove-if (lambda (s) (string= s "modules")))
-                          (cl-remove-if (lambda (s) (string= s "vars-in-module"))))
+          (cl-remove-if (lambda (s) (or (string= s "modules")
+                                    (string= s "vars-in-module")))
+                        types)
         types))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
