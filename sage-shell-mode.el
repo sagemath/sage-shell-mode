@@ -2422,11 +2422,17 @@ send current line to Sage process buffer."
    ;; nil or string.
    (cons 'module-name nil)
 
+   ;; nil or the function name
+   (cons 'in-function-call nil)
+
+   ;; nil or the base name of the function in function call.
+   (cons 'in-function-call-base-name nil)
+
    ;; In some cases, we need different kinds of candidates.
    ;; For example, candidates which follow "gap." should contain
    ;; gap commands and attributes of a variable gap.
    ;; An element of tyjpes should be equal to one of
-   ;; "interface", "attributes", "modules", "vars-in-module".
+   ;; "interface", "attributes", "modules", "vars-in-module", "in-function-call".
 
    ;; When "modules" in in type and module-name is nil, then candidates shoud
    ;; contain top level modules in sys.path.  If module-name is non-nil, it
@@ -2601,14 +2607,27 @@ send current line to Sage process buffer."
            ;; When the current interface is sage
            ((string= cur-intf "sage")
             (let* ((pfx (sage-shell-interfaces:looking-back-var "sage"))
-                   (chbf (and pfx (char-before pfx))))
+                   (chbf (and pfx (char-before pfx)))
+                   (in-func-call (sage-shell:-in-func-call-p))
+                   (in-func-name (sage-shell:awhen in-func-call
+                                   (caddr it)))
+                   (in-function-call-bn
+                    (sage-shell:awhen in-func-call
+                      (save-excursion
+                        (goto-char (goto-char (cadr it)))
+                        (car (sage-shell-cpl:var-base-name-and-att-start
+                              "sage"))))))
               (sage-shell:push-elmts state
                 'interface "sage"
                 'var-base-name nil
-                'prefix pfx)
+                'prefix pfx
+                'in-function-call in-func-name
+                'in-function-call-base-name in-function-call-bn)
               ;; Unless parsing failed,
               (unless (and chbf (= chbf 46))
-                (push "interface" types)))
+                (push "interface" types))
+              (when in-func-name
+                (push "in-function-call" types)))
             (list types state)))
         (sage-shell:push-elmts state
           'types types)
@@ -2726,7 +2745,9 @@ send current line to Sage process buffer."
         types))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
-(defvar sage-shell-cpl:-dict-keys '(interface var-base-name module-name))
+(defvar sage-shell-cpl:-dict-keys
+  '(interface var-base-name module-name in-function-call
+              in-function-call-base-name))
 
 (defun sage-shell:redirect-and-output-finished-p ()
   (and (sage-shell:redirect-finished-p)

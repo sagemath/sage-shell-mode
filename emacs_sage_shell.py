@@ -53,7 +53,8 @@ def print_cpl_sexp(typs, compl_dct):
     funcs = {"interface": all_commands,
              "attributes": all_attributes,
              "modules": all_modules,
-             "vars-in-module": all_vars_in_module}
+             "vars-in-module": all_vars_in_module,
+             "in-function-call": all_keyword_args}
     alst = [(tp, funcs[tp](compl_dct)) for tp in typs]
     conss = ['("%s" . %s)'%(tp, _to_lisp_str_ls(ls))
              for tp, ls in alst if ls is not None]
@@ -351,6 +352,21 @@ def short_doc(name, base_name=None):
             res = dc
         return res.strip()
 
+def all_keyword_args(compl_dct):
+    base_name = compl_dct["in-function-call-base-name"]
+    name = compl_dct["in-function-call"]
+    return keyword_args(name, base_name=base_name)
+
+def keyword_args(name, base_name=None):
+    if _is_safe_str(name) and (_should_be_ignored(name, base_name)
+                               is not None):
+        try:
+            argspec = ip.ev("sage.misc.sageinspect.sage_getargspec(%s)"%(
+                preparse(name)))
+            return [a + "=" for a, _ in
+                    zip(reversed(argspec.args), argspec.defaults)]
+        except:
+            return []
 
 def print_short_doc(name, base_name=None):
     try:
