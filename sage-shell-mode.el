@@ -46,6 +46,7 @@
 (require 'cl-lib)
 (require 'deferred)
 (require 'pcomplete)
+(require 'eldoc)
 
 ;;; Global variables for users
 (defgroup sage-shell
@@ -621,6 +622,8 @@ returned from the function, otherwise, this returns it self. "
   (set (make-local-variable 'comint-output-filter-functions)
        (remove 'comint-postoutput-scroll-to-bottom
                comint-output-filter-functions))
+  (set (make-local-variable 'eldoc-documentation-function)
+       #'sage-shell:eldoc-function)
   (when sage-shell:scroll-show-maximum-output
     (set (make-local-variable 'scroll-conservatively) 1000))
   ;; Ignore duplicates in command history
@@ -1114,6 +1117,29 @@ if the PT is in function call."
             (unless (looking-at (rx (or "." "(" "[")))
               (list (point) beg-of-ls
                     (buffer-substring-no-properties (point) beg-of-ls)))))))))
+
+;; eldoc
+(defvar sage-shell:-eldoc-cache nil)
+(make-variable-buffer-local 'sage-shell:-eldoc-cache)
+
+(defun sage-shell:eldoc-function ()
+  (sage-shell:awhen (sage-shell:-in-func-call-p)
+    (let* ((func-name (caddr it))
+           (beg (1+ (car it)))
+           (str (sage-shell:-eldoc-function-str func-name)))
+      str)))
+
+(defun sage-shell:-eldoc-function-str (func-name)
+  (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
+    (cond (cache cache)
+          (t (let ((res (sage-shell:->>
+                         (sage-shell:py-mod-func
+                          (format "print_def('%s')" func-name))
+                         sage-shell:send-command-to-string
+                         sage-shell:trim-left)))
+               (push (cons func-name res) sage-shell:-eldoc-cache)
+               res)))))
+
 
 
 ;; comint functions
