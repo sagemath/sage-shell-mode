@@ -302,7 +302,7 @@ def print_info(name):
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 
-def sage_getdef(name, base_name=None):
+def _sage_getdef(name, base_name=None):
     if _is_safe_str(name) and (_should_be_ignored(name, base_name)
                                is not None):
         gd_name = "sage.misc.sageinspect.sage_getdef"
@@ -312,9 +312,14 @@ def sage_getdef(name, base_name=None):
                 df = ip.ev("%s(%s.__init__)"%(gd_name, name))
             else:
                 df = ip.ev("%s(%s)"%(gd_name, preparse(name)))
-            return "%s%s"%(name, df)
+            return df
         except NameError:
             pass
+
+def sage_getdef(name, base_name=None):
+    df = _sage_getdef(name, base_name=base_name)
+    if df is not None:
+        return "%s%s"%(name, df)
 
 _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
                "ALGORITHM"]
@@ -358,15 +363,16 @@ def all_keyword_args(compl_dct):
     return keyword_args(name, base_name=base_name)
 
 def keyword_args(name, base_name=None):
-    if _is_safe_str(name) and (_should_be_ignored(name, base_name)
-                               is not None):
-        try:
-            argspec = ip.ev("sage.misc.sageinspect.sage_getargspec(%s)"%(
-                preparse(name)))
-            return [a + "=" for a, _ in
-                    zip(reversed(argspec.args), argspec.defaults)]
-        except:
-            return []
+    gd = _sage_getdef(name, base_name=base_name)
+    no_argspec_reg = re.compile(r"\[noargspec\]")
+    if (not gd) or re.match(no_argspec_reg, gd):
+        return []
+    else:
+        args_str = gd[1:-1]
+        reg = re.compile("[a-zA-Z_0-9]+=")
+        args = args_str.split(", ")
+        matchs = [re.match(reg, a) for a in args]
+        return [m.group() for m in matchs if m]
 
 def print_short_doc(name, base_name=None):
     try:
