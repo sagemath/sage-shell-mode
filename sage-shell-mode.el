@@ -1140,6 +1140,9 @@ Match group 1 will be replaced with devel/sage-branch")
   (setq sage-shell:-eldoc-cache nil))
 (make-variable-buffer-local 'sage-shell:-eldoc-cache)
 
+(when (fboundp #'eldoc-add-command)
+  (eldoc-add-command #'sage-shell-tab-command))
+
 (defun sage-shell:eldoc-function ()
   (let* ((state (sage-shell-cpl:parse-current-state))
          (func-name (sage-shell-cpl:get state 'in-function-call))
