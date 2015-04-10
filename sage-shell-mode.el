@@ -1729,7 +1729,11 @@ function does not highlight the input."
         (sage-shell-cpl:-add-to-cands-in-cur-session line)
         (when (string-match sage-shell:clear-commands-regexp line)
           (sage-shell:clear-current-buffer))))
-    (sage-shell:-inputs-outputs-clear-cache)))
+    (sage-shell:-clear-cache-in-send-input)))
+
+(defun sage-shell:-clear-cache-in-send-input ()
+  (sage-shell:-inputs-outputs-clear-cache)
+  (sage-shell:-clear-eldoc-cache))
 
 (defun sage-shell-cpl:-add-to-cands-in-cur-session (line)
   (let ((regexp-asg
