@@ -937,6 +937,7 @@ argument."
       (setq sage-shell-cpl:-cands-in-current-session nil)
       (sage-shell:clear-completion-sync-cached)
       (sage-shell:-clear-eldoc-cache)
+      (sage-shell-cpl:-clear-argspec-cache)
       (run-hooks 'sage-shell:clear-command-cache-hook))))
 
 (defun sage-shell:update-sage-commands ()
@@ -1747,7 +1748,8 @@ function does not highlight the input."
 
 (defun sage-shell:-clear-cache-in-send-input ()
   (sage-shell:-inputs-outputs-clear-cache)
-  (sage-shell:-clear-eldoc-cache))
+  (sage-shell:-clear-eldoc-cache)
+  (sage-shell-cpl:-clear-argspec-cache))
 
 (defun sage-shell-cpl:-add-to-cands-in-cur-session (line)
   (let ((regexp-asg
@@ -2709,7 +2711,10 @@ send current line to Sage process buffer."
 
 
 (defvar sage-shell-cpl:-modules-cached nil)
-
+(defvar sage-shell-cpl:-argspec-cached nil)
+(defun sage-shell-cpl:-clear-argspec-cache ()
+  (setq sage-shell-cpl:-argspec-cached nil))
+(make-variable-buffer-local 'sage-shell-cpl:-argspec-cached)
 
 (defun sage-shell-cpl:-mod-type (compl-state)
   (let ((types (sage-shell-cpl:get compl-state 'types)))
@@ -2727,9 +2732,16 @@ send current line to Sage process buffer."
                   res)
             sage-shell-cpl:-modules-cached))))
 
+(defun sage-shell-cpl:-push-cache-argspec (compl-state sexp)
+  (let ((in-function-call (sage-shell-cpl:get compl-state 'in-function-call)))
+    (when in-function-call
+      (push (cons in-function-call (assoc-default "in-function-call" sexp))
+            sage-shell-cpl:-argspec-cached))))
+
 (cl-defun sage-shell-cpl:-types (compl-state make-cache-file-p)
   (let* ((types (sage-shell-cpl:get compl-state 'types))
          (interface (sage-shell-cpl:get compl-state 'interface))
+         (in-function-call (sage-shell-cpl:get compl-state 'in-function-call))
          (update-cmd-p
           (cond (make-cache-file-p
                  (not (string= interface "magma")))
@@ -2749,6 +2761,10 @@ send current line to Sage process buffer."
           (cl-remove-if (lambda (s) (or (string= s "modules")
                                     (string= s "vars-in-module")))
                         types)
+        types)
+      (if (and in-function-call
+               (assoc in-function-call sage-shell-cpl:-argspec-cached))
+          (cl-remove-if (lambda (s) (string= s "in-function-call")) types)
         types))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
@@ -2820,6 +2836,8 @@ using `sage-shell-cpl:set-cmd-lst'"
               (sage-shell-cpl:-push-cache-modules
                compl-state sage-shell-cpl:-last-sexp)
               (sage-shell-cpl:-set-cmd-lst
+               compl-state sage-shell-cpl:-last-sexp)
+              (sage-shell-cpl:-push-cache-argspec
                compl-state sage-shell-cpl:-last-sexp)
               (when cont
                 (funcall cont))))
@@ -2940,17 +2958,24 @@ of current Sage process.")
  of candidates."
   (let ((types (sage-shell-cpl:get state 'types))
         (int (sage-shell-cpl:get state 'interface))
-        (mod-tp (sage-shell-cpl:-mod-type state)))
-    (let ((sexp (cond ((and (sage-shell:in "interface" types)
-                            (null (assoc "interface" sexp)))
-                       (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
-                             sexp))
-                      (t sexp))))
+        (mod-tp (sage-shell-cpl:-mod-type state))
+        (in-function-call (sage-shell-cpl:get state 'in-function-call)))
+    (sage-shell:chain sexp
+      (cond ((and (sage-shell:in "interface" types)
+                  (null (assoc "interface" sexp)))
+             (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
+                   sexp))
+            (t sexp))
       (let* ((ky (sage-shell-cpl:-cached-mod-key mod-tp state))
              (val (assoc-default ky sage-shell-cpl:-modules-cached)))
         (cond ((and mod-tp val (null (assoc-default mod-tp sexp)))
                (cons (cons mod-tp val) sexp))
-              (t sexp))))))
+              (t sexp)))
+      (sage-shell:aif (and in-function-call
+                           (assoc-default in-function-call
+                                          sage-shell-cpl:-argspec-cached))
+          (cons (cons "in-function-call" it) sexp)
+        sexp))))
 
 (defun sage-shell-cpl:-default-regexp-alst (keys state)
   (let ((regexp (sage-shell-interfaces:get "sage" 'cmd-rxp)))
