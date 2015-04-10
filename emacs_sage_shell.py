@@ -353,7 +353,9 @@ def short_doc(name, base_name=None):
 
 def print_short_doc(name, base_name=None):
     try:
-        print(short_doc(name, base_name=base_name))
+        sd = short_doc(name, base_name=base_name)
+        if sd is not None:
+            print(sd)
     except:
         pass
 
