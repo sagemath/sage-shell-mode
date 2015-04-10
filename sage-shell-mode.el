@@ -169,6 +169,14 @@ process."
                  (const :tag "pop-to-buffer" 'pop-to-buffer))
   :group 'sage-shell)
 
+(defcustom sage-shell:inspect-ingnore-classes nil
+  "If non-nil, this should be a list of strings.
+Each string shoud be a class of Sage. When non-nil instances or methods
+of these classes are ignored by `ac-quick-help' and `eldoc'.
+If the value is equal to '(\"\"), then it does not ignore anything."
+  :group 'sage-shell
+  :type '(repeat string))
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -816,7 +824,14 @@ When sync is nill this return a lambda function to get the result."
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:send-command
-   (sage-shell:join-command sage-shell:init-command-list) buffer)
+   (sage-shell:join-command
+    (sage-shell:aif sage-shell:inspect-ingnore-classes
+        (let ((cmd (format "%s.ignore_classes = [%s]"
+                           sage-shell:python-module
+                           (mapconcat 'identity it ", "))))
+          (cons cmd sage-shell:init-command-list))
+      sage-shell:init-command-list))
+   buffer)
   (setq sage-shell:init-finished-p t)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
