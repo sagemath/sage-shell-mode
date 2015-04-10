@@ -930,6 +930,7 @@ argument."
       (sage-shell-cpl:set-cmd-lst "sage" nil)
       (setq sage-shell-cpl:-cands-in-current-session nil)
       (sage-shell:clear-completion-sync-cached)
+      (sage-shell:-clear-eldoc-cache)
       (run-hooks 'sage-shell:clear-command-cache-hook))))
 
 (defun sage-shell:update-sage-commands ()
@@ -1120,6 +1121,8 @@ if the PT is in function call."
 
 ;; eldoc
 (defvar sage-shell:-eldoc-cache nil)
+(defun sage-shell:-clear-eldoc-cache ()
+  (setq sage-shell:-eldoc-cache nil))
 (make-variable-buffer-local 'sage-shell:-eldoc-cache)
 
 (defun sage-shell:eldoc-function ()
