@@ -776,8 +776,10 @@ When sync is nill this return a lambda function to get the result."
 
 (defvar sage-shell:run-history nil "sage command history.")
 
-(defvar sage-shell:python-module "emacs_sage_shell"
+(defvar sage-shell:python-module "_emacs_sage_shell"
   "Name of the python module.")
+
+(defconst sage-shell:python-module-true-name "emacs_sage_shell")
 
 (defun sage-shell:py-mod-func (funcname)
   (format "%s.%s" sage-shell:python-module
@@ -793,7 +795,9 @@ When sync is nill this return a lambda function to get the result."
 
 (defvar sage-shell:init-command-list
   (list
-   (format "import %s" sage-shell:python-module)
+   (format "import %s as %s"
+           sage-shell:python-module-true-name
+           sage-shell:python-module)
    (format "sys.path.append('%s')"
            (sage-shell:remove-trailing-slash
             sage-shell:python-script-directory)))
