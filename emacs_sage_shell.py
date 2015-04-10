@@ -361,9 +361,9 @@ def print_short_doc(name, base_name=None):
         pass
 
 
-def print_def(name):
+def print_def(name, base_name=None):
     try:
-        df = sage_getdef(name)
+        df = sage_getdef(name, base_name=base_name)
         if df is not None:
             print(df)
     except:

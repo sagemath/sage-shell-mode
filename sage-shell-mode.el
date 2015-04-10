@@ -1128,18 +1128,26 @@ if the PT is in function call."
 (defun sage-shell:eldoc-function ()
   (sage-shell:awhen (sage-shell:-in-func-call-p)
     (let* ((func-name (caddr it))
-           (beg (1+ (car it)))
-           (str (sage-shell:-eldoc-function-str func-name)))
+           (beg (1+ (cadr it)))
+           (base-name (save-excursion
+                        (goto-char (cadr it))
+                        (let ((state (sage-shell-cpl:parse-current-state)))
+                          (sage-shell:aif (sage-shell-cpl:get
+                                           state 'var-base-name)
+                              (format "'%s'" it)
+                            "None"))))
+           (str (sage-shell:-eldoc-function-str func-name base-name)))
       str)))
 
-(defun sage-shell:-eldoc-function-str (func-name)
+(defun sage-shell:-eldoc-function-str (func-name base-name)
   (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
     (cond (cache cache)
-          (t (let ((res (sage-shell:->>
-                         (sage-shell:py-mod-func
-                          (format "print_def('%s')" func-name))
-                         sage-shell:send-command-to-string
-                         sage-shell:trim-left)))
+          (t (let* ((res (sage-shell:->>
+                          (sage-shell:py-mod-func
+                           (format "print_def('%s', base_name=%s)"
+                                   func-name base-name))
+                          sage-shell:send-command-to-string
+                          sage-shell:trim-left)))
                (push (cons func-name res) sage-shell:-eldoc-cache)
                res)))))
 
