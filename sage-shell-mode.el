@@ -1112,8 +1112,11 @@ Match group 1 will be replaced with devel/sage-branch")
 
 
 (defun sage-shell:-in-func-call-p (&optional pt)
-  "Returns a list of beginning of function, end of function and function name
-if the PT is in function call."
+  "Returns a list s.t.
+  0: begging of funciton
+  1: end of funciton
+  2: funciton name
+  3: inside string or not"
   (let* ((bol (line-beginning-position))
          (pt (or pt (point)))
          (pps (parse-partial-sexp bol pt))
@@ -1128,7 +1131,8 @@ if the PT is in function call."
              (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bol)
             (unless (looking-at (rx (or "." "(" "[")))
               (list (point) beg-of-ls
-                    (buffer-substring-no-properties (point) beg-of-ls)))))))))
+                    (buffer-substring-no-properties (point) beg-of-ls)
+                    (nth 3 pps)))))))))
 
 ;; eldoc
 (defvar sage-shell:-eldoc-cache nil)
@@ -1137,18 +1141,14 @@ if the PT is in function call."
 (make-variable-buffer-local 'sage-shell:-eldoc-cache)
 
 (defun sage-shell:eldoc-function ()
-  (sage-shell:awhen (sage-shell:-in-func-call-p)
-    (let* ((func-name (caddr it))
-           (beg (1+ (cadr it)))
-           (base-name (save-excursion
-                        (goto-char (cadr it))
-                        (let ((state (sage-shell-cpl:parse-current-state)))
-                          (sage-shell:aif (sage-shell-cpl:get
-                                           state 'var-base-name)
-                              (format "'%s'" it)
-                            "None"))))
-           (str (sage-shell:-eldoc-function-str func-name base-name)))
-      str)))
+  (let* ((state (sage-shell-cpl:parse-current-state))
+         (func-name (sage-shell-cpl:get state 'in-function-call))
+         (base-name (sage-shell:aif
+                        (sage-shell-cpl:get state 'in-function-call-bn)
+                        (format "'%s'" it)
+                      "None")))
+    (when func-name
+      (sage-shell:-eldoc-function-str func-name base-name))))
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
   (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
@@ -2560,9 +2560,7 @@ send current line to Sage process buffer."
                            (when (and
                                   func-name
                                   ;; Inside string?
-                                  (nth 3 (parse-partial-sexp
-                                          (line-beginning-position)
-                                          (point)))
+                                  (nth 3 it)
                                   (string-match
                                    (rx-to-string
                                     `(and (regexp ,(regexp-opt itfcs 1))
@@ -2621,8 +2619,10 @@ send current line to Sage process buffer."
             (let* ((pfx (sage-shell-interfaces:looking-back-var "sage"))
                    (chbf (and pfx (char-before pfx)))
                    (in-func-call (sage-shell:-in-func-call-p))
-                   (in-func-name (sage-shell:awhen in-func-call
-                                   (caddr it)))
+                   (in-func-name (when (and in-func-call
+                                            ;; Not inside string
+                                            (null (nth 3 in-func-call)))
+                                   (caddr in-func-call)))
                    (in-function-call-bn
                     (sage-shell:awhen in-func-call
                       (save-excursion
