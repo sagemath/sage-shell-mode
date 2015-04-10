@@ -2733,15 +2733,15 @@ send current line to Sage process buffer."
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
     (let ((types (if update-cmd-p
                      types
-                   (delete "interface" types))))
+                   (cl-remove-if (lambda (s) (string= s "interface")) types))))
       (if (sage-shell:aand
             (sage-shell-cpl:-mod-type compl-state)
             (assoc-default
              (sage-shell-cpl:-cached-mod-key it compl-state)
              sage-shell-cpl:-modules-cached))
           (sage-shell:->> types
-                          (delete "modules")
-                          (delete "vars-in-module"))
+                          (cl-remove-if (lambda (s) (string= s "modules")))
+                          (cl-remove-if (lambda (s) (string= s "vars-in-module"))))
         types))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
