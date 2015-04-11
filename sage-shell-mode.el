@@ -1170,29 +1170,33 @@ Match group 1 will be replaced with devel/sage-branch")
                       "None"))
          (func-end (sage-shell-cpl:get state 'in-function-call-end))
          (s (and func-name
-                 (sage-shell:-eldoc-function-str func-name base-name))))
+                 (sage-shell:-eldoc-function-str func-name base-name)))
+         (keyword-reg (rx (0+ whitespace)
+                          (group (1+ (or alnum "_")))
+                          (0+ whitespace) "=")))
     (when (and func-name s
                (not (string-match (rx "[noargspec]") s))
                (not (string= s "")))
-      (let* ((buf-args (split-string
-                        (buffer-substring-no-properties
-                         (1+ func-end)
-                         (save-excursion
-                           (skip-chars-forward
-                            "[a-zA-Z0-9_ =]"
-                            (line-end-position))
-                           (point)))
-                        ", "))
+      (let* ((buf-args-str (buffer-substring-no-properties
+                            (1+ func-end)
+                            (save-excursion
+                              (skip-chars-forward
+                               "[a-zA-Z0-9_ =]"
+                               (line-end-position))
+                              (point))))
+             (buf-args (split-string buf-args-str ", "))
              (last-arg (car (last buf-args)))
-             (reg (rx (0+ whitespace)
-                      (group (1+ (or alnum "_")))
-                      (0+ whitespace) "="))
-             (beg-end (cond ((string-match reg last-arg)
+             (ignore-regexp (if (string-match keyword-reg buf-args-str)
+                                (rx (or "*" "="))
+                              (rx "*")))
+             (beg-end (cond ((string-match keyword-reg last-arg)
                              (sage-shell:-eldoc-highlight-beg-end
                               func-name s
-                              (concat (match-string 1 last-arg) "=") nil))
+                              (concat (match-string 1 last-arg) "=") nil
+                              ignore-regexp))
                             (t (sage-shell:-eldoc-highlight-beg-end
-                                func-name s nil (1- (length buf-args)))))))
+                                func-name s nil (1- (length buf-args))
+                                ignore-regexp)))))
         (if beg-end
             (let ((s-noprop (substring-no-properties s)))
               (add-text-properties (car beg-end)
@@ -1219,7 +1223,8 @@ Match group 1 will be replaced with devel/sage-branch")
         res)))))
 
 
-(defun sage-shell:-eldoc-highlight-beg-end (func-name def-str keyword idx)
+(defun sage-shell:-eldoc-highlight-beg-end
+    (func-name def-str keyword idx ignore-regexp)
   (let* ((func-len (length func-name)))
     (cond (keyword (let ((args-s (substring def-str func-len)))
                      (when (string-match (concat keyword "[^,]+") args-s)
@@ -1230,7 +1235,7 @@ Match group 1 will be replaced with devel/sage-branch")
                       (args (split-string args-s ", ")))
                  (let ((rest (nthcdr idx args)))
                    (when (and rest
-                              (not (string-match (rx "*") (car rest))))
+                              (not (string-match ignore-regexp (car rest))))
                      (let ((len-args-s (length args-s)))
                        (cons (sage-shell:-eldoc-highlight-indx-fn
                               func-len len-args-s rest)
