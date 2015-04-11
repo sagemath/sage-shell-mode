@@ -65,6 +65,15 @@
   Here =/path/to/sage/executable= is the path of the executable file
   of Sage.  This may be a symbolic link.
 
+*** Sample configuration
+    Here is a sample configuration.
+
+    #+BEGIN_SRC lisp
+     ;; Run SageMath by M-x run-sage instead of M-x sage-shell:run-sage
+     (sage-shell:define-alias)
+     ;; Turn of eldoc-mode
+     (add-hook 'sage-shell-mode-hook #'eldoc-mode)
+    #+END_SRC
 ** Aliases
 
   The major mode =sage-mode= and the command =run-sage= are provided
