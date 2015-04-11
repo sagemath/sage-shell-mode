@@ -1192,7 +1192,7 @@ Match group 1 will be replaced with devel/sage-branch")
              (beg-end (cond ((string-match keyword-reg last-arg)
                              (sage-shell:-eldoc-highlight-beg-end
                               func-name s
-                              (concat (match-string 1 last-arg) "=") nil
+                              (match-string 1 last-arg) nil
                               ignore-regexp))
                             (t (sage-shell:-eldoc-highlight-beg-end
                                 func-name s nil (1- (length buf-args))
@@ -1225,14 +1225,17 @@ Match group 1 will be replaced with devel/sage-branch")
 
 (defun sage-shell:-eldoc-highlight-beg-end
     (func-name def-str keyword idx ignore-regexp)
-  (let* ((func-len (length func-name)))
-    (cond (keyword (let ((args-s (substring def-str func-len)))
-                     (when (string-match (concat keyword "[^,]+") args-s)
-                       (let ((beg (+ (match-beginning 0) func-len))
-                             (end (+ (match-end 0) func-len)))
-                         (cons beg end)))))
-          (idx (let* ((args-s (substring def-str (1+ func-len) -1))
-                      (args (split-string args-s ", ")))
+  (let* ((func-len (length func-name))
+         (args-s (substring def-str (1+ func-len) -1)))
+    (cond (keyword (when (string-match (rx-to-string
+                                        `(and symbol-start
+                                              ,keyword
+                                              (zero-or-one "=")
+                                              (0+ (not (any ","))))) args-s)
+                     (let ((beg (+ (match-beginning 0) func-len 1))
+                           (end (+ (match-end 0) func-len 1)))
+                       (cons beg end))))
+          (idx (let* ((args (split-string args-s ", ")))
                  (let ((rest (nthcdr idx args)))
                    (when (and rest
                               (not (string-match ignore-regexp (car rest))))
