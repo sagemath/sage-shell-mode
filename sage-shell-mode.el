@@ -2709,9 +2709,7 @@ send current line to Sage process buffer."
                    (in-func-call (sage-shell:-in-func-call-p))
                    (in-func-call-end (if in-func-call
                                          (cadr in-func-call)))
-                   (in-func-name (when (and in-func-call
-                                            ;; Not inside string
-                                            (null (nth 3 in-func-call)))
+                   (in-func-name (when in-func-call
                                    (caddr in-func-call)))
                    (in-function-call-bn
                     (sage-shell:awhen in-func-call
