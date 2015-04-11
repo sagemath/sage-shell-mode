@@ -702,6 +702,9 @@ Sends an EOF only if point is at the end of the buffer and there is no input. "
   (interactive)
   (sage-shell:comint-send-input t t)
   (process-send-eof)
+  (sage-shell:-after-send-eof-func))
+
+(defun sage-shell:-after-send-eof-func ()
   ;; kill cache buffes
   (cl-loop for bufn in (list sage-shell:output-buffer
                              sage-shell-indent:indenting-buffer-name)
@@ -1757,6 +1760,9 @@ function does not highlight the input."
                 (file-exists-p (match-string 1 line)))
                (ignore-errors
                  (cd (match-string 1 line))))
+              ((string-match (rx symbol-start (or "quit" "exit") symbol-end)
+                             line)
+               (sage-shell:-after-send-eof-func))
               ((string-match (rx bol (zero-or-more blank)
                                  (zero-or-one "%")
                                  "cd" (zero-or-more blank)
