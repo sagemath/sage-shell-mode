@@ -2846,10 +2846,17 @@ using `sage-shell-cpl:set-cmd-lst'"
                         (compl-state compl-state))
             (sage-shell:after-redirect-finished
               (with-current-buffer output-buffer
-                (goto-char (point-min))
                 (setq sage-shell-cpl:-last-sexp
                       (condition-case err
-                          (read (current-buffer))
+                          (progn
+                            (goto-char (point-max))
+                            (forward-line -1)
+                            (let ((beg (point-min))
+                                  (end (point)))
+                              (unless (= beg end)
+                                (message (buffer-substring beg end))
+                                (delete-region beg end)))
+                            (read (current-buffer)))
                         (end-of-file (unless (= (buffer-size) 0)
                                        (signal (car err) (cdr err))))
                         (error (signal (car err) (cdr err))))))
