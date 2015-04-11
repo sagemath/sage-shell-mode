@@ -1173,15 +1173,17 @@ Match group 1 will be replaced with devel/sage-branch")
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
   (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
-    (cond (cache cache)
-          (t (let* ((res (sage-shell:->>
-                          (sage-shell:py-mod-func
-                           (format "print_def('%s', base_name=%s)"
-                                   func-name base-name))
-                          sage-shell:send-command-to-string
-                          sage-shell:trim-left)))
-               (push (cons func-name res) sage-shell:-eldoc-cache)
-               res)))))
+    (cond
+     (cache cache)
+     (t (let* ((res (sage-shell:->>
+                     (sage-shell:py-mod-func
+                      (format "print_def('%s', base_name=%s)"
+                              func-name base-name))
+                     sage-shell:send-command-to-string
+                     sage-shell:trim-left
+                     (funcall (lambda (s) (car (last (split-string s "\n"))))))))
+          (push (cons func-name res) sage-shell:-eldoc-cache)
+          res)))))
 
 
 
