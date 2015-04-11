@@ -1168,54 +1168,55 @@ Match group 1 will be replaced with devel/sage-branch")
                         (sage-shell-cpl:get state 'in-function-call-bn)
                         (format "'%s'" it)
                       "None"))
-         (func-end (sage-shell-cpl:get state 'in-function-call-end)))
-    (when func-name
-      (let ((s (sage-shell:-eldoc-function-str func-name base-name))
-            (buf-args (split-string
-                       (buffer-substring-no-properties
-                        (1+ func-end)
-                        (save-excursion
-                          (skip-chars-forward
-                           "[a-zA-Z0-9_ =]"
-                           (line-end-position))
-                          (point)))
-                       ", ")))
-        (let* ((last-arg (car (last buf-args)))
-               (reg (rx (0+ whitespace)
-                        (group (1+ (or alnum "_")))
-                        (0+ whitespace) "="))
-               (beg-end (cond ((string-match reg last-arg)
-                               (sage-shell:-eldoc-highlight-beg-end
-                                func-name s
-                                (concat (match-string 1 last-arg) "=") nil))
-                              (t (sage-shell:-eldoc-highlight-beg-end
-                                  func-name s nil (1- (length buf-args)))))))
-          (if beg-end
-              (let ((s-noprop (substring-no-properties s)))
-                (add-text-properties (car beg-end)
-                                     (cdr beg-end)
-                                     '(face eldoc-highlight-function-argument)
-                                     s-noprop)
-                s-noprop)
-            s))))))
+         (func-end (sage-shell-cpl:get state 'in-function-call-end))
+         (s (sage-shell:-eldoc-function-str func-name base-name)))
+    (when (and func-name s)
+      (let* ((buf-args (split-string
+                        (buffer-substring-no-properties
+                         (1+ func-end)
+                         (save-excursion
+                           (skip-chars-forward
+                            "[a-zA-Z0-9_ =]"
+                            (line-end-position))
+                           (point)))
+                        ", "))
+             (last-arg (car (last buf-args)))
+             (reg (rx (0+ whitespace)
+                      (group (1+ (or alnum "_")))
+                      (0+ whitespace) "="))
+             (beg-end (cond ((string-match reg last-arg)
+                             (sage-shell:-eldoc-highlight-beg-end
+                              func-name s
+                              (concat (match-string 1 last-arg) "=") nil))
+                            (t (sage-shell:-eldoc-highlight-beg-end
+                                func-name s nil (1- (length buf-args)))))))
+        (if beg-end
+            (let ((s-noprop (substring-no-properties s)))
+              (add-text-properties (car beg-end)
+                                   (cdr beg-end)
+                                   '(face eldoc-highlight-function-argument)
+                                   s-noprop)
+              s-noprop)
+          s)))))
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
   (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
     (cond
      (cache cache)
-     (t (let* ((res (sage-shell:->>
-                     (sage-shell:py-mod-func
-                      (format "print_def('%s', base_name=%s)"
-                              func-name base-name))
-                     sage-shell:send-command-to-string
-                     sage-shell:trim-left
-                     (funcall (lambda (s) (car (last (split-string s "\n"))))))))
-          (push (cons func-name res) sage-shell:-eldoc-cache)
-          res)))))
+     ((and (sage-shell:at-top-level-and-in-sage-p)
+           (sage-shell:redirect-and-output-finished-p))
+      (let* ((res (sage-shell:->>
+                   (sage-shell:py-mod-func
+                    (format "print_def('%s', base_name=%s)"
+                            func-name base-name))
+                   sage-shell:send-command-to-string
+                   sage-shell:trim-left
+                   (funcall (lambda (s) (car (last (split-string s "\n"))))))))
+        (push (cons func-name res) sage-shell:-eldoc-cache)
+        res)))))
 
 
-(defun sage-shell:-eldoc-highlight-beg-end
-    (func-name def-str keyword idx)
+(defun sage-shell:-eldoc-highlight-beg-end (func-name def-str keyword idx)
   (let* ((func-len (length func-name)))
     (cond (keyword (let ((args-s (substring def-str func-len)))
                      (when (string-match (concat keyword "[^,]+") args-s)
