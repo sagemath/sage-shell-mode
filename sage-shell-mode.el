@@ -1169,8 +1169,11 @@ Match group 1 will be replaced with devel/sage-branch")
                         (format "'%s'" it)
                       "None"))
          (func-end (sage-shell-cpl:get state 'in-function-call-end))
-         (s (sage-shell:-eldoc-function-str func-name base-name)))
-    (when (and func-name s)
+         (s (and func-name
+                 (sage-shell:-eldoc-function-str func-name base-name))))
+    (when (and func-name s
+               (not (string-match (rx "[noargspec]") s))
+               (not (string= s "")))
       (let* ((buf-args (split-string
                         (buffer-substring-no-properties
                          (1+ func-end)
