@@ -1227,7 +1227,7 @@ Match group 1 will be replaced with devel/sage-branch")
                       (args (split-string args-s ", ")))
                  (let ((rest (nthcdr idx args)))
                    (when (and rest
-                              (not (string-match (rx (or "*" "=")) (car rest))))
+                              (not (string-match (rx "*") (car rest))))
                      (let ((len-args-s (length args-s)))
                        (cons (sage-shell:-eldoc-highlight-indx-fn
                               func-len len-args-s rest)
