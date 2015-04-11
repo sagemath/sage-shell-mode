@@ -2636,6 +2636,7 @@ send current line to Sage process buffer."
 (defun sage-shell-cpl:-parse-state-args (cur-intf)
   (let* ((base-and-beg (sage-shell-cpl:var-base-name-and-att-start cur-intf))
          (base-name (car-safe base-and-beg))
+         (case-fold-search nil)
          (att-beg (cdr-safe base-and-beg))
          (itfcs sage-shell-interfaces:other-interfaces)
          (intf (unless att-beg
@@ -2648,7 +2649,9 @@ send current line to Sage process buffer."
                                   (nth 3 it)
                                   (string-match
                                    (rx-to-string
-                                    `(and (regexp ,(regexp-opt itfcs 1))
+                                    `(and symbol-start
+                                          (regexp ,(regexp-opt itfcs 1))
+                                          symbol-end
                                           (zero-or-one ".eval"))) func-name))
                              (match-string-no-properties 1 func-name)))))))
          (import-state-p (and (save-excursion
