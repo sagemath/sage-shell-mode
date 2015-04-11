@@ -1167,9 +1167,37 @@ Match group 1 will be replaced with devel/sage-branch")
          (base-name (sage-shell:aif
                         (sage-shell-cpl:get state 'in-function-call-bn)
                         (format "'%s'" it)
-                      "None")))
+                      "None"))
+         (func-end (sage-shell-cpl:get state 'in-function-call-end)))
     (when func-name
-      (sage-shell:-eldoc-function-str func-name base-name))))
+      (let ((s (sage-shell:-eldoc-function-str func-name base-name))
+            (buf-args (split-string
+                       (buffer-substring-no-properties
+                        (1+ func-end)
+                        (save-excursion
+                          (skip-chars-forward
+                           "[a-zA-Z0-9_ =]"
+                           (line-end-position))
+                          (point)))
+                       ", ")))
+        (let* ((last-arg (car (last buf-args)))
+               (reg (rx (0+ whitespace)
+                        (group (1+ (or alnum "_")))
+                        (0+ whitespace) "="))
+               (beg-end (cond ((string-match reg last-arg)
+                               (sage-shell:-eldoc-highlight-beg-end
+                                func-name s
+                                (concat (match-string 1 last-arg) "=") nil))
+                              (t (sage-shell:-eldoc-highlight-beg-end
+                                  func-name s nil (1- (length buf-args)))))))
+          (if beg-end
+              (let ((s-noprop (substring-no-properties s)))
+                (add-text-properties (car beg-end)
+                                     (cdr beg-end)
+                                     '(face eldoc-highlight-function-argument)
+                                     s-noprop)
+                s-noprop)
+            s))))))
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
   (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
@@ -1185,6 +1213,33 @@ Match group 1 will be replaced with devel/sage-branch")
           (push (cons func-name res) sage-shell:-eldoc-cache)
           res)))))
 
+
+(defun sage-shell:-eldoc-highlight-beg-end
+    (func-name def-str keyword idx)
+  (let* ((func-len (length func-name)))
+    (cond (keyword (let ((args-s (substring def-str func-len)))
+                     (when (string-match (concat keyword "[^,]+") args-s)
+                       (let ((beg (+ (match-beginning 0) func-len))
+                             (end (+ (match-end 0) func-len)))
+                         (cons beg end)))))
+          (idx (let* ((args-s (substring def-str (1+ func-len) -1))
+                      (args (split-string args-s ", ")))
+                 (let ((rest (nthcdr idx args)))
+                   (when (and rest
+                              (not (string-match (rx (or "*" "=")) (car rest))))
+                     (let ((len-args-s (length args-s)))
+                       (cons (sage-shell:-eldoc-highlight-indx-fn
+                              func-len len-args-s rest)
+                             (- (sage-shell:-eldoc-highlight-indx-fn
+                                 func-len len-args-s (cdr rest))
+                                (if (cdr rest) 2 0)))))))))))
+
+(defun sage-shell:-eldoc-highlight-indx-fn (func-len len-args-s ls)
+  (+ (1+ func-len)
+     (- len-args-s
+        (cl-loop for a on ls
+                 summing (+ (length (car a))
+                            (if (cdr a) 2 0))))))
 
 
 ;; comint functions
@@ -2460,10 +2515,14 @@ send current line to Sage process buffer."
    ;; nil or string.
    (cons 'module-name nil)
 
-   ;; nil or the function name
+   ;; nil or the function name. Used by eldoc
    (cons 'in-function-call nil)
 
+   ;; nil or integer. Used by eldoc
+   (cons 'in-function-call-end nil)
+
    ;; nil or the base name of the function in function call.
+   ;; Used by eldoc
    (cons 'in-function-call-base-name nil)
 
    ;; In some cases, we need different kinds of candidates.
@@ -2645,6 +2704,8 @@ send current line to Sage process buffer."
             (let* ((pfx (sage-shell-interfaces:looking-back-var "sage"))
                    (chbf (and pfx (char-before pfx)))
                    (in-func-call (sage-shell:-in-func-call-p))
+                   (in-func-call-end (if in-func-call
+                                         (cadr in-func-call)))
                    (in-func-name (when (and in-func-call
                                             ;; Not inside string
                                             (null (nth 3 in-func-call)))
@@ -2660,7 +2721,8 @@ send current line to Sage process buffer."
                 'var-base-name nil
                 'prefix pfx
                 'in-function-call in-func-name
-                'in-function-call-base-name in-function-call-bn)
+                'in-function-call-base-name in-function-call-bn
+                'in-function-call-end in-func-call-end)
               ;; Unless parsing failed,
               (unless (and chbf (= chbf 46))
                 (push "interface" types))
