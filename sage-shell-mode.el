@@ -1164,16 +1164,19 @@ Match group 1 will be replaced with devel/sage-branch")
 (defun sage-shell:eldoc-function ()
   (let* ((state (sage-shell-cpl:parse-current-state))
          (func-name (sage-shell-cpl:get state 'in-function-call))
-         (base-name (sage-shell:aif
-                        (sage-shell-cpl:get state 'in-function-call-bn)
-                        (format "'%s'" it)
-                      "None"))
-         (func-end (sage-shell-cpl:get state 'in-function-call-end))
-         (s (and func-name
-                 (sage-shell:-eldoc-function-str func-name base-name)))
-         (keyword-reg (rx (0+ whitespace)
-                          (group (1+ (or alnum "_")))
-                          (0+ whitespace) "=")))
+         (base-name (sage-shell-cpl:get state 'in-function-call-base-name))
+         (func-end (sage-shell-cpl:get state 'in-function-call-end)))
+    (sage-shell:-eldoc-function func-name base-name func-end)))
+
+(defun sage-shell:-eldoc-function (func-name base-name func-end)
+  (setq base-name (sage-shell:aif base-name
+                      (format "'%s'" it)
+                    "None"))
+  (let ((s (and func-name
+                (sage-shell:-eldoc-function-str func-name base-name)))
+        (keyword-reg (rx (0+ whitespace)
+                         (group (1+ (or alnum "_")))
+                         (0+ whitespace) "=")))
     (when (and func-name s
                (not (string-match (rx "[noargspec]") s))
                (not (string= s "")))
