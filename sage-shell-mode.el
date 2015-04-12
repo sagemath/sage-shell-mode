@@ -3705,10 +3705,13 @@ inserted in the process buffer before executing the command."
              (sage-int-state '((interface . "sage")
                                (types "interface"))))
         (when (and in-function-call
+                   sage-shell:process-buffer
+                   (get-buffer sage-shell:process-buffer)
                    (or (null base-name)
                        sage-shell-edit:eldoc-show-methods-doc)
                    (member (if base-name
-                               base-name
+                               (sage-shell:trim-left
+                                (car (split-string base-name (rx "."))))
                              in-function-call)
                            (append
                             (buffer-local-value
