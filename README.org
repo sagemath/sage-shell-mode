@@ -73,6 +73,7 @@
      (sage-shell:define-alias)
      ;; Turn on eldoc-mode
      (add-hook 'sage-shell-mode-hook #'eldoc-mode)
+     (add-hook 'sage-shell:sage-mode-hook #'eldoc-mode)
     #+END_SRC
 ** Aliases
 
