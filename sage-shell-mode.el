@@ -366,11 +366,6 @@ returned from the function, otherwise, this returns it self. "
 (defun sage-shell:line-beginning-position ()
   (save-excursion (forward-line 0) (point)))
 
-(cl-defsubst sage-shell:in (elt lst &optional (test 'equal))
-  (cl-loop for i in lst
-           if (funcall test elt i)
-           return i))
-
 (defmacro sage-shell:with-current-buffer-safe (buf-maybe &rest body)
   (declare (indent 1))
   `(when (and (buffer-live-p ,buf-maybe)
@@ -2446,7 +2441,7 @@ send current line to Sage process buffer."
                (cons 'executable nil))))
 
 (defun sage-shell-interfaces:set (interface &rest attributes-values)
-  (when (sage-shell:in
+  (when (member
          interface (cons "sage" sage-shell-interfaces:other-interfaces))
     (let ((alist (symbol-value
                   (intern (format "sage-shell-cpl:%s-info" interface)))))
@@ -2458,8 +2453,8 @@ send current line to Sage process buffer."
                finally return val))))
 
 (defun sage-shell-interfaces:get (interface attribute)
-  (when (sage-shell:in interface
-                       (cons "sage" sage-shell-interfaces:other-interfaces))
+  (when (member interface
+                (cons "sage" sage-shell-interfaces:other-interfaces))
     (let ((alist (symbol-value
                   (intern (format "sage-shell-cpl:%s-info" interface)))))
       (sage-shell:aif (assoc attribute alist)
@@ -2661,7 +2656,7 @@ send current line to Sage process buffer."
       (forward-char -1)
       (skip-chars-backward " " bol)
       ;; 93 and 41 are chars of closed parens.
-      (if (sage-shell:in (char-after (1- (point))) (list 93 41))
+      (if (member (char-after (1- (point))) (list 93 41))
           (when (ignore-errors (backward-list))
             (skip-chars-backward " " bol)
             (sage-shell-cpl:base-name-att-beg-rec var-chars bol))
@@ -2675,7 +2670,7 @@ send current line to Sage process buffer."
          (att-beg (cdr-safe base-and-beg))
          (itfcs sage-shell-interfaces:other-interfaces)
          (intf (unless att-beg
-                 (or (sage-shell:in cur-intf itfcs)
+                 (or (member cur-intf itfcs)
                      (sage-shell:aif (sage-shell:-in-func-call-p)
                          (let ((func-name (caddr it)))
                            (when (and
@@ -2719,7 +2714,7 @@ send current line to Sage process buffer."
               'var-base-name base-name
               'prefix att-beg)
             (push "attributes" types)
-            (cond ((sage-shell:in base-name itfcs)
+            (cond ((member base-name itfcs)
                    (sage-shell:push-elmts state
                      'interface base-name)
                    (push "interface" types))
@@ -2849,7 +2844,7 @@ send current line to Sage process buffer."
 (defun sage-shell-cpl:-mod-type (compl-state)
   (let ((types (sage-shell-cpl:get compl-state 'types)))
     (cl-loop for tp in '("modules" "vars-in-module")
-             thereis (sage-shell:in tp types))))
+             thereis (member tp types))))
 
 (defun sage-shell-cpl:-cached-mod-key (mod-tp compl-state)
   (cons mod-tp (sage-shell-cpl:get compl-state 'module-name)))
@@ -2875,8 +2870,8 @@ send current line to Sage process buffer."
          (update-cmd-p
           (cond (make-cache-file-p
                  (not (string= interface "magma")))
-                ((sage-shell:in interface
-                                sage-shell-interfaces:optional-interfaces)
+                ((member interface
+                         sage-shell-interfaces:optional-interfaces)
                  (sage-shell-interfaces:executable-find interface))
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
     (sage-shell:chain types
@@ -2930,7 +2925,7 @@ using `sage-shell-cpl:set-cmd-lst'"
                  verbose
                  (not (file-exists-p (sage-shell-interfaces:get
                                       interface 'cache-file)))
-                 (or (not (sage-shell:in
+                 (or (not (member
                            interface
                            sage-shell-interfaces:optional-interfaces))
                      (sage-shell-interfaces:executable-find interface))))
@@ -2984,7 +2979,7 @@ using `sage-shell-cpl:set-cmd-lst'"
 
 (defun sage-shell-cpl:-set-cmd-lst (state sexp)
   (let ((int (sage-shell-cpl:get state 'interface)))
-    (when (and (sage-shell:in
+    (when (and (member
                 "interface" (sage-shell-cpl:get state 'types))
                (null (sage-shell-cpl:get-cmd-lst int)))
       (let ((ls (assoc-default "interface" sexp)))
@@ -3053,7 +3048,7 @@ of current Sage process.")
          do (set sym nil))
 
 (defun sage-shell-cpl:set-cmd-lst (intf lst)
-  (if (sage-shell:in intf (cons "sage" sage-shell-interfaces:other-interfaces))
+  (if (member intf (cons "sage" sage-shell-interfaces:other-interfaces))
       (sage-shell:awhen (sage-shell:aand
                           sage-shell:process-buffer
                           (get-buffer it))
@@ -3062,7 +3057,7 @@ of current Sage process.")
     (error (format "No interface %s" intf))))
 
 (defun sage-shell-cpl:get-cmd-lst (intf)
-  (if (sage-shell:in intf (cons "sage" sage-shell-interfaces:other-interfaces))
+  (if (member intf (cons "sage" sage-shell-interfaces:other-interfaces))
       (sage-shell:awhen (sage-shell:aand
                           sage-shell:process-buffer
                           (get-buffer it))
@@ -3072,13 +3067,13 @@ of current Sage process.")
 
 (defun sage-shell-cpl:to-objname-to-send (can)
   (let* ((var-base-name (sage-shell-cpl:get-current 'var-base-name))
-         (interface (cond ((sage-shell:in
+         (interface (cond ((member
                             (sage-shell-interfaces:current-interface)
                             sage-shell-interfaces:other-interfaces)
                            (sage-shell-interfaces:current-interface))
                           (t (sage-shell-cpl:get-current 'interface)))))
     (cond (var-base-name (concat var-base-name "." can))
-          ((sage-shell:in interface sage-shell-interfaces:other-interfaces)
+          ((member interface sage-shell-interfaces:other-interfaces)
            (concat interface "." can))
           (t can))))
 
@@ -3098,7 +3093,7 @@ of current Sage process.")
         (mod-tp (sage-shell-cpl:-mod-type state))
         (in-function-call (sage-shell-cpl:get state 'in-function-call)))
     (sage-shell:chain sexp
-      (cond ((and (sage-shell:in "interface" types)
+      (cond ((and (member "interface" types)
                   (null (assoc "interface" sexp)))
              (cons (cons "interface" (sage-shell-cpl:get-cmd-lst int))
                    sexp))
@@ -3123,7 +3118,7 @@ of current Sage process.")
 (defun sage-shell-cpl:-use-filter-p (type state)
   (cond ((string= type "interface")
          (string= (sage-shell-cpl:get state 'interface) "sage"))
-        (t (sage-shell:in type '("attributes")))))
+        (t (member type '("attributes")))))
 
 (cl-defun sage-shell-cpl:candidates
     (&key (regexp nil) (sexp sage-shell-cpl:-last-sexp)
@@ -3202,12 +3197,12 @@ whose key is in KEYS."
 
 (defun sage-shell:-completion-at-pt-func-append (ls)
   (append
-   (when (and (sage-shell:in "interface"
-                             (sage-shell-cpl:get-current 'types))
+   (when (and (member "interface"
+                      (sage-shell-cpl:get-current 'types))
               (string= (sage-shell-cpl:get-current 'interface) "sage"))
      (append sage-shell:-python-builtins
              sage-shell-cpl:-cands-in-current-session))
-    ls))
+   ls))
 
 
 (defun sage-shell:symbol-beg ()
@@ -3710,15 +3705,15 @@ inserted in the process buffer before executing the command."
         (when (and in-function-call
                    (or (null base-name)
                        sage-shell-edit:eldoc-show-methods-doc)
-                   (sage-shell:in (if base-name
-                                      base-name
-                                    in-function-call)
-                                  (append
-                                   (buffer-local-value
-                                    'sage-shell-cpl:-cands-in-current-session
-                                    sage-shell:process-buffer)
-                                   (sage-shell-cpl:candidates
-                                    :state sage-int-state))))
+                   (member (if base-name
+                               base-name
+                             in-function-call)
+                           (append
+                            (buffer-local-value
+                             'sage-shell-cpl:-cands-in-current-session
+                             sage-shell:process-buffer)
+                            (sage-shell-cpl:candidates
+                             :state sage-int-state))))
           (sage-shell:-eldoc-function state))))))
 
 
@@ -3924,8 +3919,8 @@ Argument OUTPUT is a string with the output from the comint process."
                        "local/share/texmf/tex/generic/sagetex:"
                        it)))
       (unless (and texinputs
-                   (sage-shell:in (substring sagetexdir 0 -1)
-                                  (split-string texinputs ":")))
+                   (member (substring sagetexdir 0 -1)
+                           (split-string texinputs ":")))
         (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
 
 (defun sage-shell-sagetex:tex-to-sagetex-file (f)
