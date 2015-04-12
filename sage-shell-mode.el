@@ -3666,8 +3666,7 @@ inserted in the process buffer before executing the command."
      ;; Else type is '("interface")
      (t (push "interface" types)
         (sage-shell:awhen (sage-shell:-in-func-call-p)
-
-          )))
+          (setq state (sage-shell-cpl:-push-in-func-call-state it state)))))
 
     (sage-shell:push-elmts state
       'types types)
@@ -3675,10 +3674,22 @@ inserted in the process buffer before executing the command."
     state))
 
 
+(defvar sage-shell-edit:-eldoc-orig-func nil)
+(defun sage-shell-edit:eldoc-function ()
+  (let ((orig-eldoc (sage-shell:aif (functionp sage-shell-edit:-eldoc-orig-func)
+                        (ignore-errors (funcall it)))))
+    (if orig-eldoc
+        ;; Prefer original implementation.
+        orig-eldoc
+      (sage-shell:-eldoc-function (sage-shell-edit:parse-current-state)))))
+
 
 ;;; sage-shell:sage-mode
 ;;;###autoload
-(define-derived-mode sage-shell:sage-mode python-mode "Sage")
+(define-derived-mode sage-shell:sage-mode python-mode "Sage"
+  (setq sage-shell-edit:-eldoc-orig-func eldoc-documentation-function)
+  (set (make-local-variable 'eldoc-documentation-function)
+       #'sage-shell-edit:eldoc-function))
 
 (sage-shell:define-keys sage-shell:sage-mode-map
   "C-c C-c" 'sage-shell-edit:send-buffer
