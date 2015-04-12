@@ -71,7 +71,7 @@
     #+BEGIN_SRC lisp
      ;; Run SageMath by M-x run-sage instead of M-x sage-shell:run-sage
      (sage-shell:define-alias)
-     ;; Turn of eldoc-mode
+     ;; Turn on eldoc-mode
      (add-hook 'sage-shell-mode-hook #'eldoc-mode)
     #+END_SRC
 ** Aliases
