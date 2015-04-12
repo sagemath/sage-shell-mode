@@ -425,6 +425,7 @@ returned from the function, otherwise, this returns it self. "
 (defvar sage-shell:sage-modes '(sage-shell:sage-mode sage-shell-mode))
 
 (defmacro sage-shell:push-elmts (state &rest attributes-values)
+  "Push elements and returns new STATE."
   (declare (indent 1))
   `(setq ,state
          (append ,(cons 'list
@@ -2723,34 +2724,36 @@ send current line to Sage process buffer."
            ((string= cur-intf "sage")
             (let* ((pfx (sage-shell-interfaces:looking-back-var "sage"))
                    (chbf (and pfx (char-before pfx)))
-                   (in-func-call (sage-shell:-in-func-call-p))
-                   (in-func-call-end (if in-func-call
-                                         (cadr in-func-call)))
-                   (in-func-name (when in-func-call
-                                   (caddr in-func-call)))
-                   (in-function-call-bn
-                    (sage-shell:awhen in-func-call
-                      (save-excursion
-                        (goto-char (goto-char (cadr it)))
-                        (car (sage-shell-cpl:var-base-name-and-att-start
-                              "sage"))))))
+                   (in-func-call (sage-shell:-in-func-call-p)))
               (sage-shell:push-elmts state
                 'interface "sage"
                 'var-base-name nil
-                'prefix pfx
-                'in-function-call in-func-name
-                'in-function-call-base-name in-function-call-bn
-                'in-function-call-end in-func-call-end)
+                'prefix pfx)
               ;; Unless parsing failed,
               (unless (and chbf (= chbf 46))
                 (push "interface" types))
-              (when in-func-name
-                (push "in-function-call" types)))
+              (when in-func-call
+                (push "in-function-call" types)
+                (setq state (sage-shell-cpl:-push-in-func-call-state
+                             in-func-call state))))
             (list types state)))
         (sage-shell:push-elmts state
           'types types)
         ;; Returns state.
         state))))
+
+(defun sage-shell-cpl:-push-in-func-call-state (in-func-call state)
+  "Assume in-func-call is non-nil."
+  (let ((in-func-call-end (cadr in-func-call))
+        (in-func-name (caddr in-func-call))
+        (in-function-call-bn (save-excursion
+                               (goto-char (goto-char (cadr in-func-call)))
+                               (car (sage-shell-cpl:var-base-name-and-att-start
+                                     "sage")))))
+    (sage-shell:push-elmts state
+     'in-function-call in-func-name
+     'in-function-call-base-name in-function-call-bn
+     'in-function-call-end in-func-call-end)))
 
 (defun sage-shell-cpl:-scb-and-looking-at (chars regexp)
   (let ((bol (line-beginning-position)))
@@ -3661,7 +3664,10 @@ inserted in the process buffer before executing the command."
           (sage-shell:push-elmts state
             'module-name (match-string-no-properties 1))))))
      ;; Else type is '("interface")
-     (t (push "interface" types)))
+     (t (push "interface" types)
+        (sage-shell:awhen (sage-shell:-in-func-call-p)
+
+          )))
 
     (sage-shell:push-elmts state
       'types types)
