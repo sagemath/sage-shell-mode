@@ -3692,6 +3692,10 @@ inserted in the process buffer before executing the command."
 
 
 (defvar sage-shell-edit:-eldoc-orig-func nil)
+
+(defvar sage-shell-edit:eldoc-show-methods-doc nil
+  "Non-`nil' means show eldoc for methods..")
+
 (defun sage-shell-edit:eldoc-function ()
   (let ((orig-eldoc (sage-shell:aif (functionp sage-shell-edit:-eldoc-orig-func)
                         (ignore-errors (funcall it)))))
@@ -3699,10 +3703,22 @@ inserted in the process buffer before executing the command."
         ;; Prefer original implementation.
         orig-eldoc
       (let* ((state (sage-shell-edit:parse-current-state))
-             (in-function-call (sage-shell-cpl:get state 'in-function-call)))
+             (in-function-call (sage-shell-cpl:get state 'in-function-call))
+             (base-name (sage-shell-cpl:get state 'in-function-call-base-name))
+             (sage-int-state '((interface . "sage")
+                               (types "interface"))))
         (when (and in-function-call
-                   (sage-shell:in in-function-call
-                                  (sage-shell-cpl:candidates :state state)))
+                   (or (null base-name)
+                       sage-shell-edit:eldoc-show-methods-doc)
+                   (sage-shell:in (if base-name
+                                      base-name
+                                    in-function-call)
+                                  (append
+                                   (buffer-local-value
+                                    'sage-shell-cpl:-cands-in-current-session
+                                    sage-shell:process-buffer)
+                                   (sage-shell-cpl:candidates
+                                    :state sage-int-state))))
           (sage-shell:-eldoc-function state))))))
 
 
