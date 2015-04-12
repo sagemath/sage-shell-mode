@@ -430,6 +430,7 @@ returned from the function, otherwise, this returns it self. "
                  ,state)))
 
 (defmacro sage-shell:chain (var &rest forms)
+  (declare (indent 1))
   (append '(progn)
           (cl-loop for f in forms
                    collect
@@ -1515,6 +1516,7 @@ Does not delete the prompt."
      ,@forms))
 
 (defmacro sage-shell:-define-font-lock-matcher (name keywords)
+  (declare (indent 1))
   `(defun ,name (lim)
      (sage-shell:font-lock-when-sage-line
       (let ((match
@@ -2763,9 +2765,9 @@ send current line to Sage process buffer."
                                (car (sage-shell-cpl:var-base-name-and-att-start
                                      "sage")))))
     (sage-shell:push-elmts state
-     'in-function-call in-func-name
-     'in-function-call-base-name in-function-call-bn
-     'in-function-call-end in-func-call-end)))
+      'in-function-call in-func-name
+      'in-function-call-base-name in-function-call-bn
+      'in-function-call-end in-func-call-end)))
 
 (defun sage-shell-cpl:-scb-and-looking-at (chars regexp)
   (let ((bol (line-beginning-position)))
