@@ -1162,32 +1162,32 @@ Match group 1 will be replaced with devel/sage-branch")
   (eldoc-add-command #'sage-shell-tab-command))
 
 (defun sage-shell:eldoc-function ()
-  (let* ((state (sage-shell-cpl:parse-current-state))
-         (func-name (sage-shell-cpl:get state 'in-function-call))
-         (base-name (sage-shell-cpl:get state 'in-function-call-base-name))
-         (func-end (sage-shell-cpl:get state 'in-function-call-end)))
-    (sage-shell:-eldoc-function func-name base-name func-end)))
+  (sage-shell:-eldoc-function (sage-shell-cpl:parse-current-state)))
 
-(defun sage-shell:-eldoc-function (func-name base-name func-end)
-  (setq base-name (sage-shell:aif base-name
-                      (format "'%s'" it)
-                    "None"))
-  (let ((s (and func-name
-                (sage-shell:-eldoc-function-str func-name base-name)))
-        (keyword-reg (rx (0+ whitespace)
-                         (group (1+ (or alnum "_")))
-                         (0+ whitespace) "=")))
+(defun sage-shell:-eldoc-function (state)
+  "Has less state than `sage-shell:eldoc-function'"
+  (let* ((func-name (sage-shell-cpl:get state 'in-function-call))
+         (base-name (sage-shell-cpl:get state 'in-function-call-base-name))
+         (func-end (sage-shell-cpl:get state 'in-function-call-end))
+         (buf-args-str (when func-name
+                         (buffer-substring-no-properties
+                          (1+ func-end)
+                          (save-excursion
+                            (skip-chars-forward
+                             "[a-zA-Z0-9_ =]"
+                             (line-end-position))
+                            (point)))))
+         (s (and func-name
+                 (sage-shell:-eldoc-function-str
+                  func-name
+                  (sage-shell:aif base-name (format "'%s'" it) "None"))))
+         (keyword-reg (rx (0+ whitespace)
+                          (group (1+ (or alnum "_")))
+                          (0+ whitespace) "=")))
     (when (and func-name s
                (not (string-match (rx "[noargspec]") s))
                (not (string= s "")))
-      (let* ((buf-args-str (buffer-substring-no-properties
-                            (1+ func-end)
-                            (save-excursion
-                              (skip-chars-forward
-                               "[a-zA-Z0-9_ =]"
-                               (line-end-position))
-                              (point))))
-             (buf-args (split-string buf-args-str ", "))
+      (let* ((buf-args (split-string buf-args-str ", "))
              (last-arg (car (last buf-args)))
              (ignore-regexp (if (string-match keyword-reg buf-args-str)
                                 (rx (or "*" "="))
