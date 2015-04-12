@@ -3681,7 +3681,12 @@ inserted in the process buffer before executing the command."
     (if orig-eldoc
         ;; Prefer original implementation.
         orig-eldoc
-      (sage-shell:-eldoc-function (sage-shell-edit:parse-current-state)))))
+      (let* ((state (sage-shell-edit:parse-current-state))
+             (in-function-call (sage-shell-cpl:get state 'in-function-call)))
+        (when (and in-function-call
+                   (sage-shell:in in-function-call
+                                  (sage-shell-cpl:candidates :state state)))
+          (sage-shell:-eldoc-function state))))))
 
 
 ;;; sage-shell:sage-mode
