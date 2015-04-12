@@ -1130,28 +1130,32 @@ Match group 1 will be replaced with devel/sage-branch")
   (mapconcat 'identity (reverse cmds) "; "))
 
 
+(defvar sage-shell:-eldoc-syntax-table
+  (let ((table (copy-syntax-table sage-shell-mode-syntax-table)))
+    (modify-syntax-entry ?\[ " " table)
+    (modify-syntax-entry ?\] " " table)
+    table))
+
 (defun sage-shell:-in-func-call-p (&optional pt)
   "Returns a list s.t.
   0: begging of funciton
   1: end of funciton
   2: funciton name
   3: inside string or not"
-  (let* ((bol (line-beginning-position))
-         (pt (or pt (point)))
-         (pps (parse-partial-sexp bol pt))
-         (beg-of-ls (cadr pps)))
-    (save-excursion
-      (when beg-of-ls
-        (goto-char beg-of-ls)
-        (cond
-         ((looking-at (rx "["))
-          nil)
-         (t (skip-chars-backward
-             (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bol)
-            (unless (looking-at (rx (or "." "(" "[")))
-              (list (point) beg-of-ls
-                    (buffer-substring-no-properties (point) beg-of-ls)
-                    (nth 3 pps)))))))))
+  (with-syntax-table sage-shell:-eldoc-syntax-table
+    (let* ((bol (line-beginning-position))
+           (pt (or pt (point)))
+           (pps (parse-partial-sexp bol pt))
+           (beg-of-ls (cadr pps)))
+      (save-excursion
+        (when beg-of-ls
+          (goto-char beg-of-ls)
+          (skip-chars-backward
+           (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bol)
+          (unless (looking-at (rx (or "." "(" "[")))
+            (list (point) beg-of-ls
+                  (buffer-substring-no-properties (point) beg-of-ls)
+                  (nth 3 pps))))))))
 
 ;; eldoc
 (defvar sage-shell:-eldoc-cache nil)
@@ -1188,7 +1192,20 @@ Match group 1 will be replaced with devel/sage-branch")
     (when (and func-name s
                (not (string-match (rx "[noargspec]") s))
                (not (string= s "")))
-      (let* ((buf-args (split-string buf-args-str ", "))
+      (let* ((buf-args (split-string
+                        ;; Replace "," inside string or brackets by space.
+                        (with-temp-buffer
+                          (with-syntax-table sage-shell-mode-syntax-table
+                            (insert buf-args-str)
+                            (goto-char (point-min))
+                            (while (re-search-forward (rx ",") nil t)
+                              (let ((pps (parse-partial-sexp (point-min)
+                                                             (point))))
+                                (if (or (nth 3 pps)
+                                        (sage-shell:awhen (nth 1 pps)
+                                          (eq (char-after it) ?\[)))
+                                    (replace-match " "))))
+                            (buffer-string))) ", "))
              (last-arg (car (last buf-args)))
              (ignore-regexp (if (string-match keyword-reg buf-args-str)
                                 (rx (or "*" "="))
