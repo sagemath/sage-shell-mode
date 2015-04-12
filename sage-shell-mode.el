@@ -1210,20 +1210,22 @@ Match group 1 will be replaced with devel/sage-branch")
           s)))))
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
-  (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
-    (cond
-     (cache cache)
-     ((and (sage-shell:at-top-level-and-in-sage-p)
-           (sage-shell:redirect-and-output-finished-p))
-      (let* ((res (sage-shell:->>
-                   (sage-shell:py-mod-func
-                    (format "print_def('%s', base_name=%s)"
-                            func-name base-name))
-                   sage-shell:send-command-to-string
-                   sage-shell:trim-left
-                   (funcall (lambda (s) (car (last (split-string s "\n"))))))))
-        (push (cons func-name res) sage-shell:-eldoc-cache)
-        res)))))
+  (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+    (sage-shell:when-process-alive
+      (let ((cache (assoc-default func-name sage-shell:-eldoc-cache)))
+        (cond
+         (cache cache)
+         ((and (sage-shell:at-top-level-and-in-sage-p)
+               (sage-shell:redirect-and-output-finished-p))
+          (let* ((res (sage-shell:->>
+                       (sage-shell:py-mod-func
+                        (format "print_def('%s', base_name=%s)"
+                                func-name base-name))
+                       sage-shell:send-command-to-string
+                       sage-shell:trim-left
+                       (funcall (lambda (s) (car (last (split-string s "\n"))))))))
+            (push (cons func-name res) sage-shell:-eldoc-cache)
+            res)))))))
 
 
 (defun sage-shell:-eldoc-highlight-beg-end
