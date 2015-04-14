@@ -1193,23 +1193,7 @@ Match group 1 will be replaced with devel/sage-branch")
     (when (and func-name s
                (not (string-match (rx "[noargspec]") s))
                (not (string= s "")))
-      (let* ((buf-args (split-string
-                        ;; Replace "," inside string or brackets by space.
-                        (with-temp-buffer
-                          (with-syntax-table sage-shell-mode-syntax-table
-                            (insert (replace-regexp-in-string
-                                     (rx "\n") " " buf-args-str))
-                            (goto-char (point-min))
-                            (while (re-search-forward (rx ",") nil t)
-                              (let ((pps (parse-partial-sexp (point-min)
-                                                             (point))))
-                                ;; Inside a string, list or tuple.
-                                (if (or (nth 3 pps)
-                                        (sage-shell:awhen (nth 1 pps)
-                                          (memq (char-after it)
-                                                (list ?\[ ?\())))
-                                    (replace-match " "))))
-                            (buffer-string))) ", "))
+      (let* ((buf-args (sage-shell:-eldoc-split-buffer-args buf-args-str))
              (last-arg (car (last buf-args)))
              (ignore-regexp (if (string-match keyword-reg buf-args-str)
                                 (rx (or "*" "="))
@@ -1230,6 +1214,25 @@ Match group 1 will be replaced with devel/sage-branch")
                                    s-noprop)
               s-noprop)
           s)))))
+
+(defun sage-shell:-eldoc-split-buffer-args (buf-args-str)
+  (split-string
+   ;; Replace "," inside string or brackets by space.
+   (with-temp-buffer
+     (with-syntax-table sage-shell-mode-syntax-table
+       (insert (replace-regexp-in-string
+                (rx "\n") " " buf-args-str))
+       (goto-char (point-min))
+       (while (re-search-forward (rx ",") nil t)
+         (let ((pps (parse-partial-sexp (point-min)
+                                        (point))))
+           ;; Inside a string, list or tuple.
+           (if (or (nth 3 pps)
+                   (sage-shell:awhen (nth 1 pps)
+                     (memq (char-after it)
+                           (list ?\[ ?\())))
+               (replace-match " "))))
+       (buffer-string))) ", "))
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
