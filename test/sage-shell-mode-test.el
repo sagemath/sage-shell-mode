@@ -44,7 +44,7 @@
     (cons 'and
           (cl-loop for (a b) in (sage-shell:group args)
                    collect
-                   (list (assoc-default a test-fns)
+                   (list (or (assoc-default a test-fns) #'equal)
                          `(sage-shell-cpl:get ,state ',a) b)))))
 
 (ert-deftest sage-shell:parse-state-repl-attribute ()
@@ -114,3 +114,66 @@
             (sage-shell-test:state-assert state
               types '("vars-in-module")
               module-name "foo.bar"))))
+
+(ert-deftest sage-shell:parse-state-func-call ()
+  (should (let ((state (sage-shell-test:temp-state
+                        "sage: foo()" "sage" 11)))
+            (sage-shell-test:state-assert state
+              types '("in-function-call" "interface")
+              in-function-call "foo"
+              in-function-call-end 10
+              in-function-call-base-name nil))))
+
+(ert-deftest sage-shell:parse-state-func-call-1 ()
+  (should (let ((state (sage-shell-test:temp-state
+                        "sage: foo(1, 2, ((2, 3, 4, [5, 6])))" "sage" 33)))
+            (sage-shell-test:state-assert state
+              types '("in-function-call" "interface")
+              in-function-call "foo"
+              in-function-call-end 10))))
+
+(ert-deftest sage-shell:parse-state-func-call-1 ()
+  (should (let ((state (sage-shell-test:temp-state
+                        "sage: foo(1, 2, ((2, 3, 4, [5, 6])))" "sage" 33)))
+            (sage-shell-test:state-assert state
+              types '("in-function-call" "interface")
+              in-function-call "foo"
+              in-function-call-end 10))))
+
+(ert-deftest sage-shell:parse-state-edit-func-call ()
+  (should (let ((state (sage-shell-test:sage-mode-temp-state
+                        "foo(1, 2,
+((2, 3, 4, [5, 6])))" 25)))
+            (sage-shell-test:state-assert state
+              types '("interface")
+              in-function-call "foo"
+              in-function-call-end 4))))
+
+(ert-deftest sage-shell:parse-state-edit-func-call-1 ()
+  (should (let ((state (sage-shell-test:sage-mode-temp-state
+                            "foo(1, 2,
+((2, 3, 4, [5, 6])))")))
+            (sage-shell-test:state-assert state
+              types '("interface")
+              in-function-call nil))))
+
+(ert-deftest sage-shell:split-args ()
+  (should (= (length
+              (sage-shell:-eldoc-split-buffer-args "1, 2, ((2, 3, 4, [5,"))
+             3)))
+
+(ert-deftest sage-shell:split-args-1 ()
+  (should (= (length
+              (sage-shell:-eldoc-split-buffer-args
+               "1, 2,
+foo=bar(1, 2), baz=(1, 2"))
+             4)))
+
+(ert-deftest sage-shell:split-args-2 ()
+  (should (= (length
+              (sage-shell:-eldoc-split-buffer-args
+               (concat "[foo(1, 2), ((3, 4), 5)],  "
+               "
+(((a, b), c))[0],
+foo=bar(1, 2), baz=(1, 2")))
+             4)))
