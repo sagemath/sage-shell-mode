@@ -3684,8 +3684,17 @@ inserted in the process buffer before executing the command."
             'module-name (match-string-no-properties 1))))))
      ;; Else type is '("interface")
      (t (push "interface" types)
-        (sage-shell:awhen (sage-shell:-in-func-call-p)
-          (setq state (sage-shell-cpl:-push-in-func-call-state it state)))))
+        (let* ((funcall-lim
+                (save-excursion
+                  (when (re-search-backward
+                         (rx (or "_" alnum) "(")
+                         sage-shell-edit:-parse-pps-backward-limit t)
+                    (line-beginning-position))))
+               (in-func-call (and funcall-lim
+                                  (sage-shell:-in-func-call-p
+                                   nil funcall-lim))))
+          (sage-shell:awhen in-func-call
+            (setq state (sage-shell-cpl:-push-in-func-call-state it state))))))
 
     (sage-shell:push-elmts state
       'types types)
