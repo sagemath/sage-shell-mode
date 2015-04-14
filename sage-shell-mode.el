@@ -3625,11 +3625,11 @@ inserted in the process buffer before executing the command."
   (pop-to-buffer sage-shell:process-buffer))
 
 
-(defvar sage-shell-edit:-parse-pps-backward-limit 3000)
+(defvar sage-shell-edit:-pps-backward-lim 3000)
 (defun sage-shell-edit:parse-current-state ()
   "Parse completion state in sage-shell:sage-mode."
   (let* ((pt (point))
-         (bd (sage-shell:aif sage-shell-edit:-parse-pps-backward-limit
+         (bd (sage-shell:aif sage-shell-edit:-pps-backward-lim
                  (max (point-min) (- pt it))
                (point-min)))
          ;; Nearest top level block
@@ -3691,7 +3691,8 @@ inserted in the process buffer before executing the command."
                 (save-excursion
                   (when (re-search-backward
                          (rx (or "_" alnum) "(")
-                         sage-shell-edit:-parse-pps-backward-limit t)
+                         (sage-shell:aif sage-shell-edit:-pps-backward-lim
+                             (max (- (point) it) (point-min))) t)
                     (line-beginning-position))))
                (in-func-call (and funcall-lim
                                   (sage-shell:-in-func-call-p
