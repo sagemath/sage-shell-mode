@@ -1232,7 +1232,7 @@ Match group 1 will be replaced with devel/sage-branch")
                      (memq (char-after it)
                            (list ?\[ ?\())))
                (replace-match " "))))
-       (buffer-string))) ", "))
+       (buffer-string))) ","))
 
 (defun sage-shell:-eldoc-function-str (func-name base-name)
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
