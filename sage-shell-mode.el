@@ -1197,14 +1197,17 @@ Match group 1 will be replaced with devel/sage-branch")
                         ;; Replace "," inside string or brackets by space.
                         (with-temp-buffer
                           (with-syntax-table sage-shell-mode-syntax-table
-                            (insert buf-args-str)
+                            (insert (replace-regexp-in-string
+                                     (rx "\n") " " buf-args-str))
                             (goto-char (point-min))
                             (while (re-search-forward (rx ",") nil t)
                               (let ((pps (parse-partial-sexp (point-min)
                                                              (point))))
+                                ;; Inside a string, list or tuple.
                                 (if (or (nth 3 pps)
                                         (sage-shell:awhen (nth 1 pps)
-                                          (eq (char-after it) ?\[)))
+                                          (memq (char-after it)
+                                                (list ?\[ ?\())))
                                     (replace-match " "))))
                             (buffer-string))) ", "))
              (last-arg (car (last buf-args)))
