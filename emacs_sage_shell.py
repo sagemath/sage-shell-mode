@@ -303,18 +303,18 @@ ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 
 def _sage_getdef(name, base_name=None):
-    if _is_safe_str(name) and (_should_be_ignored(name, base_name)
-                               is not None):
-        gd_name = "sage.misc.sageinspect.sage_getdef"
-        try:
+    try:
+        if _is_safe_str(name) and (_should_be_ignored(name, base_name)
+                                   is not None):
+            gd_name = "sage.misc.sageinspect.sage_getdef"
             name_ob = ip.ev(preparse(name))
             if inspect.isclass(name_ob):
                 df = ip.ev("%s(%s.__init__)"%(gd_name, name))
             else:
                 df = ip.ev("%s(%s)"%(gd_name, preparse(name)))
             return df
-        except NameError:
-            pass
+    except NameError:
+        pass
 
 def sage_getdef(name, base_name=None):
     df = _sage_getdef(name, base_name=base_name)
@@ -361,6 +361,7 @@ def all_keyword_args(compl_dct):
     base_name = compl_dct["in-function-call-base-name"]
     name = compl_dct["in-function-call"]
     return keyword_args(name, base_name=base_name)
+
 
 def keyword_args(name, base_name=None):
     gd = _sage_getdef(name, base_name=base_name)
