@@ -165,9 +165,9 @@
 (ert-deftest sage-shell:split-args-1 ()
   (should (= (length
               (sage-shell:-eldoc-split-buffer-args
-               "1, 2,
-foo=bar(1, 2), baz=(1, 2"))
-             4)))
+               "1,     2,3,4,
+foo=bar(1, 2),baz=(1, 2"))
+             6)))
 
 (ert-deftest sage-shell:split-args-2 ()
   (should (= (length
