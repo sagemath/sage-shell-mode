@@ -1132,26 +1132,31 @@ Match group 1 will be replaced with devel/sage-branch")
     (modify-syntax-entry ?\] " " table)
     table))
 
-(defun sage-shell:-in-func-call-p (&optional pt)
+(defun sage-shell:-in-func-call-p (&optional pt limit)
   "Returns a list s.t.
   0: begging of funciton
   1: end of funciton
   2: funciton name
   3: inside string or not"
   (with-syntax-table sage-shell:-eldoc-syntax-table
-    (let* ((bol (line-beginning-position))
+    (let* ((bd (or limit (line-beginning-position)))
            (pt (or pt (point)))
-           (pps (parse-partial-sexp bol pt))
+           (pps (parse-partial-sexp bd pt))
            (beg-of-ls (cadr pps)))
       (save-excursion
         (when beg-of-ls
           (goto-char beg-of-ls)
+          (skip-chars-backward " " bd)
           (skip-chars-backward
-           (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bol)
-          (unless (looking-at (rx (or "." "(" "[")))
-            (list (point) beg-of-ls
-                  (buffer-substring-no-properties (point) beg-of-ls)
-                  (nth 3 pps))))))))
+           (concat (sage-shell-interfaces:get "sage" 'var-chars) ".") bd)
+          (cond
+           ;; Inside tuple
+           ((looking-at (rx (0+ whitespace) "("))
+            (sage-shell:-in-func-call-p nil bd))
+           (t (unless (looking-at (rx (0+ whitespace) "."))
+                (list (point) beg-of-ls
+                      (buffer-substring-no-properties (point) beg-of-ls)
+                      (nth 3 pps))))))))))
 
 ;; eldoc
 (defvar sage-shell:-eldoc-cache nil)
