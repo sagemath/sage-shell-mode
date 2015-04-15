@@ -370,10 +370,12 @@ def keyword_args(name, base_name=None):
         return []
     else:
         args_str = gd[1:-1]
-        reg = re.compile("[a-zA-Z_0-9]+=")
+        reg = re.compile(r"\*+[a-zA-Z_0-9]+")
         args = args_str.split(", ")
-        matchs = [re.match(reg, a) for a in args]
-        return [m.group() for m in matchs if m]
+        args = [a for a in args if reg.match(a) is None]
+        reg = re.compile("[a-zA-Z_0-9]+")
+        matches = [reg.match(a) for a in args]
+        return [m.group() + "=" for m in matches if m]
 
 def print_short_doc(name, base_name=None):
     try:
