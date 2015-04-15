@@ -1195,17 +1195,13 @@ Match group 1 will be replaced with devel/sage-branch")
                (not (string= s "")))
       (let* ((buf-args (sage-shell:-eldoc-split-buffer-args buf-args-str))
              (last-arg (car (last buf-args)))
-             (ignore-regexp (if (string-match keyword-reg buf-args-str)
-                                (rx (or "*" "="))
-                              (rx "*")))
              (beg-end (cond ((string-match keyword-reg last-arg)
                              (sage-shell:-eldoc-highlight-beg-end
                               func-name s
-                              (match-string 1 last-arg) nil
-                              ignore-regexp))
-                            (t (sage-shell:-eldoc-highlight-beg-end
-                                func-name s nil (1- (length buf-args))
-                                ignore-regexp)))))
+                              (match-string 1 last-arg) nil))
+                            ((not (string-match keyword-reg buf-args-str))
+                             (sage-shell:-eldoc-highlight-beg-end
+                              func-name s nil (1- (length buf-args)))))))
         (if beg-end
             (let ((s-noprop (substring-no-properties s)))
               (add-text-properties (car beg-end)
@@ -1253,28 +1249,44 @@ Match group 1 will be replaced with devel/sage-branch")
             res)))))))
 
 
-(defun sage-shell:-eldoc-highlight-beg-end
-    (func-name def-str keyword idx ignore-regexp)
-  (let* ((func-len (length func-name))
-         (args-s (substring def-str (1+ func-len) -1)))
-    (cond (keyword (when (string-match (rx-to-string
-                                        `(and symbol-start
-                                              ,keyword
-                                              (zero-or-one "=")
-                                              (0+ (not (any ","))))) args-s)
-                     (let ((beg (+ (match-beginning 0) func-len 1))
-                           (end (+ (match-end 0) func-len 1)))
-                       (cons beg end))))
-          (idx (let* ((args (split-string args-s ", ")))
-                 (let ((rest (nthcdr idx args)))
-                   (when (and rest
-                              (not (string-match ignore-regexp (car rest))))
-                     (let ((len-args-s (length args-s)))
-                       (cons (sage-shell:-eldoc-highlight-indx-fn
-                              func-len len-args-s rest)
-                             (- (sage-shell:-eldoc-highlight-indx-fn
-                                 func-len len-args-s (cdr rest))
-                                (if (cdr rest) 2 0)))))))))))
+(defvar sage-shell:-eldoc-args-syntax-table
+  (let ((table (copy-syntax-table sage-shell-mode-syntax-table)))
+    (modify-syntax-entry ?* "w" table)
+    table))
+
+(defun sage-shell:-eldoc-highlight-beg-end (func-name def-str keyword idx)
+  (with-syntax-table sage-shell:-eldoc-args-syntax-table
+    (let* ((func-len (length func-name))
+           (args-s (substring def-str (1+ func-len) -1))
+           (fun (lambda () (let ((beg (+ (match-beginning 0) func-len 1))
+                             (end (+ (match-end 0) func-len 1)))
+                         (cons beg end)))))
+      (cond (keyword
+             (cond ((string-match (rx-to-string
+                                   `(or (and symbol-start
+                                             ,keyword
+                                             symbol-end
+                                             (zero-or-one "=")
+                                             (1+ (or alnum "_")))
+                                        (and symbol-start
+                                             ,keyword
+                                             symbol-end))) args-s)
+                    (funcall fun))
+                   ((string-match (rx "**" (1+ (or alnum "_"))) args-s)
+                    (funcall fun))))
+            (idx (let* ((args (split-string args-s ", "))
+                        (rest (nthcdr idx args)))
+                   (cond ((and rest (not (string-match (rx "*") (car rest))))
+                          (let ((len-args-s (length args-s)))
+                            (cons (sage-shell:-eldoc-highlight-indx-fn
+                                   func-len len-args-s rest)
+                                  (- (sage-shell:-eldoc-highlight-indx-fn
+                                      func-len len-args-s (cdr rest))
+                                     (if (cdr rest) 2 0)))))
+                         ((string-match (rx symbol-start
+                                            "*" (1+ (or alnum "_")))
+                                        args-s)
+                          (funcall fun)))))))))
 
 (defun sage-shell:-eldoc-highlight-indx-fn (func-len len-args-s ls)
   (+ (1+ func-len)
