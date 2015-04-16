@@ -1152,7 +1152,8 @@ Match group 1 will be replaced with devel/sage-branch")
   (eldoc-add-command #'sage-shell-tab-command))
 
 (defun sage-shell:eldoc-function ()
-  (sage-shell:-eldoc-function (sage-shell-cpl:parse-current-state)))
+  (when (sage-shell:redirect-and-output-finished-p)
+    (sage-shell:-eldoc-function (sage-shell-cpl:parse-current-state))))
 
 (defun sage-shell:-eldoc-function (state)
   "Has less state than `sage-shell:eldoc-function'"
