@@ -254,10 +254,6 @@ the value of last sym"
      (when it ,@then-forms)))
 
 ;; utilities
-(eval-when-compile
-  (defvar sage-shell:gensym-counter 0))
-(defvar sage-shell:gensym-counter 0)
-
 (cl-defsubst sage-shell:group (l &optional (n 2))
   (let ((r l)
         (a nil)
@@ -296,20 +292,11 @@ the value of last sym"
      (unless ,test-form
        ,@then-forms)))
 
-(defsubst sage-shell:gensym (&optional prefix)
-  "Generate a new uninterned symbol.
-The name is made by appending a number to PREFIX, default \"sage-gensym-\"."
-  (let ((pfix (if (stringp prefix) prefix "sage-gensym-"))
-        (num (if (integerp prefix) prefix
-               (prog1 sage-shell:gensym-counter
-                 (cl-incf sage-shell:gensym-counter)))))
-    (make-symbol (format "%s%d" pfix num))))
-
 (defmacro sage-shell:acond (&rest clauses)
   (if (null clauses)
       nil
     (let ((cl1 (car clauses))
-          (sym (sage-shell:gensym)))
+          (sym (cl-gensym "sage-shell")))
       `(let ((,sym ,(car cl1)))
          (if ,sym
              (let ((it ,sym)) ,@(cdr cl1))
@@ -317,7 +304,7 @@ The name is made by appending a number to PREFIX, default \"sage-gensym-\"."
 
 (cl-defmacro sage-shell:with-gensym ((&rest names) &rest body)
   (declare (indent 1) (debug t))
-  `(let ,(cl-loop for n in names collect `(,n (sage-shell:gensym)))
+  `(let ,(cl-loop for n in names collect `(,n (cl-gensym "sage-shell")))
      ,@body))
 
 (defmacro sage-shell:define-keys (keymap &rest defs)
@@ -333,10 +320,7 @@ The name is made by appending a number to PREFIX, default \"sage-gensym-\"."
 (defmacro sage-shell:as-soon-as (form &rest body)
   (declare (indent 1))
   `(cond (,form (progn ,@body))
-         (t (lexical-let ((timer-sym
-                           (intern (format "sage-timer%d"
-                                           sage-shell:gensym-counter))))
-              (cl-incf sage-shell:gensym-counter)
+         (t (lexical-let ((timer-sym (cl-gensym "sage-shell")))
               (set timer-sym
                    (run-with-timer
                     0.01 0.01
