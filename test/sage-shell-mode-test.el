@@ -1,6 +1,6 @@
 (require 'ert)
 (require 'sage-shell-mode)
-(require 'noflet)
+
 (ert-deftest sage-shell:development-version-test ()
   (should (string=
            (sage-shell:src-version
@@ -203,5 +203,3 @@ foo=bar(1, 2), baz=(1, 2")))
   (should (equal (sage-shell:-eldoc-highlight-beg-end
                   "foo" "foo(a, b, *args, **kwds)" "bar" nil)
                  (cons 17 23))))
-
-
