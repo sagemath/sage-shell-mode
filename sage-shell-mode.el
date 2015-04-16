@@ -254,6 +254,29 @@ the value of last sym"
      (when it ,@then-forms)))
 
 ;; utilities
+(eval-when-compile
+  (defvar sage-shell:gensym-counter 0))
+(defvar sage-shell:gensym-counter 0)
+
+(defsubst sage-shell:gensym (&optional prefix)
+  "Generate a new uninterned symbol.
+The name is made by appending a number to PREFIX, default
+\"sage-shell-gensym-\"."
+  (if (fboundp 'cl-gensym)
+      (cl-gensym prefix)
+      (let ((pfix (if (stringp prefix) prefix "sage-shell-gensym-"))
+            (num (if (integerp prefix) prefix
+                   (prog1 sage-shell:gensym-counter
+                     (cl-incf sage-shell:gensym-counter)))))
+        (make-symbol (format "%s%d" pfix num)))))
+
+(defun sage-shell:remove-if (pred seq)
+  (if (fboundp 'cl-remove-if)
+      (cl-remove-if pred seq)
+    (cl-loop for a in seq
+             unless (funcall pred a)
+             collect a)))
+
 (cl-defsubst sage-shell:group (l &optional (n 2))
   (let ((r l)
         (a nil)
@@ -296,7 +319,7 @@ the value of last sym"
   (if (null clauses)
       nil
     (let ((cl1 (car clauses))
-          (sym (cl-gensym "sage-shell")))
+          (sym (sage-shell:gensym "sage-shell")))
       `(let ((,sym ,(car cl1)))
          (if ,sym
              (let ((it ,sym)) ,@(cdr cl1))
@@ -304,7 +327,7 @@ the value of last sym"
 
 (cl-defmacro sage-shell:with-gensym ((&rest names) &rest body)
   (declare (indent 1) (debug t))
-  `(let ,(cl-loop for n in names collect `(,n (cl-gensym "sage-shell")))
+  `(let ,(cl-loop for n in names collect `(,n (sage-shell:gensym "sage-shell")))
      ,@body))
 
 (defmacro sage-shell:define-keys (keymap &rest defs)
@@ -320,7 +343,7 @@ the value of last sym"
 (defmacro sage-shell:as-soon-as (form &rest body)
   (declare (indent 1))
   `(cond (,form (progn ,@body))
-         (t (lexical-let ((timer-sym (cl-gensym "sage-shell")))
+         (t (lexical-let ((timer-sym (sage-shell:gensym "sage-shell")))
               (set timer-sym
                    (run-with-timer
                     0.01 0.01
@@ -2887,19 +2910,19 @@ send current line to Sage process buffer."
     (sage-shell:chain types
       (if update-cmd-p
           types
-        (cl-remove-if (lambda (s) (string= s "interface")) types))
+        (sage-shell:remove-if (lambda (s) (string= s "interface")) types))
       (if (sage-shell:aand
             (sage-shell-cpl:-mod-type compl-state)
             (assoc-default
              (sage-shell-cpl:-cached-mod-key it compl-state)
              sage-shell-cpl:-modules-cached))
-          (cl-remove-if (lambda (s) (or (string= s "modules")
+          (sage-shell:remove-if (lambda (s) (or (string= s "modules")
                                     (string= s "vars-in-module")))
                         types)
         types)
       (if (and in-function-call
                (assoc in-function-call sage-shell-cpl:-argspec-cached))
-          (cl-remove-if (lambda (s) (string= s "in-function-call")) types)
+          (sage-shell:remove-if (lambda (s) (string= s "in-function-call")) types)
         types))))
 
 (defvar sage-shell-cpl:-last-sexp nil)
