@@ -1,0 +1,28 @@
+language: emacs-lisp
+env:
+  - EMACS=emacs EVM_EMACS=emacs-24.1-bin
+  - EMACS=emacs EVM_EMACS=emacs-24.2-bin
+  - EMACS=emacs EVM_EMACS=emacs-24.3-bin
+  - EMACS=emacs EVM_EMACS=emacs-24.4-bin
+  - EMACS=emacs EVM_EMACS=emacs-24.5-bin
+before_install:
+  # Install Emacs
+  - sudo mkdir /usr/local/evm
+  - sudo chown travis:travis /usr/local/evm
+
+  - export PATH="/home/travis/.cask/bin:$PATH"
+  - export PATH="/home/travis/.evm/bin:$PATH"
+
+  - curl -fsSkL --max-time 10 --retry 10 --retry-delay 10
+        https://raw.github.com/rejeep/evm/master/go | bash
+  - export PATH="$HOME/.evm/bin:$PATH"
+  - evm install "$EVM_EMACS" --use --skip
+
+  # Install Cask
+  - curl -fsSkL --max-time 10 --retry 10 --retry-delay 10
+        https://raw.github.com/cask/cask/master/go | python
+  - export PATH="$HOME/.cask/bin:$PATH"
+  - cask
+script:
+  - emacs --version
+  - make test
