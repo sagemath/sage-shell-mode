@@ -1200,7 +1200,8 @@ Match group 1 will be replaced with devel/sage-branch")
                  (sage-shell:-eldoc-function-str
                   func-name
                   (sage-shell:aif base-name (format "'%s'" it) "None"))))
-         (keyword-reg (rx (0+ whitespace)
+         (keyword-reg (rx bol
+                          (0+ whitespace)
                           (group (1+ (or alnum "_")))
                           (0+ whitespace) "=")))
     (when (and func-name s
@@ -1212,7 +1213,8 @@ Match group 1 will be replaced with devel/sage-branch")
                              (sage-shell:-eldoc-highlight-beg-end
                               func-name s
                               (match-string 1 last-arg) nil))
-                            ((not (string-match keyword-reg buf-args-str))
+                            ((cl-loop for s in buf-args
+                                      never (string-match keyword-reg s))
                              (sage-shell:-eldoc-highlight-beg-end
                               func-name s nil (1- (length buf-args)))))))
         (if beg-end
