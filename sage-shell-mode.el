@@ -1258,7 +1258,7 @@ Match group 1 will be replaced with devel/sage-branch")
                         (format "print_def('%s', base_name=%s)"
                                 func-name base-name))
                        sage-shell:send-command-to-string
-                       sage-shell:trim-left
+                       sage-shell:trim-right
                        (funcall (lambda (s) (car (last (split-string s "\n"))))))))
             (push (cons func-name res) sage-shell:-eldoc-cache)
             res)))))))
