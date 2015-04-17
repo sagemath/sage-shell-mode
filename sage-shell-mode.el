@@ -397,8 +397,13 @@ returned from the function, otherwise, this returns it self. "
   (goto-char (point-min))
   (forward-line (1- n)))
 
+(defun sage-shell:trim-right (s)
+  (if (string-match (rx (or whitespace "\n") buffer-end) s)
+      (replace-match "" t t s)
+    s))
+
 (defun sage-shell:trim-left (s)
-  (if (string-match (rx "\n" buffer-end) s)
+  (if (string-match (rx buffer-start (or whitespace "\n")) s)
       (replace-match "" t t s)
     s))
 
@@ -3751,7 +3756,7 @@ inserted in the process buffer before executing the command."
                    (or (null base-name)
                        sage-shell-edit:eldoc-show-methods-doc)
                    (member (if base-name
-                               (sage-shell:trim-left
+                               (sage-shell:trim-right
                                 (car (split-string base-name (rx "."))))
                              in-function-call)
                            (append
