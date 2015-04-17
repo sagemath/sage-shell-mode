@@ -398,12 +398,12 @@ returned from the function, otherwise, this returns it self. "
   (forward-line (1- n)))
 
 (defun sage-shell:trim-right (s)
-  (if (string-match (rx (or whitespace "\n") buffer-end) s)
+  (if (string-match (rx (1+ (or whitespace "\n")) buffer-end) s)
       (replace-match "" t t s)
     s))
 
 (defun sage-shell:trim-left (s)
-  (if (string-match (rx buffer-start (or whitespace "\n")) s)
+  (if (string-match (rx buffer-start (1+ (or whitespace "\n"))) s)
       (replace-match "" t t s)
     s))
 
