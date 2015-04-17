@@ -146,9 +146,9 @@
 
 *** Editing a Sage file
 
-   When you visit a file ended with =".sage"=, then
+   When you visit a file ended with =.sage=, then
    =sage-shell:sage-mode= will be the major-mode of the buffer
-   automatically. If you want to edit a file ended with =".py"= in
+   automatically. If you want to edit a file ended with =.py= in
    =sage-shell:sage-mode=, then use the following magic comment at the
    first line of the file:
 
