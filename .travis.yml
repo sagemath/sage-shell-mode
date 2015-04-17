@@ -1,4 +1,7 @@
 language: emacs-lisp
+branches:
+  only:
+    - master
 env:
   - EMACS=emacs EVM_EMACS=emacs-24.1-bin
   - EMACS=emacs EVM_EMACS=emacs-24.2-bin
