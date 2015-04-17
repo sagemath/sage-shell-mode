@@ -1,6 +1,7 @@
 * History of user-visible changes.
 
-
+** 0.0.8 (2015-4-17)
+   Add support for =eldoc=.
 ** 0.0.7.2 (2015-4-12)
    - Fix =sage-shell-cpl:-parse-state-args=.
 ** 0.0.7.1 (2015-4-11)

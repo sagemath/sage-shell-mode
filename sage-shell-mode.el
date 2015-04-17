@@ -5,7 +5,7 @@
 ;; URL: https://github.com/stakemori/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1"))
 ;; Keywords: Sage, math
-;; Version: 0.0.7
+;; Version: 0.0.8
 
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify
