@@ -1273,35 +1273,51 @@ Match group 1 will be replaced with devel/sage-branch")
   (with-syntax-table sage-shell:-eldoc-args-syntax-table
     (let* ((func-len (length func-name))
            (args-s (substring def-str (1+ func-len) -1))
+           (args (sage-shell:->>
+                  (sage-shell:-eldoc-split-buffer-args args-s)
+                  (mapcar (lambda (s) (sage-shell:trim-left s)))))
            (fun (lambda () (let ((beg (+ (match-beginning 0) func-len 1))
                              (end (+ (match-end 0) func-len 1)))
-                         (cons beg end)))))
+                         (cons beg end))))
+           (rest-args (list args args-s func-len)))
       (cond (keyword
-             (cond ((string-match (rx-to-string
-                                   `(or (and symbol-start
-                                             ,keyword
-                                             symbol-end
-                                             (zero-or-one "=")
-                                             (1+ (or alnum "_")))
-                                        (and symbol-start
-                                             ,keyword
-                                             symbol-end))) args-s)
-                    (funcall fun))
-                   ((string-match (rx "**" (1+ (or alnum "_"))) args-s)
-                    (funcall fun))))
-            (idx (let* ((args (split-string args-s ", "))
-                        (rest (nthcdr idx args)))
-                   (cond ((and rest (not (string-match (rx "*") (car rest))))
-                          (let ((len-args-s (length args-s)))
-                            (cons (sage-shell:-eldoc-highlight-indx-fn
-                                   func-len len-args-s rest)
-                                  (- (sage-shell:-eldoc-highlight-indx-fn
-                                      func-len len-args-s (cdr rest))
-                                     (if (cdr rest) 2 0)))))
-                         ((string-match (rx symbol-start
-                                            "*" (1+ (or alnum "_")))
-                                        args-s)
-                          (funcall fun)))))))))
+             (or (apply #'sage-shell:-eldoc--hl-beg-end-1
+                        (rx-to-string
+                         `(or (and bol
+                                   ,keyword
+                                   symbol-end
+                                   (zero-or-one "=")
+                                   (1+ nonl))
+                              (and bol ,keyword eol)))
+                        rest-args)
+                 (apply #'sage-shell:-eldoc--hl-beg-end-1
+                        (rx bol "**" (1+ (or alnum "_")))
+                        rest-args)))
+            (idx (let ((rest (nthcdr idx args)))
+                   (cond ((and rest (not (string-match (rx bol "*")
+                                                       (car rest))))
+                          (sage-shell:-eldoc--hl-beg-end
+                           rest func-len (length args-s)))
+                         (t (apply #'sage-shell:-eldoc--hl-beg-end-1
+                                   (rx bol "*" (1+ (or alnum "_")))
+                                   rest-args)))))))))
+
+(defun sage-shell:-eldoc--hl-beg-end-1 (reg args args-s func-len)
+  "Find argument which matches REG and compute (cons beg end)"
+  (sage-shell:aif (cl-loop for xs on args
+                           if (string-match reg (car xs))
+                           return xs)
+      (sage-shell:-eldoc--hl-beg-end it func-len (length args-s))))
+
+
+(defun sage-shell:-eldoc--hl-beg-end (rest func-len len-args-s)
+  "Compute (cons beg end) form REST."
+  (cons (sage-shell:-eldoc-highlight-indx-fn
+         func-len len-args-s rest)
+        (- (sage-shell:-eldoc-highlight-indx-fn
+            func-len len-args-s (cdr rest))
+           ;; if not the last element, delete the length of ", ".
+           (if (cdr rest) 2 0))))
 
 (defun sage-shell:-eldoc-highlight-indx-fn (func-len len-args-s ls)
   (+ (1+ func-len)

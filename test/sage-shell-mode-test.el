@@ -184,20 +184,23 @@ foo=bar(1, 2), baz=(1, 2")))
              4)))
 
 
+(defvar sage-shell-test:eldoc-str
+  "foo(a, b, bar=[0, (1, 2), (3, (5, 6)), '**kwds'], foo_bar='x, y, *args', **kwds)")
+
 (ert-deftest sage-shell:eldoc-highlight ()
   (should (equal (sage-shell:-eldoc-highlight-beg-end
-                  "foo" "foo(a, b, *args)" "a" nil)
+                  "foo" sage-shell-test:eldoc-str "a" nil)
                  (cons 4 5))))
 
 (ert-deftest sage-shell:eldoc-highlight-1 ()
   (should (equal (sage-shell:-eldoc-highlight-beg-end
-                  "foo" "foo(a, b, *args, **kwds)" "c" nil)
-                 (cons 17 23))))
+                  "foo" sage-shell-test:eldoc-str "c" nil)
+                 (cons 73 79))))
 
 (ert-deftest sage-shell:eldoc-highlight-2 ()
   (should (equal (sage-shell:-eldoc-highlight-beg-end
-                  "foo" "foo(a, b, bar=0, **kwds)" "bar" nil)
-                 (cons 10 15))))
+                  "foo" sage-shell-test:eldoc-str "bar" nil)
+                 (cons 10 48))))
 
 (ert-deftest sage-shell:eldoc-highlight-3 ()
   (should (equal (sage-shell:-eldoc-highlight-beg-end
