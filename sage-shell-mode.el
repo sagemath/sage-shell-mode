@@ -2897,6 +2897,21 @@ send current line to Sage process buffer."
   (setq sage-shell-cpl:-argspec-cached nil))
 (make-variable-buffer-local 'sage-shell-cpl:-argspec-cached)
 
+(defun sage-shell-cpl:-argspec-cache (in-function-call)
+  (and in-function-call
+       (or (assoc-default in-function-call sage-shell-cpl:-argspec-cached)
+           (sage-shell:aif (assoc-default in-function-call
+                                          sage-shell:-eldoc-cache)
+               (let ((args (sage-shell:->>
+                            (substring it
+                                       (1+ (length in-function-call)) -1)
+                            sage-shell:-eldoc-split-buffer-args
+                            (mapcar (lambda (a) (sage-shell:trim-left a))))))
+                 (cl-loop for a in args
+                          if (string-match (rx bol (group (1+ (or alnum "_")))
+                                               symbol-end) a)
+                          collect (concat (match-string 1 a) "=")))))))
+
 (defun sage-shell-cpl:-mod-type (compl-state)
   (let ((types (sage-shell-cpl:get compl-state 'types)))
     (cl-loop for tp in '("modules" "vars-in-module")
@@ -2944,7 +2959,8 @@ send current line to Sage process buffer."
                         types)
         types)
       (if (and in-function-call
-               (assoc in-function-call sage-shell-cpl:-argspec-cached))
+               (or (assoc in-function-call sage-shell-cpl:-argspec-cached)
+                   (assoc in-function-call sage-shell:-eldoc-cache)))
           (sage-shell:remove-if (lambda (s) (string= s "in-function-call")) types)
         types))))
 
@@ -3160,8 +3176,7 @@ of current Sage process.")
                (cons (cons mod-tp val) sexp))
               (t sexp)))
       (sage-shell:aif (and in-function-call
-                           (assoc-default in-function-call
-                                          sage-shell-cpl:-argspec-cached))
+                           (sage-shell-cpl:-argspec-cache in-function-call))
           (cons (cons "in-function-call" it) sexp)
         sexp))))
 
