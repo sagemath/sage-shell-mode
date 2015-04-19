@@ -1180,7 +1180,8 @@ Match group 1 will be replaced with devel/sage-branch")
   (eldoc-add-command #'sage-shell-tab-command))
 
 (defun sage-shell:eldoc-function ()
-  (when (sage-shell:redirect-and-output-finished-p)
+  (when (and (sage-shell:redirect-and-output-finished-p)
+             (sage-shell:at-top-level-and-in-sage-p))
     (sage-shell:-eldoc-function (sage-shell-cpl:parse-current-state))))
 
 (defun sage-shell:-eldoc-function (state)
