@@ -264,11 +264,11 @@ The name is made by appending a number to PREFIX, default
 \"sage-shell-gensym-\"."
   (if (fboundp 'cl-gensym)
       (cl-gensym prefix)
-      (let ((pfix (if (stringp prefix) prefix "sage-shell-gensym-"))
-            (num (if (integerp prefix) prefix
-                   (prog1 sage-shell:gensym-counter
-                     (cl-incf sage-shell:gensym-counter)))))
-        (make-symbol (format "%s%d" pfix num)))))
+    (let ((pfix (if (stringp prefix) prefix "sage-shell-gensym-"))
+          (num (if (integerp prefix) prefix
+                 (prog1 sage-shell:gensym-counter
+                   (cl-incf sage-shell:gensym-counter)))))
+      (make-symbol (format "%s%d" pfix num)))))
 
 (defsubst sage-shell:in (elt seq)
   (if (member elt seq) elt))
@@ -2514,7 +2514,7 @@ send current line to Sage process buffer."
 
 (defun sage-shell-interfaces:get (interface attribute)
   (when (sage-shell:in interface
-                (cons "sage" sage-shell-interfaces:other-interfaces))
+                       (cons "sage" sage-shell-interfaces:other-interfaces))
     (let ((alist (symbol-value
                   (intern (format "sage-shell-cpl:%s-info" interface)))))
       (sage-shell:aif (assoc attribute alist)
@@ -2946,7 +2946,7 @@ send current line to Sage process buffer."
           (cond (make-cache-file-p
                  (not (string= interface "magma")))
                 ((sage-shell:in interface
-                         sage-shell-interfaces:optional-interfaces)
+                                sage-shell-interfaces:optional-interfaces)
                  (sage-shell-interfaces:executable-find interface))
                 (t (null (sage-shell-cpl:get-cmd-lst interface))))))
     (sage-shell:chain types
@@ -2959,8 +2959,8 @@ send current line to Sage process buffer."
              (sage-shell-cpl:-cached-mod-key it compl-state)
              sage-shell-cpl:-modules-cached))
           (sage-shell:remove-if (lambda (s) (or (string= s "modules")
-                                    (string= s "vars-in-module")))
-                        types)
+                                            (string= s "vars-in-module")))
+                                types)
         types)
       (if (and in-function-call
                (or (assoc in-function-call sage-shell-cpl:-argspec-cached)
@@ -3273,7 +3273,7 @@ whose key is in KEYS."
 (defun sage-shell:-completion-at-pt-func-append (ls)
   (append
    (when (and (sage-shell:in "interface"
-                      (sage-shell-cpl:get-current 'types))
+                             (sage-shell-cpl:get-current 'types))
               (string= (sage-shell-cpl:get-current 'interface) "sage"))
      (append sage-shell:-python-builtins
              sage-shell-cpl:-cands-in-current-session))
@@ -3793,15 +3793,15 @@ inserted in the process buffer before executing the command."
                    (or (null base-name)
                        sage-shell-edit:eldoc-show-methods-doc)
                    (sage-shell:in (if base-name
-                               (sage-shell:trim-right
-                                (car (split-string base-name (rx "."))))
-                             in-function-call)
-                           (append
-                            (buffer-local-value
-                             'sage-shell-cpl:-cands-in-current-session
-                             sage-shell:process-buffer)
-                            (sage-shell-cpl:candidates
-                             :state sage-int-state))))
+                                      (sage-shell:trim-right
+                                       (car (split-string base-name (rx "."))))
+                                    in-function-call)
+                                  (append
+                                   (buffer-local-value
+                                    'sage-shell-cpl:-cands-in-current-session
+                                    sage-shell:process-buffer)
+                                   (sage-shell-cpl:candidates
+                                    :state sage-int-state))))
           (sage-shell:-eldoc-function state))))))
 
 
@@ -4008,7 +4008,7 @@ Argument OUTPUT is a string with the output from the comint process."
                        it)))
       (unless (and texinputs
                    (sage-shell:in (substring sagetexdir 0 -1)
-                           (split-string texinputs ":")))
+                                  (split-string texinputs ":")))
         (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
 
 (defun sage-shell-sagetex:tex-to-sagetex-file (f)
