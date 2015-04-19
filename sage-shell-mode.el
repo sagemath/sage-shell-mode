@@ -2268,8 +2268,8 @@ send current line to Sage process buffer."
 
 ;;; make err link
 (defvar sage-shell:make-err-link--line-regexp
-  (rx bol (group (1+ (regexp "[^
- ]")) (or ".pyc" ".pyx" ".py" ".so")) eow " in"))
+  (rx bol (group "/" (repeat 1 255 nonl)
+                 (or ".pyc" ".pyx" ".py" ".so")) eow " in"))
 
 (defun sage-shell:make-err-link--fname-conv (filename)
   (cond ((string-match (rx (or ".py" ".pyc") eol) filename)
