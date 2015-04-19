@@ -502,14 +502,13 @@ returned from the function, otherwise, this returns it self. "
 
 
 (defvar sage-shell:output-finished-regexp
-  (concat (rx (group line-start
-                     (1+ (and (or "sage:" "sage0:" ">>>" "....:"
-                                  "(Pdb)" "ipdb>" "(gdb)")
-                              " "))
-                     line-end))
-          "\\|^\\("
-          (regexp-opt sage-shell-interfaces:other-interfaces)
-          ": $\\)"))
+  (rx-to-string
+   `(and (or (and line-start
+                  (1+ (and (or "sage:" "sage0:" ">>>" "....:"
+                               "(Pdb)" "ipdb>" "(gdb)") " "))
+                  line-end)
+             (and (or ,@sage-shell-interfaces:other-interfaces)
+                  ": " line-end)))))
 
 (defvar sage-shell:process-buffer nil)
 (make-variable-buffer-local 'sage-shell:process-buffer)
@@ -519,15 +518,6 @@ returned from the function, otherwise, this returns it self. "
       (1+ (and (or "sage:" "sage0:" ">>>" "....:"
                    "(Pdb)" "ipdb>" "(gdb)") " ")))
   "Regular expression matching the Sage prompt.")
-
-(defvar sage-shell:prompt-generic-regexp
-  (concat (rx (group line-start
-                     (or "sage:" "sage0:" ">>>" "....:"
-                         "(Pdb)" "ipdb>" "(gdb)")
-                     " "))
-          "\\|^\\("
-          (regexp-opt sage-shell-interfaces:other-interfaces)
-          ": \\)"))
 
 ;; cache buffers
 (defvar sage-shell-indent:indenting-buffer-name " *sage-indent*")
