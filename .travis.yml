@@ -4,7 +4,7 @@ env:
   - EMACS=emacs EVM_EMACS=emacs-24.3-bin
   - EMACS=emacs EVM_EMACS=emacs-24.4-bin
   - EMACS=emacs EVM_EMACS=emacs-24.5-bin
-  - EMACS=emacs-snapshot EMACS_PPA=ppa:ubuntu-elisp/ppa
+  # - EMACS=emacs-snapshot EMACS_PPA=ppa:ubuntu-elisp/ppa
 before_install:
   # Install Emacs
   - if [ -n "$EMACS_PPA" ]; then
