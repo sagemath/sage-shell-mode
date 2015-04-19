@@ -90,6 +90,18 @@
               interface "sage"
               prefix 32))))
 
+(ert-deftest sage-shell:parse-state-repl-other-int-gap ()
+  (should (let ((state (sage-shell-test:temp-state "gap: " "gap")))
+            (sage-shell-test:state-assert state
+              types '("interface")
+              interface "gap"))))
+
+(ert-deftest sage-shell:parse-state-repl-other-int-gp ()
+  (should (let ((state (sage-shell-test:temp-state "pari: " "gp")))
+            (sage-shell-test:state-assert state
+              types '("interface")
+              interface "gp"))))
+
 (ert-deftest sage-shell:parse-state-edit-from-top-level ()
   (should (let ((state (sage-shell-test:sage-mode-temp-state
                         "from foo")))
