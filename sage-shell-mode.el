@@ -1486,7 +1486,7 @@ This ring remebers the parts.")
         ;; python syntax.
         (sage-shell:comment-out-output)
 
-        (sage-shell-indent:indent-function))
+        (sage-shell-indent:insert-whitespace))
       (run-hook-with-args 'comint-output-filter-functions string)
       (set-marker saved-point (point))
 
@@ -1980,8 +1980,8 @@ the current line is not in a block."
       (python-mode))
     buf))
 
-(defun sage-shell-indent:indent-function ()
-  "Insert indentation string if sage-shell:prompt2-regexp regexp
+(defun sage-shell-indent:insert-whitespace ()
+  "Insert whitespaces if sage-shell:prompt2-regexp regexp
 matches last process output."
   (when (save-excursion
           (forward-line 0)
