@@ -495,10 +495,10 @@ returned from the function, otherwise, this returns it self. "
 
 (defun sage-shell:sage-executable ()
   (or sage-shell:sage-executable
-      (sage-shell:acond
-       ((stringp sage-shell:sage-root)
-        (expand-file-name "sage" sage-shell:sage-root))
-       ((executable-find "sage") (file-truename it)))))
+      (if (stringp sage-shell:sage-root)
+          (expand-file-name "sage" sage-shell:sage-root)
+        (sage-shell:aif (executable-find "sage")
+            (file-truename it)))))
 
 
 (defvar sage-shell:output-finished-regexp
@@ -1270,9 +1270,6 @@ Match group 1 will be replaced with devel/sage-branch")
            (args (sage-shell:->>
                   (sage-shell:-eldoc-split-buffer-args args-s)
                   (mapcar (lambda (s) (sage-shell:trim-left s)))))
-           (fun (lambda () (let ((beg (+ (match-beginning 0) func-len 1))
-                             (end (+ (match-end 0) func-len 1)))
-                         (cons beg end))))
            (rest-args (list args args-s func-len)))
       (cond (keyword
              (or (apply #'sage-shell:-eldoc--hl-beg-end-1
@@ -1489,7 +1486,7 @@ This ring remebers the parts.")
         ;; python syntax.
         (sage-shell:comment-out-output)
 
-        (sage-shell-indent:indent-function string))
+        (sage-shell-indent:indent-function))
       (run-hook-with-args 'comint-output-filter-functions string)
       (set-marker saved-point (point))
 
@@ -1951,7 +1948,7 @@ function does not highlight the input."
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
-           (lambda (proc str) (comint-simple-send proc "")))
+           (lambda (proc _str) (comint-simple-send proc "")))
           (win (get-buffer-window sage-shell:process-buffer)))
       (if (and (windowp win)
                (window-live-p win))
@@ -1980,10 +1977,10 @@ the current line is not in a block."
   (let ((buf (get-buffer-create sage-shell-indent:indenting-buffer-name)))
     (set-buffer buf)
     (unless (eq major-mode 'python-mode)
-      (let ((python-mode-hook nil)) (python-mode)))
+      (python-mode))
     buf))
 
-(defun sage-shell-indent:indent-function (string)
+(defun sage-shell-indent:indent-function ()
   "Insert indentation string if sage-shell:prompt2-regexp regexp
 matches last process output."
   (when (save-excursion
@@ -2359,7 +2356,7 @@ send current line to Sage process buffer."
         (setq sage-shell:process-buffer proc-buf)
         (let* ((win (get-buffer-window (pop-to-buffer b)))
                (delim (mapconcat
-                       (lambda (x) "-")
+                       (lambda (_x) "-")
                        (number-sequence 1 (window-width win)) ""))
                (out (sage-shell:-inputs-outputs)))
           (with-current-buffer b
@@ -2825,11 +2822,9 @@ send current line to Sage process buffer."
     (looking-at regexp)))
 
 (defun sage-shell-cpl:-parse-import-state
-    (base-name att-beg intf import-state-p from-state-p)
+    (base-name _att-beg _intf _import-state-p from-state-p)
   (let ((state nil) (types nil)
-        (var-chars (sage-shell-interfaces:get "sage" 'var-chars))
-        (bol (line-beginning-position))
-        (prefix nil))
+        (var-chars (sage-shell-interfaces:get "sage" 'var-chars)))
     (sage-shell:push-elmts state
       'interface "sage"
       'prefix (sage-shell-interfaces:looking-back-var "sage"))
@@ -3080,7 +3075,7 @@ using `sage-shell-cpl:set-cmd-lst'"
                                              tmp-file)))
             (set-process-sentinel
              proc
-             (lambda (proc event)
+             (lambda (_proc _event)
                (message
                 "Scanning Magma types ... Done! (%d seconds)\n Saving cache to
 '%s' for future instant use\n.  Delete the above file to force re-creation of the cache."
@@ -3174,7 +3169,7 @@ of current Sage process.")
           (cons (cons "in-function-call" it) sexp)
         sexp))))
 
-(defun sage-shell-cpl:-default-regexp-alst (keys state)
+(defun sage-shell-cpl:-default-regexp-alst (keys _state)
   (let ((regexp (sage-shell-interfaces:get "sage" 'cmd-rxp)))
     (cl-loop for k in keys
              collect
@@ -3232,7 +3227,6 @@ whose key is in KEYS."
   "Used for completion-at-point. The result is cached."
   (let ((old-int (sage-shell-cpl:get-current 'interface))
         (old-pref (sage-shell-cpl:get-current 'prefix))
-        (old-name (sage-shell-cpl:get-current 'var-base-name))
         (wab (sage-shell:word-at-pt-beg))
         (var-name (progn
                     (sage-shell-cpl:parse-and-set-state)
@@ -3352,7 +3346,7 @@ whose key is in KEYS."
          ((consp (cdr proc-alist))
           (when select-p
             (let* ((buffer-names
-                    (cl-loop for (proc-name . proc) in proc-alist
+                    (cl-loop for (_proc-name . proc) in proc-alist
                              collect (buffer-name (process-buffer proc))))
                    (buffer-name
                     (completing-read
@@ -3588,9 +3582,6 @@ inserted in the process buffer before executing the command."
                                  `(interactive ,it)
                                '(interactive))
                    for args = (sage-shell:aif (plist-get plist :args) it '())
-                   for doc-name = (sage-shell:aif (plist-get plist :doc-name)
-                                      it
-                                    (symbol-name type))
                    append
                    (cl-loop for b in '(t nil)
                             for func-name =  (cond (b (concat func-name-base "-and-go"))
@@ -3698,7 +3689,6 @@ inserted in the process buffer before executing the command."
          (chars (sage-shell-interfaces:get "sage" 'var-chars))
          (base-att-beg (sage-shell-cpl:var-base-name-and-att-start "sage"))
          (base-name (car base-att-beg))
-         (att-beg (cdr base-att-beg))
          (in-import-line-p
           (save-excursion
             (beginning-of-line)
@@ -4118,8 +4108,8 @@ file name.")
           (sage-shell:TeX-shell-command-option)
           cmd)
         (deferred:nextc it
-          (lambda (x) (when verbose
-                    (message "Running \"%s\" ... Done." cmd-name)))))
+          (lambda (_x) (when verbose
+                     (message "Running \"%s\" ... Done." cmd-name)))))
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
@@ -4135,7 +4125,7 @@ file name.")
                (sage-shell:TeX-shell-command-option)
                (sage-shell-sagetex:pre-command f))
              (deferred:nextc it
-               (lambda (x) (,sym f))))
+               (lambda (_x) (,sym f))))
            (deferred:error it
              (lambda (e) (sage-shell-sagetex:insert-error e))))))))
 
