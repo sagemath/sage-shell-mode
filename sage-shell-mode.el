@@ -1539,7 +1539,8 @@ This ring remebers the parts.")
         (delete-region pmark (point))))
     (sage-shell:clear-completion-sync-cached)
     ;; Output message and put back prompt
-    (sage-shell:output-filter proc replacement)))
+    (let ((sage-shell:output-filter-finished-hook nil))
+      (sage-shell:output-filter proc replacement))))
 
 (defun sage-shell:clear-current-buffer ()
   "Delete all output in the current buffer. This does not delete
