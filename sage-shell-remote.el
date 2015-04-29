@@ -33,7 +33,8 @@ argument."
   "Run remote Sage associated to NAME."
   (interactive (list (sage-shell-remote:-read-name)))
   (sage-shell:aif (assoc name sage-shell-remote:sage-plists)
-      (or (plist-get (cdr it) :executable) "sage")
+      (sage-shell:run-remote
+       (or (plist-get (cdr it) :executable) "sage") nil it)
     (error (concat
             "Invalid name. Please set `sage-shell-remote:sage-plists'"
             " correctly."))))
