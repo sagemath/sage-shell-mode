@@ -3483,16 +3483,24 @@ inserted in the process buffer before executing the command."
 (when sage-shell:delete-temp-dir-when-kill-emacs
   (add-hook 'kill-emacs-hook 'sage-shell-edit:delete-temp-dir))
 
-(defun sage-shell-edit:temp-file (ext)
+(defvar sage-shell-edit:-temp-f-remote-fun nil
+  "Make temp file funciton for a remote process")
+
+(cl-defun sage-shell-edit:temp-file
+    (ext &optional (name sage-shell-edit:temp-file-base-name))
+  (sage-shell:aif (sage-shell:remote-name-plist)
+      (funcall sage-shell-edit:-temp-f-remote-fun it ext name)
+    (sage-shell-edit:-temp-file ext name)))
+
+(defun sage-shell-edit:-temp-file (ext name)
   ;; In case temp dir is removed,
   (unless (and (stringp sage-shell-edit:temp-directory)
                (file-exists-p sage-shell-edit:temp-directory)
                (file-writable-p sage-shell-edit:temp-directory))
     (setq sage-shell-edit:temp-directory
           (sage-shell-edit:make-temp-dir)))
-  (expand-file-name
-   (concat sage-shell-edit:temp-file-base-name "." ext)
-   sage-shell-edit:temp-directory))
+  (expand-file-name (concat name "." ext)
+                    sage-shell-edit:temp-directory))
 
 (defvar sage-shell-edit:temp-file-header "# -*- coding: utf-8 -*-\n")
 
