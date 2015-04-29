@@ -10,10 +10,10 @@
   "Running Sage function internal.
 SIWTCH-FUNCTION is 'no-switch, or a function with one
 argument."
-  (let ((default-directory (sage-shell-remote:plist-to-file-name
-                            (cdr name-plist)))
-        ;; Spwan process
-        (proc-buf (sage-shell:run cmd new switch-function (car name-plist))))
+  (let* ((default-directory (sage-shell-remote:plist-to-file-name
+                             (cdr name-plist)))
+         ;; Spwan process
+         (proc-buf (sage-shell:run cmd new switch-function (car name-plist))))
     (with-current-buffer proc-buf
       (setq sage-shell:remote-name-plist name-plist))))
 
