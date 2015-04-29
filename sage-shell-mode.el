@@ -899,6 +899,12 @@ When sync is nill this return a lambda function to get the result."
     (format "%s %s" (sage-shell:sage-executable)
             (mapconcat 'identity (cdr lst) " "))))
 
+(defvar sage-shell:remote-name-plist nil
+  "If the associated process is running on remote,
+this should be an element of `sage-shell-remote:sage-plists'
+Nil means the process runs on the localhost.")
+(make-variable-buffer-local 'sage-shell:remote-name-plist)
+
 (cl-defun sage-shell:run (cmd new &optional
                               (switch-function 'switch-to-buffer)
                               host-name)

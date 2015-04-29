@@ -11,8 +11,11 @@
 SIWTCH-FUNCTION is 'no-switch, or a function with one
 argument."
   (let ((default-directory (sage-shell-remote:plist-to-file-name
-                            (cdr name-plist))))
-    (sage-shell:run cmd new switch-function (car name-plist))))
+                            (cdr name-plist)))
+        ;; Spwan process
+        (proc-buf (sage-shell:run cmd new switch-function (car name-plist))))
+    (with-current-buffer proc-buf
+      (setq sage-shell:remote-name-plist name-plist))))
 
 (defun sage-shell-remote:plist-to-file-name (plist)
   (tramp-make-tramp-file-name
