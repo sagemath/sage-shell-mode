@@ -3515,6 +3515,7 @@ inserted in the process buffer before executing the command."
 
 (defun sage-shell-edit:make-temp-file-from-region (start end)
   "Make temp file from region and return temp file name."
+  (sage-shell-edit:set-sage-proc-buf-internal)
   (let ((f (sage-shell-edit:temp-file
             (sage-shell:aif (buffer-file-name)
                 (file-name-extension it)
