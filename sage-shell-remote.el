@@ -22,13 +22,18 @@ argument."
    (plist-get plist :method)
    (plist-get plist :user)
    (plist-get plist :host)
-   (plist-get plist :directory)))
+   (plist-get plist :localname)))
+
+(defun sage-shell-remote:-expand-fname (f plist)
+  (sage-shell-remote:plist-to-file-name
+   (append (list :localname f)
+           plist)))
 
 (defun sage-shell-remote:run-sage (name)
   "Run remote Sage associated to NAME."
   (interactive (list (sage-shell-remote:-read-name)))
   (sage-shell:aif (assoc name sage-shell-remote:sage-plists)
-      (sage-shell:run-remote "sage" nil it)
+      (or (plist-get (cdr it) :executable) "sage")
     (error (concat
             "Invalid name. Please set `sage-shell-remote:sage-plists'"
             " correctly."))))
