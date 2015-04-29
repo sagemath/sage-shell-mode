@@ -905,6 +905,11 @@ this should be an element of `sage-shell-remote:sage-plists'
 Nil means the process runs on the localhost.")
 (make-variable-buffer-local 'sage-shell:remote-name-plist)
 
+(defun sage-shell:remote-name-plist ()
+  (buffer-local-value 'sage-shell:remote-name-plist
+                      sage-shell:process-buffer))
+
+
 (cl-defun sage-shell:run (cmd new &optional
                               (switch-function 'switch-to-buffer)
                               host-name)
