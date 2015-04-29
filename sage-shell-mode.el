@@ -886,7 +886,7 @@ When sync is nill this return a lambda function to get the result."
 (defun sage-shell:shell-buffer-name (new &optional host-name)
   (cond (new (let ((num (sage-shell:-shell-buf-name-new-num host-name)))
                (sage-shell:-shell-buffer-name num host-name)))
-        (t (sage-shell:-shell-buffer-name))))
+        (t (sage-shell:-shell-buffer-name nil host-name))))
 
 (defun sage-shell:read-command ()
   (unless (and (sage-shell:sage-executable)
@@ -900,11 +900,13 @@ When sync is nill this return a lambda function to get the result."
             (mapconcat 'identity (cdr lst) " "))))
 
 (cl-defun sage-shell:run (cmd new &optional
-                              (switch-function 'switch-to-buffer))
+                              (switch-function 'switch-to-buffer)
+                              host-name)
   "Running Sage function internal.
 SIWTCH-FUNCTION is 'no-switch, or a function with one
 argument."
-  (let ((buf (get-buffer-create (sage-shell:shell-buffer-name new))))
+  (let ((buf (get-buffer-create
+              (sage-shell:shell-buffer-name new host-name))))
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
