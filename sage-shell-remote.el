@@ -1,8 +1,12 @@
 (require 'sage-shell-mode)
 (require 'tramp)
 
-(defcustom sage-shell-remote:sage-plists nil
-  "plists"
+(defcustom sage-shell-remote:remote-alist nil
+  "Car is a name and cdr is a plist.
+Properties are,
+:method :host, :user,
+:executable (default \"sage\") and
+:default-directory (default \"~/\")"
   :group 'sage-shell)
 
 (cl-defun sage-shell:run-remote
@@ -30,13 +34,13 @@ argument."
 (defun sage-shell-remote:run-sage (name)
   "Run remote Sage associated to NAME."
   (interactive (list (sage-shell-remote:-read-name)))
-  (sage-shell:aif (assoc name sage-shell-remote:sage-plists)
+  (sage-shell:aif (assoc name sage-shell-remote:remote-alist)
       (sage-shell:run-remote
        (or (plist-get (cdr it) :executable) "sage") nil it)
     (error (concat
-            "Invalid name. Please set `sage-shell-remote:sage-plists'"
+            "Invalid name. Please set `sage-shell-remote:remote-alist'"
             " correctly."))))
 
 (defun sage-shell-remote:-read-name ()
   (completing-read "Sage Remote: "
-                   (mapcar #'car sage-shell-remote:sage-plists)))
+                   (mapcar #'car sage-shell-remote:remote-alist)))
