@@ -2454,23 +2454,13 @@ send current line to Sage process buffer."
 
 (defun sage-shell-interfaces:current-interface ()
   (save-excursion
-    ;; goto last prompt
-    (goto-char (process-mark (get-buffer-process (current-buffer))))
     (forward-line 0)
-    (sage-shell:->>
-     (sage-shell:aif
-         (cl-loop for str in sage-shell-interfaces:other-interfaces
-                  if (looking-at (concat str ": ")) return str)
-         it
-       (if (looking-at sage-shell:prompt-regexp)
-           "sage"
-         ;; otherwise
-         (let ((lstline (ring-ref comint-input-ring 0)))
-           (when (string-match
-                  (rx (group (1+ alnum)) (or "." "_") "console")
-                  lstline)
-             (match-string-no-properties 1 lstline)))))
-     sage-shell-cpl:interface-trans)))
+    (let ((int (or (cl-loop for str in sage-shell-interfaces:other-interfaces
+                            if (looking-at (concat str ": ")) return str)
+                   (when (looking-at sage-shell:prompt-regexp)
+                     "sage"))))
+      (if int
+          (sage-shell-cpl:interface-trans int)))))
 
 ;; Define many global variables
 (cl-loop for i in (append sage-shell-interfaces:other-interfaces '("sage"))
@@ -2744,62 +2734,63 @@ send current line to Sage process buffer."
 (cl-defun sage-shell-cpl:parse-current-state
     (&optional (cur-intf (sage-shell-interfaces:current-interface)))
   "Returns the current state as an alist. Used in a repl buffer."
-  (cl-destructuring-bind
-      (base-name att-beg intf import-state-p from-state-p)
-      (sage-shell-cpl:-parse-state-args cur-intf)
-    (let* ((case-fold-search nil) (state nil) (types nil)
-           (itfcs sage-shell-interfaces:other-interfaces))
-      (cl-destructuring-bind (types state)
-          (cond
-           ;; import statement
-           (import-state-p
-            (sage-shell-cpl:-parse-import-state
-             base-name att-beg intf import-state-p from-state-p))
-           ;; When the word at point is an attribute
-           (att-beg
-            (sage-shell:push-elmts state
-              'var-base-name base-name
-              'prefix att-beg)
-            (push "attributes" types)
-            (cond ((sage-shell:in base-name itfcs)
-                   (sage-shell:push-elmts state
-                     'interface base-name)
-                   (push "interface" types))
-                  (t (sage-shell:push-elmts state
-                       'interface "sage")))
-            (list types state))
-
-           ;; When the current interface is not sage or the point is
-           ;; in a function one of gp.eval, gp, gap.eval, ...
-           (intf
-            (sage-shell:push-elmts state
-              'interface intf
-              'var-base-name nil
-              'prefix (sage-shell-interfaces:looking-back-var intf))
-            (push "interface" types)
-            (list types state))
-
-           ;; When the current interface is sage
-           ((string= cur-intf "sage")
-            (let* ((pfx (sage-shell-interfaces:looking-back-var "sage"))
-                   (chbf (and pfx (char-before pfx)))
-                   (in-func-call (sage-shell:-in-func-call-p)))
+  (when cur-intf
+    (cl-destructuring-bind
+        (base-name att-beg intf import-state-p from-state-p)
+        (sage-shell-cpl:-parse-state-args cur-intf)
+      (let* ((case-fold-search nil) (state nil) (types nil)
+             (itfcs sage-shell-interfaces:other-interfaces))
+        (cl-destructuring-bind (types state)
+            (cond
+             ;; import statement
+             (import-state-p
+              (sage-shell-cpl:-parse-import-state
+               base-name att-beg intf import-state-p from-state-p))
+             ;; When the word at point is an attribute
+             (att-beg
               (sage-shell:push-elmts state
-                'interface "sage"
+                'var-base-name base-name
+                'prefix att-beg)
+              (push "attributes" types)
+              (cond ((sage-shell:in base-name itfcs)
+                     (sage-shell:push-elmts state
+                       'interface base-name)
+                     (push "interface" types))
+                    (t (sage-shell:push-elmts state
+                         'interface "sage")))
+              (list types state))
+
+             ;; When the current interface is not sage or the point is
+             ;; in a function one of gp.eval, gp, gap.eval, ...
+             (intf
+              (sage-shell:push-elmts state
+                'interface intf
                 'var-base-name nil
-                'prefix pfx)
-              ;; Unless parsing failed,
-              (unless (and chbf (= chbf 46))
-                (push "interface" types))
-              (when in-func-call
-                (push "in-function-call" types)
-                (setq state (sage-shell-cpl:-push-in-func-call-state
-                             in-func-call state))))
-            (list types state)))
-        (sage-shell:push-elmts state
-          'types types)
-        ;; Returns state.
-        state))))
+                'prefix (sage-shell-interfaces:looking-back-var intf))
+              (push "interface" types)
+              (list types state))
+
+             ;; When the current interface is sage
+             ((string= cur-intf "sage")
+              (let* ((pfx (sage-shell-interfaces:looking-back-var "sage"))
+                     (chbf (and pfx (char-before pfx)))
+                     (in-func-call (sage-shell:-in-func-call-p)))
+                (sage-shell:push-elmts state
+                  'interface "sage"
+                  'var-base-name nil
+                  'prefix pfx)
+                ;; Unless parsing failed,
+                (unless (and chbf (= chbf 46))
+                  (push "interface" types))
+                (when in-func-call
+                  (push "in-function-call" types)
+                  (setq state (sage-shell-cpl:-push-in-func-call-state
+                               in-func-call state))))
+              (list types state)))
+          (sage-shell:push-elmts state
+            'types types)
+          ;; Returns state.
+          state)))))
 
 (defun sage-shell-cpl:-push-in-func-call-state (in-func-call state)
   "Assume in-func-call is non-nil."
@@ -3139,8 +3130,8 @@ of current Sage process.")
           (t can))))
 
 (defun sage-shell-cpl:candidates-sync (&optional regexp)
-  (when (sage-shell:redirect-and-output-finished-p)
-    (sage-shell-cpl:parse-and-set-state)
+  (when (and (sage-shell-cpl:parse-and-set-state)
+             (sage-shell:redirect-and-output-finished-p))
     (let ((cur-intf (sage-shell-interfaces:current-interface)))
       (sage-shell-cpl:candidates
        :sexp (sage-shell-cpl:completion-init t)
