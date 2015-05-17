@@ -62,8 +62,11 @@ def print_cpl_sexp(typs, compl_dct):
 
 
 def all_modules(compl_dct):
-    module_name = compl_dct["module-name"]
-    return _all_modules(module_name)
+    try:
+        module_name = compl_dct["module-name"]
+        return _all_modules(module_name)
+    except:
+        return []
 
 def _all_modules(module_name):
     if module_name is None:
@@ -80,8 +83,11 @@ def _all_modules(module_name):
 
 
 def all_vars_in_module(compl_dct):
-    module_name = compl_dct["module-name"]
-    return _all_vars_in_module(module_name)
+    try:
+        module_name = compl_dct["module-name"]
+        return _all_vars_in_module(module_name)
+    except:
+        return []
 
 special_att_regexp = re.compile("__[a-zA-Z0-9_]+__")
 
@@ -154,7 +160,7 @@ def all_attributes(compl_dct):
 
         return ls
     except:
-        pass
+        return []
 
 def list_modules_in(p):
     res = [os.path.basename(a) for a in list_module_paths_in(p)]
@@ -358,9 +364,12 @@ def short_doc(name, base_name=None):
         return res.strip()
 
 def all_keyword_args(compl_dct):
-    base_name = compl_dct["in-function-call-base-name"]
-    name = compl_dct["in-function-call"]
-    return keyword_args(name, base_name=base_name)
+    try:
+        base_name = compl_dct["in-function-call-base-name"]
+        name = compl_dct["in-function-call"]
+        return keyword_args(name, base_name=base_name)
+    except:
+        return []
 
 
 def keyword_args(name, base_name=None):
