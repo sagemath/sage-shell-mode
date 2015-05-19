@@ -2437,7 +2437,8 @@ send current line to Sage process buffer."
   "Save the previous visible output to `kill-ring'."
   (interactive)
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
-    (apply #'kill-ring-save (sage-shell:last-output-beg-end))))
+    (kill-new (apply #'buffer-substring-no-properties
+                     (sage-shell:last-output-beg-end)))))
 
 
 ;;; sage-shell-interfaces
