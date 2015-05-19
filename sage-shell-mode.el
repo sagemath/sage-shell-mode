@@ -1361,13 +1361,16 @@ This ring remebers the parts.")
                  (let ((p (sage-shell:python-syntax-output-p
                            (buffer-substring (line-beginning-position)
                                              (line-end-position)))))
-                   (cond ((not p) (put-text-property
-                                   (1- (point)) (point)
-                                   'syntax-table (cons 11 nil)))
+                   (cond ((not p)
+                          (put-text-property
+                           (line-beginning-position)
+                           (line-end-position)
+                           'syntax-table (cons 11 nil)))
                          ((numberp p)
                           (setq p (+ p (line-beginning-position)))
                           (put-text-property
-                           p (1+ p) 'syntax-table (cons 11 nil))))))))))
+                           p (line-end-position) 'syntax-table
+                           (cons 11 nil))))))))))
 
 (defmacro sage-shell:after-output-finished (&rest body)
   (declare (indent 0))
