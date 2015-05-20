@@ -640,6 +640,8 @@ returned from the function, otherwise, this returns it self. "
                comint-output-filter-functions))
   (set (make-local-variable 'eldoc-documentation-function)
        #'sage-shell:eldoc-function)
+  (set (make-local-variable 'yank-excluded-properties)
+       (cons 'syntax-table yank-excluded-properties))
   (when sage-shell:scroll-show-maximum-output
     (set (make-local-variable 'scroll-conservatively) 1000))
   ;; Ignore duplicates in command history
