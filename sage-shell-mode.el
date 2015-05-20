@@ -2057,7 +2057,8 @@ python-mode"
                               "Call docstring"
                               "Init definition"
                               "Init docstring"
-                              "Signature")
+                              "Signature"
+                              "Init signature")
                       ":")
                  (and bol (or "NAME"
                               "FILE"
