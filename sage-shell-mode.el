@@ -2892,7 +2892,7 @@ send current line to Sage process buffer."
                                              sage-shell:-eldoc-cache)))
              (if (and eldoc-cache (not (equal eldoc-cache "")))
                  (let ((args (sage-shell:->>
-                              (substring it
+                              (substring eldoc-cache
                                          (1+ (length in-function-call)) -1)
                               sage-shell:-eldoc-split-buffer-args
                               (mapcar (lambda (a) (sage-shell:trim-left a))))))
