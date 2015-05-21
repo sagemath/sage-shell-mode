@@ -2888,17 +2888,18 @@ send current line to Sage process buffer."
 (defun sage-shell-cpl:-argspec-cache (in-function-call)
   (and in-function-call
        (or (assoc-default in-function-call sage-shell-cpl:-argspec-cached)
-           (sage-shell:aif (assoc-default in-function-call
-                                          sage-shell:-eldoc-cache)
-               (let ((args (sage-shell:->>
-                            (substring it
-                                       (1+ (length in-function-call)) -1)
-                            sage-shell:-eldoc-split-buffer-args
-                            (mapcar (lambda (a) (sage-shell:trim-left a))))))
-                 (cl-loop for a in args
-                          if (string-match (rx bol (group (1+ (or alnum "_")))
-                                               symbol-end) a)
-                          collect (concat (match-string 1 a) "=")))))))
+           (let ((eldoc-cache (assoc-default in-function-call
+                                             sage-shell:-eldoc-cache)))
+             (if (and eldoc-cache (not (equal eldoc-cache "")))
+                 (let ((args (sage-shell:->>
+                              (substring it
+                                         (1+ (length in-function-call)) -1)
+                              sage-shell:-eldoc-split-buffer-args
+                              (mapcar (lambda (a) (sage-shell:trim-left a))))))
+                   (cl-loop for a in args
+                            if (string-match (rx bol (group (1+ (or alnum "_")))
+                                                 symbol-end) a)
+                            collect (concat (match-string 1 a) "="))))))))
 
 (defun sage-shell-cpl:-mod-type (compl-state)
   (let ((types (sage-shell-cpl:get compl-state 'types)))
