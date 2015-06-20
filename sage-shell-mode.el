@@ -3326,11 +3326,10 @@ whose key is in KEYS."
       (message (format "Set the process buffer to buffer %s."
                        (buffer-name it)))))
 
-;; TODO Remove unused argument verbose.
 (cl-defun sage-shell-edit:set-sage-proc-buf-internal
     (&optional (start-p t) (select-p t))
   "Set `sage-shell:process-buffer'"
-  (or (and (bufferp sage-shell:process-buffer)
+  (or (and (buffer-live-p sage-shell:process-buffer)
            (get-buffer-process sage-shell:process-buffer))
       (let ((proc-alist (sage-shell-edit:process-alist))
             (cur-buf (current-buffer)))
