@@ -3225,34 +3225,39 @@ whose key is in KEYS."
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
+  (let ((wab (sage-shell:word-at-pt-beg)))
+    (list wab (point) (completion-table-dynamic
+                       #'sage-shell:-completion-at-point))))
+
+(defun sage-shell:-completion-at-point (&optional symbol)
+  "Return list of possible completions at point."
   (let ((old-int (sage-shell-cpl:get-current 'interface))
         (old-pref (sage-shell-cpl:get-current 'prefix))
         (wab (sage-shell:word-at-pt-beg))
         (var-name (progn
                     (sage-shell-cpl:parse-and-set-state)
                     (sage-shell-cpl:get-current 'var-base-name))))
-    (cond ((and
-            old-int (string= old-int "sage") old-pref
-            ;; same line as the last completion
-            (or (= (line-number-at-pos wab) (line-number-at-pos old-pref))
-                (sage-shell:clear-completion-sync-cached))
-            var-name
+    (sage-shell:->>
+     (cond ((and
+             old-int (string= old-int "sage") old-pref
+             ;; same line as the last completion
+             (or (= (line-number-at-pos wab) (line-number-at-pos old-pref))
+                 (sage-shell:clear-completion-sync-cached))
+             var-name
+             (assoc-default var-name sage-shell:completion-sync-cached))
             (assoc-default var-name sage-shell:completion-sync-cached))
-           (list wab (point) (assoc-default var-name
-                                            sage-shell:completion-sync-cached)))
-          (t (list wab
-                   (point)
-                   (cond
-                    (var-name
-                     (setq sage-shell:completion-sync-cached
-                           (cons (cons var-name
-                                       (sage-shell-cpl:candidates-sync
-                                        sage-shell:completion-candidate-regexp))
-                                 sage-shell:completion-sync-cached))
-                     (assoc-default var-name sage-shell:completion-sync-cached))
-                    (t (sage-shell:-completion-at-pt-func-append
-                        (sage-shell-cpl:candidates-sync
-                         sage-shell:completion-candidate-regexp)))))))))
+           (t (cond
+               (var-name
+                (setq sage-shell:completion-sync-cached
+                      (cons (cons var-name
+                                  (sage-shell-cpl:candidates-sync
+                                   sage-shell:completion-candidate-regexp))
+                            sage-shell:completion-sync-cached))
+                (assoc-default var-name sage-shell:completion-sync-cached))
+               (t (sage-shell:-completion-at-pt-func-append
+                   (sage-shell-cpl:candidates-sync
+                    sage-shell:completion-candidate-regexp))))))
+     (all-completions symbol))))
 
 (defun sage-shell:-completion-at-pt-func-append (ls)
   (append
@@ -3291,10 +3296,8 @@ whose key is in KEYS."
 
 (defun sage-shell:pcomplete-default-completion ()
   (pcomplete-here
-   (all-completions (buffer-substring-no-properties
-                     (sage-shell:symbol-beg)
-                     (point))
-                    (car (last (sage-shell:completion-at-point-func))))))
+   (sage-shell:-completion-at-point
+    (buffer-substring-no-properties (sage-shell:symbol-beg) (point)))))
 
 
 ;;; sage-edit
