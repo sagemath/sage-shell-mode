@@ -3670,7 +3670,7 @@ inserted in the process buffer before executing the command."
 (defun sage-shell-edit:pop-to-process-buffer ()
   "Switch to the Sage process buffer."
   (interactive)
-  (unless sage-shell:process-buffer
+  (unless (buffer-live-p sage-shell:process-buffer)
     (sage-shell-edit:set-sage-proc-buf-internal))
   (pop-to-buffer sage-shell:process-buffer))
 
