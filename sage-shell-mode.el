@@ -1007,7 +1007,7 @@ returns a lamda function with no args to obtain the result."
   (interactive)
   (sage-shell:when-process-alive
     (cond
-     ((functionp sage-shell:completion-function)
+     ((member sage-shell:completion-function '(auto-complete pcomplete))
       (let ((this-command (cl-case sage-shell:completion-function
                             (auto-complete 'auto-complete)
                             (pcomplete 'pcomplete)
