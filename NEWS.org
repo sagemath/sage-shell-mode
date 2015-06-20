@@ -1,4 +1,11 @@
 * History of user-visible changes.
+** 0.0.8.8 (2015-6-20)
+   - Fix =sage-shell:complete=.
+     When =sage-shell:completion-function= is =completion-at-point=,
+     sometimes =completion-at-point= did not work property when hitting =TAB=
+     twice.
+   - =sage-shell-edit:pop-to-process-buffer= sets the process buffer when
+     =sage-shell:process-buffer= is not a live buffer.
 ** 0.0.8.7 (2015-5-21)
    - Fix a function for =eldoc= (=sage-shell-cpl:-argspec-cache=).
 ** 0.0.8.6 (2015-5-20)
