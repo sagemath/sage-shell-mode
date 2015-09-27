@@ -1007,7 +1007,7 @@ returns a lamda function with no args to obtain the result."
   (interactive)
   (sage-shell:when-process-alive
     (cond
-     ((functionp sage-shell:completion-function)
+     ((member sage-shell:completion-function '(auto-complete pcomplete))
       (let ((this-command (cl-case sage-shell:completion-function
                             (auto-complete 'auto-complete)
                             (pcomplete 'pcomplete)
@@ -3225,6 +3225,11 @@ whose key is in KEYS."
 
 (defun sage-shell:completion-at-point-func ()
   "Used for completion-at-point. The result is cached."
+  (let ((wab (sage-shell:word-at-pt-beg)))
+    (list wab (point) (sage-shell:-completion-at-point))))
+
+(defun sage-shell:-completion-at-point ()
+  "Return list of possible completions at point."
   (let ((old-int (sage-shell-cpl:get-current 'interface))
         (old-pref (sage-shell-cpl:get-current 'prefix))
         (wab (sage-shell:word-at-pt-beg))
@@ -3238,21 +3243,18 @@ whose key is in KEYS."
                 (sage-shell:clear-completion-sync-cached))
             var-name
             (assoc-default var-name sage-shell:completion-sync-cached))
-           (list wab (point) (assoc-default var-name
-                                            sage-shell:completion-sync-cached)))
-          (t (list wab
-                   (point)
-                   (cond
-                    (var-name
-                     (setq sage-shell:completion-sync-cached
-                           (cons (cons var-name
-                                       (sage-shell-cpl:candidates-sync
-                                        sage-shell:completion-candidate-regexp))
-                                 sage-shell:completion-sync-cached))
-                     (assoc-default var-name sage-shell:completion-sync-cached))
-                    (t (sage-shell:-completion-at-pt-func-append
-                        (sage-shell-cpl:candidates-sync
-                         sage-shell:completion-candidate-regexp)))))))))
+           (assoc-default var-name sage-shell:completion-sync-cached))
+          (t (cond
+              (var-name
+               (setq sage-shell:completion-sync-cached
+                     (cons (cons var-name
+                                 (sage-shell-cpl:candidates-sync
+                                  sage-shell:completion-candidate-regexp))
+                           sage-shell:completion-sync-cached))
+               (assoc-default var-name sage-shell:completion-sync-cached))
+              (t (sage-shell:-completion-at-pt-func-append
+                  (sage-shell-cpl:candidates-sync
+                   sage-shell:completion-candidate-regexp))))))))
 
 (defun sage-shell:-completion-at-pt-func-append (ls)
   (append
@@ -3291,10 +3293,9 @@ whose key is in KEYS."
 
 (defun sage-shell:pcomplete-default-completion ()
   (pcomplete-here
-   (all-completions (buffer-substring-no-properties
-                     (sage-shell:symbol-beg)
-                     (point))
-                    (car (last (sage-shell:completion-at-point-func))))))
+   (all-completions
+    (buffer-substring-no-properties (sage-shell:symbol-beg) (point))
+    (sage-shell:-completion-at-point))))
 
 
 ;;; sage-edit
@@ -3323,11 +3324,10 @@ whose key is in KEYS."
       (message (format "Set the process buffer to buffer %s."
                        (buffer-name it)))))
 
-;; TODO Remove unused argument verbose.
 (cl-defun sage-shell-edit:set-sage-proc-buf-internal
     (&optional (start-p t) (select-p t))
   "Set `sage-shell:process-buffer'"
-  (or (and (bufferp sage-shell:process-buffer)
+  (or (and (buffer-live-p sage-shell:process-buffer)
            (get-buffer-process sage-shell:process-buffer))
       (let ((proc-alist (sage-shell-edit:process-alist))
             (cur-buf (current-buffer)))
@@ -3668,6 +3668,8 @@ inserted in the process buffer before executing the command."
 (defun sage-shell-edit:pop-to-process-buffer ()
   "Switch to the Sage process buffer."
   (interactive)
+  (unless (buffer-live-p sage-shell:process-buffer)
+    (sage-shell-edit:set-sage-proc-buf-internal))
   (pop-to-buffer sage-shell:process-buffer))
 
 
