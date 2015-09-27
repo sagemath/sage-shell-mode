@@ -1792,9 +1792,12 @@ function does not highlight the input."
               (delete-region (point-at-bol) (point)))
           (delete-region (point-at-bol) (point))
           (insert line)
-          ;; If line contains triple quotes, the indent function
-          ;; raises an error.
-          (if (string-match (rx (repeat 3 (or"'" "\""))) line)
+          ;; If line contains triple quotes or top-level return statement, the
+          ;; indent function raises an error.
+          (if (or (string-match (rx (repeat 3 (or"'" "\""))) line)
+                  (and after-prompt1
+                       (string-match
+                        (rx bol (0+ whitespace) "return" symbol-end) line)))
               (newline)
             (newline-and-indent)))))))
 
