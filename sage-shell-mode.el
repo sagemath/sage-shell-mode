@@ -1393,10 +1393,9 @@ This ring remebers the parts.")
                            (lambda () ,@body))))))
 
 (defun sage-shell:run-hook-and-remove (hook process)
-  (unwind-protect
-      (cl-loop for f in (nreverse (symbol-value hook)) do (funcall f))
-    (with-current-buffer (process-buffer process)
-      (set hook nil))))
+  (let ((hook-saved (symbol-value hook)))
+    (set hook nil)
+    (cl-loop for f in (nreverse hook-saved) do (funcall f))))
 
 (defun sage-shell:ansi-color-filter-apply (string)
   (let* ((ansi-color-context nil)
