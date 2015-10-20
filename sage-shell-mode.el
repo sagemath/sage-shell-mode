@@ -521,7 +521,10 @@ returned from the function, otherwise, this returns it self. "
 
 ;; cache buffers
 (defvar sage-shell-indent:indenting-buffer-name " *sage-indent*")
-(defvar sage-shell:output-buffer " *sage-output*")
+(defvar sage-shell:output--buffer nil "The output buffer associated
+to a process buffer.")
+(make-variable-buffer-local 'sage-shell:output--buffer)
+
 
 (defvar sage-shell:output-filter-finished-hook nil
   "Run after output finished.")
@@ -575,9 +578,19 @@ returned from the function, otherwise, this returns it self. "
 
 (defvar sage-shell:output-finished-p nil)
 (make-variable-buffer-local 'sage-shell:output-finished-p)
+
 (cl-defun sage-shell:output-finished-p
     (&optional (buffer sage-shell:process-buffer))
   (buffer-local-value 'sage-shell:output-finished-p buffer))
+
+(defun sage-shell:output-buffer ()
+  "The output buffer associated to the process buffer"
+  (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+    (cond ((and (bufferp sage-shell:output--buffer)
+                (buffer-live-p sage-shell:output--buffer))
+           sage-shell:output--buffer)
+          (t (setq sage-shell:output--buffer
+                   (get-buffer-create (format " *sage-output-%s*" (buffer-name))))))))
 
 ;;; Borrowed from Gallina's pyhon.el.
 (defvar sage-shell-mode-syntax-table
@@ -709,7 +722,7 @@ Sends an EOF only if point is at the end of the buffer and there is no input. "
 
 (defun sage-shell:-after-send-eof-func ()
   ;; kill cache buffes
-  (cl-loop for bufn in (list sage-shell:output-buffer
+  (cl-loop for bufn in (list (sage-shell:output-buffer)
                              sage-shell-indent:indenting-buffer-name)
            if (get-buffer bufn)
            do (kill-buffer bufn))
@@ -736,7 +749,7 @@ succesive lines in history."
 (defun sage-shell:-make-buf-if-needed (buf-maybe)
   (cond ((or (stringp buf-maybe) (bufferp buf-maybe))
          (get-buffer-create buf-maybe))
-        (t (get-buffer-create sage-shell:output-buffer))))
+        (t (sage-shell:output-buffer))))
 
 (defun sage-shell:send-command-sync
     (command &optional process-buffer output-buffer to-string)
@@ -769,7 +782,7 @@ succesive lines in history."
   "Send COMMAND to PROCESS-BUFFER's process.  PROCESS-BUFFER is a
 buffer where process is alive.  If OUTPUT-BUFFER is the exisiting
 bufffer then the out put is inserted to the buffer. Otherwise
-output buffer is `sage-shell:output-buffer'.
+output buffer is the return value of `sage-shell:output-buffer'.
 When sync is nill this return a lambda function to get the result."
   (if sync
       (sage-shell:send-command-sync command process-buffer output-buffer)
@@ -977,7 +990,8 @@ returns a lamda function with no args to obtain the result."
   (let* ((cmd (format "%%%s %s" magic-command objname)))
     (cond (async (sage-shell:send-command cmd)
                  (lambda ()
-                   (sage-shell:with-current-buffer-safe sage-shell:output-buffer
+                   (sage-shell:with-current-buffer-safe
+                       (sage-shell:output-buffer)
                      (buffer-string))))
           (t (sage-shell:send-command-to-string cmd)))))
 
@@ -2965,7 +2979,7 @@ send current line to Sage process buffer."
        (sage-shell:output-finished-p)))
 
 (cl-defun sage-shell-cpl:completion-init
-    (sync &key (output-buffer sage-shell:output-buffer)
+    (sync &key (output-buffer (sage-shell:output-buffer))
           (compl-state sage-shell-cpl:current-state)
           (cont nil))
   "If SYNC is non-nil, return a sexp. If not return value has no
