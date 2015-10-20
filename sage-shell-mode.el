@@ -915,11 +915,14 @@ When sync is nill this return a lambda function to get the result."
             (mapconcat 'identity (cdr lst) " "))))
 
 (cl-defun sage-shell:run (cmd new &optional
-                              (switch-function 'switch-to-buffer))
+                              (switch-function 'switch-to-buffer)
+                              buffer-name)
   "Running Sage function internal.
 SIWTCH-FUNCTION is 'no-switch, or a function with one
-argument."
-  (let ((buf (get-buffer-create (sage-shell:shell-buffer-name new))))
+argument. If buffer-name is non-nil, it will be the buffer name of the process buffer."
+  (let ((buf (get-buffer-create (if (stringp buffer-name)
+                                    buffer-name
+                                    (sage-shell:shell-buffer-name new)))))
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
