@@ -3382,14 +3382,14 @@ whose key is in KEYS."
 
 (defvar sage-shell:original-mode-line-process nil)
 
-(defun sage-shell:change-mode-line-process (on)
+(cl-defun sage-shell:change-mode-line-process (on &optional (name "load"))
   (cond (on
          (unless sage-shell:original-mode-line-process
            (setq sage-shell:original-mode-line-process mode-line-process))
          (setq mode-line-process
                (sage-shell:aif mode-line-process
-                   (list (concat (car it) " load"))
-                 (list ":%s load"))))
+                   (list (concat (car it) " " name))
+                 (list (concat ":%s " name)))))
         (t (setq mode-line-process sage-shell:original-mode-line-process))))
 
 (cl-defun sage-shell-edit:exec-command-base
