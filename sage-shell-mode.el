@@ -2001,7 +2001,11 @@ the current line is not in a block."
   (let ((buf (get-buffer-create sage-shell-indent:indenting-buffer-name)))
     (set-buffer buf)
     (unless (eq major-mode 'python-mode)
-      (python-mode))
+      (python-mode)
+      (if (boundp 'python-guess-indent)
+          (set (make-local-variable 'python-guess-indent) nil))
+      (if (boundp 'python-indent-guess-indent-offset)
+          (set (make-local-variable 'python-indent-guess-indent-offset) nil)))
     buf))
 
 (defun sage-shell-indent:insert-whitespace ()
