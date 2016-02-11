@@ -3755,20 +3755,21 @@ inserted in the process buffer before executing the command."
           (push "vars-in-module" types)
           (sage-shell:push-elmts state
             'module-name (match-string-no-properties 1))))))
-     ;; Else type is '("interface")
-     (t (push "interface" types)
-        (let* ((funcall-lim
-                (save-excursion
-                  (when (re-search-backward
-                         (rx (or "_" alnum) "(")
-                         (sage-shell:aif sage-shell-edit:-pps-backward-lim
-                             (max (- (point) it) (point-min))) t)
-                    (line-beginning-position))))
-               (in-func-call (and funcall-lim
-                                  (sage-shell:-in-func-call-p
-                                   nil funcall-lim))))
-          (sage-shell:awhen in-func-call
-            (setq state (sage-shell-cpl:-push-in-func-call-state it state))))))
+     ;; Else if base-name is nil, type is '("interface")
+     ((null base-name)
+      (push "interface" types)
+      (let* ((funcall-lim
+              (save-excursion
+                (when (re-search-backward
+                       (rx (or "_" alnum) "(")
+                       (sage-shell:aif sage-shell-edit:-pps-backward-lim
+                           (max (- (point) it) (point-min))) t)
+                  (line-beginning-position))))
+             (in-func-call (and funcall-lim
+                                (sage-shell:-in-func-call-p
+                                 nil funcall-lim))))
+        (sage-shell:awhen in-func-call
+          (setq state (sage-shell-cpl:-push-in-func-call-state it state))))))
 
     (sage-shell:push-elmts state
       'types types)
