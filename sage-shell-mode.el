@@ -3142,11 +3142,8 @@ of current Sage process.")
 
 (defun sage-shell-cpl:get-cmd-lst (intf)
   (if (sage-shell:in intf (cons "sage" sage-shell-interfaces:other-interfaces))
-      (sage-shell:awhen (sage-shell:aand
-                          sage-shell:process-buffer
-                          (get-buffer it))
-        (with-current-buffer it
-          (symbol-value (sage-shell-cpl:cmds-symbol intf))))
+      (sage-shell:with-current-buffer-safe sage-shell:process-buffer
+        (symbol-value (sage-shell-cpl:cmds-symbol intf)))
     (error (format "No interface %s" intf))))
 
 (defun sage-shell-cpl:to-objname-to-send (can)
