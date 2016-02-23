@@ -32,6 +32,7 @@ _sage_const_regexp = re.compile("_sage_const_")
 
 
 class Memorize(object):
+
     def __init__(self, f):
         self._f = f
         self._cached = {}
@@ -46,9 +47,10 @@ class Memorize(object):
 
 memorize = Memorize
 
+
 def print_cpl_sexp(typs, compl_dct):
     def _to_lisp_str_ls(ls):
-        return "(%s)" % " ".join(['"%s"'%(a, ) for a in ls])
+        return "(%s)" % " ".join(['"%s"' % (a, ) for a in ls])
 
     funcs = {"interface": all_commands,
              "attributes": all_attributes,
@@ -56,7 +58,7 @@ def print_cpl_sexp(typs, compl_dct):
              "vars-in-module": all_vars_in_module,
              "in-function-call": all_keyword_args}
     alst = [(tp, funcs[tp](compl_dct)) for tp in typs]
-    conss = ['("%s" . %s)'%(tp, _to_lisp_str_ls(ls))
+    conss = ['("%s" . %s)' % (tp, _to_lisp_str_ls(ls))
              for tp, ls in alst if ls is not None]
     print("(" + "".join(conss) + ")")
 
@@ -68,6 +70,7 @@ def all_modules(compl_dct):
     except:
         return []
 
+
 def _all_modules(module_name):
     if module_name is None:
         return list_modules_in_syspath()
@@ -77,7 +80,7 @@ def _all_modules(module_name):
         mod_path = resolve_module_path(module_name)
         if mod_path is None:
             return [a.split(".")[-1] for a in
-                    module_completion("import %s."%(module_name, ))]
+                    module_completion("import %s." % (module_name, ))]
         else:
             return list_modules_in(mod_path)
 
@@ -91,6 +94,7 @@ def all_vars_in_module(compl_dct):
 
 special_att_regexp = re.compile("__[a-zA-Z0-9_]+__")
 
+
 def _all_vars_in_module(module_name):
     if module_name is None:
         return []
@@ -102,7 +106,7 @@ def _all_vars_in_module(module_name):
         p = resolve_module_path(module_name)
         if p is None:
             # If resolving fails, use module_completion.
-            return module_completion("from %s import "%(module_name, ))
+            return module_completion("from %s import " % (module_name, ))
         res = None
         if os.path.isdir(p):
             res = list_modules_in(p)
@@ -112,7 +116,7 @@ def _all_vars_in_module(module_name):
             res = []
             regexp = re.compile(
                 "^{name} *= *|^def +{name}|^class +{name}".format(
-                name="([a-zA-Z0-9_]+)"))
+                    name="([a-zA-Z0-9_]+)"))
             with open(p) as f:
                 for l in f:
                     m = regexp.match(l)
@@ -162,9 +166,11 @@ def all_attributes(compl_dct):
     except:
         return []
 
+
 def list_modules_in(p):
     res = [os.path.basename(a) for a in list_module_paths_in(p)]
     return [os.path.splitext(a)[0] for a in res]
+
 
 def list_module_paths_in(p):
     if not os.path.exists(p):
@@ -181,6 +187,7 @@ def list_module_paths_in(p):
 
 mod_regexp = re.compile("^[A-Za-z0-9_.]+$")
 
+
 def is_module(p):
     if not re.match(mod_regexp, os.path.basename(p)):
         return False
@@ -191,6 +198,7 @@ def is_module(p):
         if os.path.exists(os.path.join(p, "__init__.py")):
             return p
 
+
 @memorize
 def list_module_paths_in_syspath():
     res = []
@@ -198,8 +206,10 @@ def list_module_paths_in_syspath():
         res.extend(list_module_paths_in(p))
     return res
 
+
 def list_modules_in_syspath():
     return module_completion("import ")
+
 
 @memorize
 def resolve_module_path(modname):
@@ -218,6 +228,7 @@ def resolve_module_path(modname):
         _pth = pth + ext
         if os.path.isfile(_pth):
             return _pth
+
 
 def source_line(obj):
     return sage.misc.sageinspect.sage_getsourcelines(obj)[-1]
@@ -300,8 +311,9 @@ def _is_safe_str(s):
     else:
         return False
 
+
 def print_info(name):
-    ip.run_cell("%s?"%(name,))
+    ip.run_cell("%s?" % (name,))
     # In some cases, the next line is not blank.
     ip.set_next_input("")
 
@@ -315,17 +327,18 @@ def _sage_getdef(name, base_name=None):
             gd_name = "sage.misc.sageinspect.sage_getdef"
             name_ob = ip.ev(preparse(name))
             if inspect.isclass(name_ob):
-                df = ip.ev("%s(%s.__init__)"%(gd_name, name))
+                df = ip.ev("%s(%s.__init__)" % (gd_name, name))
             else:
-                df = ip.ev("%s(%s)"%(gd_name, preparse(name)))
+                df = ip.ev("%s(%s)" % (gd_name, preparse(name)))
             return df
     except NameError:
         pass
 
+
 def sage_getdef(name, base_name=None):
     df = _sage_getdef(name, base_name=base_name)
     if df is not None:
-        return "%s%s"%(name, df)
+        return "%s%s" % (name, df)
 
 _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
                "ALGORITHM"]
@@ -355,13 +368,14 @@ def short_doc(name, base_name=None):
     sd_name = "sage.misc.sageinspect.sage_getdoc"
     if _is_safe_str(name) and (_should_be_ignored(name, base_name)
                                is not None):
-        dc = ip.ev("%s(%s)"%(sd_name, preparse(name)))
+        dc = ip.ev("%s(%s)" % (sd_name, preparse(name)))
         m = _doc_delim_regexp.search(dc)
         if m is not None:
             res = dc[:m.start()]
         else:
             res = dc
         return res.strip()
+
 
 def all_keyword_args(compl_dct):
     try:
@@ -385,6 +399,7 @@ def keyword_args(name, base_name=None):
         reg = re.compile("[a-zA-Z_0-9]+")
         matches = [reg.match(a) for a in args]
         return [m.group() + "=" for m in matches if m]
+
 
 def print_short_doc(name, base_name=None):
     try:
