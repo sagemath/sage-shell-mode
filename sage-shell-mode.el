@@ -922,14 +922,16 @@ SIWTCH-FUNCTION is 'no-switch, or a function with one
 argument. If buffer-name is non-nil, it will be the buffer name of the process buffer."
   (let ((buf (get-buffer-create (if (stringp buffer-name)
                                     buffer-name
-                                    (sage-shell:shell-buffer-name new)))))
+                                  (sage-shell:shell-buffer-name new))))
+        (cur-buf (current-buffer)))
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
         (set-process-filter (get-buffer-process buf) 'sage-shell:output-filter)
         (sage-shell-mode)))
-    (unless (eq switch-function 'no-switch)
-      (funcall switch-function buf))
+    (cond ((eq switch-function 'no-switch)
+           (switch-to-buffer cur-buf))
+          (t (funcall switch-function buf)))
     buf))
 
 ;;;###autoload
