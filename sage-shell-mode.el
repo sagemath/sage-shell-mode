@@ -3332,8 +3332,8 @@ whose key is in KEYS."
                  if (and buffer-name
                          (string-match
                           (rx bol "*Sage"
-                              (zero-or-one "<" (1+ num) ">")
-                              (zero-or-one "@" (1+ nonl)) "*"
+                              (zero-or-one "<" (1+ (or alnum "-" "." "_")) ">")
+                              (zero-or-one "@" (1+ (or alnum "-" "." "_"))) "*"
                               eol)
                           buffer-name))
                  collect (cons proc-name proc)))))
