@@ -14,7 +14,7 @@
   This package also provides a major-mode derived from =python-mode=.
 
   There are extensions for this package, [[https://github.com/stakemori/auto-complete-sage][auto-complete-sage]], [[https://github.com/stakemori/helm-sage][helm-sage]]
-  and [[https://github.com/stakemori/anything-sage][anything-sage]].
+  , [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
 
 ** Table of Contents                                                    :TOC:
      - [[#installation-and-setup][Installation and Setup]]
@@ -277,6 +277,8 @@
 -  [[https://github.com/stakemori/helm-sage][helm-sage]] provides a [[https://github.com/emacs-helm/helm][helm]] source for =sage-shell-mode=.
 
 -  [[https://github.com/stakemori/anything-sage][anything-sage]] provides an [[http://www.emacswiki.org/Anything][anything]] source for =sage-shell-mode=.
+
+-  [[https://github.com/stakemori/ob-sagemath][ob-sagemath]] provides [[http://orgmode.org/worg/org-contrib/babel/][org-babel]] functions for Sage.
 
 ** Screenshots
 
