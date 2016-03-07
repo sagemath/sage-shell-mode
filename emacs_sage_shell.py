@@ -435,3 +435,8 @@ def print_short_doc_and_def(name, base_name=None):
             print(sd)
     except:
         pass
+
+
+def run_cell_dummy_prompt(code, dummy):
+    ip.run_cell(code)
+    print(dummy)
