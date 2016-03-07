@@ -223,6 +223,13 @@ $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
   :group 'sage-shell-sagetex)
 
 
+(eval-and-compile
+  (unless (fboundp 'setq-local)
+    (defmacro setq-local (var val)
+      "Set variable VAR to value VAL in current buffer."
+      ;; Can't use backquote here, it's too early in the bootstrap.
+      (list 'set (list 'make-local-variable (list 'quote var)) val))))
+
 ;;; Anaphoric macros
 (defmacro sage-shell:ansetq (&rest rest)
   "Anaphoric setq. REST is a list of sym val sym1 val1... `it' is
@@ -1749,8 +1756,8 @@ Does not delete the prompt."
           (with-current-buffer proc-buf
             (setq sage-shell:redirect-last-point (point))))))))
 
-(defun sage-shell:prepare-for-redirect (proc  output-buffer
-                                              &optional filter)
+(defun sage-shell:prepare-for-redirect (proc output-buffer
+                                             &optional filter raw)
   "Assumes evaluated in process buffer of PROC"
   ;; Make sure there's a prompt in the current process buffer
   (and comint-redirect-perform-sanity-check
@@ -1761,6 +1768,10 @@ Does not delete the prompt."
 
   ;; Set up for redirection
   (setq sage-shell:redirect-last-point nil)
+  (setq-local sage-shell:-dummy-promt-prefix
+              (if raw
+                  ""
+                (sage-shell:-new-dummy-prompt-pfx)))
   (let ((mode-line-process mode-line-process))
     (comint-redirect-setup
      output-buffer
@@ -1798,15 +1809,12 @@ Does not delete the prompt."
                              (process-buffer process)
                            process))
          (proc (get-buffer-process process-buffer)))
-    (setq sage-shell:-dummy-promt-prefix
-          (if raw
-              ""
-            (sage-shell:-new-dummy-prompt-pfx)))
     ;; Change to the process buffer
     (with-current-buffer process-buffer
 
       (sage-shell:prepare-for-redirect proc output-buffer
-                                       'sage-shell:redirect-filter)
+                                       'sage-shell:redirect-filter
+                                       raw)
       ;; Send the command
       (process-send-string
        (current-buffer)
