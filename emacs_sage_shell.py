@@ -297,10 +297,14 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
     outputs = sorted(list(outputs.items()), key=key_func)
     outputs = [(k, show_func(format_func(v))) for k, v in outputs]
     inputs = ip.ev("_ih")
+    # TODO: Find a better way.
+    regexp = re.compile(
+        r'_emacs_sage_shell\.run_cell_dummy_prompt\("_emacs_ob_sagemath\.run_cell_babel.+')
     for k, v in outputs:
-        print("In [{k}]: {i}".format(k=k, i=inputs[k]))
-        print("Out[{k}]: {out}".format(k=k, out=v))
-        print(delim)
+        if regexp.match(inputs[k]) is None:
+            print("In [{k}]: {i}".format(k=k, i=inputs[k]))
+            print("Out[{k}]: {out}".format(k=k, out=v))
+            print(delim)
 
 _func_call_reg = re.compile("[()]")
 
@@ -435,3 +439,8 @@ def print_short_doc_and_def(name, base_name=None):
             print(sd)
     except:
         pass
+
+
+def run_cell_dummy_prompt(code, dummy):
+    ip.run_cell(code)
+    print(dummy)
