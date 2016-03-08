@@ -1,4 +1,4 @@
-;;; sage-shell-mode.el --- A front-end for Sage Math
+;;; sage-shell-mode.el --- A front-end for Sage Math -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012 - 2015 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
@@ -42,7 +42,6 @@
 ;; infomation.
 
 ;;; Code:
-(eval-when-compile (require 'cl))
 (require 'cl-lib)
 (require 'deferred)
 (require 'pcomplete)
@@ -353,7 +352,7 @@ The name is made by appending a number to PREFIX, default
 (defmacro sage-shell:as-soon-as (form &rest body)
   (declare (indent 1))
   `(cond (,form (progn ,@body))
-         (t (lexical-let ((timer-sym (sage-shell:gensym "sage-shell")))
+         (t (let ((timer-sym (sage-shell:gensym "sage-shell")))
               (set timer-sym
                    (run-with-timer
                     0.01 0.01
@@ -802,9 +801,8 @@ When sync is nill this return a lambda function to get the result."
       (with-current-buffer proc-buf
         (sage-shell:wait-for-redirection-to-complete)
         (sage-shell:redirect-send-cmd-to-proc command out-buf proc-buf raw))
-      (lexical-let ((out-buf out-buf))
-        (lambda () (sage-shell:with-current-buffer-safe out-buf
-                 (buffer-string)))))))
+      (lambda () (sage-shell:with-current-buffer-safe out-buf
+               (buffer-string))))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
@@ -1420,7 +1418,7 @@ This ring remebers the parts.")
               (add-to-list 'sage-shell:redirect-filter-finished-hook
                            (lambda () ,@body))))))
 
-(defun sage-shell:run-hook-and-remove (hook process)
+(defun sage-shell:run-hook-and-remove (hook)
   (let ((hook-saved (symbol-value hook)))
     (set hook nil)
     (cl-loop for f in (nreverse hook-saved) do (funcall f))))
@@ -1458,7 +1456,7 @@ This ring remebers the parts.")
             (comint-postoutput-scroll-to-bottom string))
           (setq buffer-undo-list nil)
           (sage-shell:run-hook-and-remove
-           'sage-shell:output-filter-finished-hook process))))))
+           'sage-shell:output-filter-finished-hook))))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
@@ -1750,7 +1748,7 @@ Does not delete the prompt."
             (set-buffer proc-buf)
             (sage-shell:redirect-cleanup)
             (sage-shell:run-hook-and-remove
-             'sage-shell:redirect-filter-finished-hook process))
+             'sage-shell:redirect-filter-finished-hook))
           ;; sage-shell:redirect-filter-finished-hook may change the current
           ;; buffer
           (with-current-buffer proc-buf
@@ -2398,20 +2396,19 @@ send current line to Sage process buffer."
            (func-ls (cl-loop for a1 on l1 for a2 on l2
                              unless a1
                              finally return a2)))
-      (lexical-let ((func-ls func-ls))
-        (lambda ()
-          (goto-char (point-min))
-          (dolist (a func-ls)
-            (re-search-forward
-             (rx-to-string
-              `(and (or "def" "cdef" "cpdef" "class")
-                    (or whitespace
-                        (and whitespace
-                             (0+ nonl)
-                             whitespace))
-                    ,a (0+ whitespace) "("))
-             nil t))
-          (forward-line 0))))))
+      (lambda ()
+        (goto-char (point-min))
+        (dolist (a func-ls)
+          (re-search-forward
+           (rx-to-string
+            `(and (or "def" "cdef" "cpdef" "class")
+                  (or whitespace
+                      (and whitespace
+                           (0+ nonl)
+                           whitespace))
+                  ,a (0+ whitespace) "("))
+           nil t))
+        (forward-line 0)))))
 
 
 ;; inputs outputs
@@ -3072,36 +3069,32 @@ using `sage-shell-cpl:set-cmd-lst'"
                               collect
                               (cons a (assoc-default a compl-state)))))))
           (sage-shell:send-command cmd nil output-buffer sync)
-          (lexical-let ((output-buffer output-buffer)
-                        (proc-buf sage-shell:process-buffer)
-                        (cont cont)
-                        (compl-state compl-state))
-            (sage-shell:after-redirect-finished
-              (with-current-buffer output-buffer
-                (setq sage-shell-cpl:-last-sexp
-                      (condition-case err
-                          (progn
-                            (goto-char (point-max))
-                            (forward-line -1)
-                            (let ((beg (point-min))
-                                  (end (point)))
-                              (unless (= beg end)
-                                (message (buffer-substring beg end))
-                                (delete-region beg end)))
-                            (read (current-buffer)))
-                        (end-of-file (unless (= (buffer-size) 0)
-                                       (signal (car err) (cdr err))))
-                        (error (signal (car err) (cdr err))))))
+          (sage-shell:after-redirect-finished
+            (with-current-buffer output-buffer
+              (setq sage-shell-cpl:-last-sexp
+                    (condition-case err
+                        (progn
+                          (goto-char (point-max))
+                          (forward-line -1)
+                          (let ((beg (point-min))
+                                (end (point)))
+                            (unless (= beg end)
+                              (message (buffer-substring beg end))
+                              (delete-region beg end)))
+                          (read (current-buffer)))
+                      (end-of-file (unless (= (buffer-size) 0)
+                                     (signal (car err) (cdr err))))
+                      (error (signal (car err) (cdr err))))))
 
-              ;; Code for side effects
-              (sage-shell-cpl:-push-cache-modules
-               compl-state sage-shell-cpl:-last-sexp)
-              (sage-shell-cpl:-set-cmd-lst
-               compl-state sage-shell-cpl:-last-sexp)
-              (sage-shell-cpl:-push-cache-argspec
-               compl-state sage-shell-cpl:-last-sexp)
-              (when cont
-                (funcall cont))))
+            ;; Code for side effects
+            (sage-shell-cpl:-push-cache-modules
+             compl-state sage-shell-cpl:-last-sexp)
+            (sage-shell-cpl:-set-cmd-lst
+             compl-state sage-shell-cpl:-last-sexp)
+            (sage-shell-cpl:-push-cache-argspec
+             compl-state sage-shell-cpl:-last-sexp)
+            (when cont
+              (funcall cont)))
 
           (if sync
               sage-shell-cpl:-last-sexp))))))
@@ -3137,10 +3130,10 @@ using `sage-shell-cpl:set-cmd-lst'"
                          thereis
                          (equal (process-name p) proc-name))
           (message verbose)
-          (lexical-let ((time (cadr (current-time)))
-                        (proc (start-process proc-name nil
-                                             (sage-shell:sage-executable)
-                                             tmp-file)))
+          (let ((time (cadr (current-time)))
+                (proc (start-process proc-name nil
+                                     (sage-shell:sage-executable)
+                                     tmp-file)))
             (set-process-sentinel
              proc
              (lambda (_proc _event)
@@ -3462,36 +3455,30 @@ inserted in the process buffer before executing the command."
 
   (sage-shell:awhen pre-message (message it))
 
-  (lexical-let ((command command)
-                (post-message post-message)
-                (insert-command-p insert-command-p)
-                (display-function display-function)
-                (before-sentence before-sentence))
-
-    (sage-shell:as-soon-as (sage-shell:output-finished-p)
-      (let ((win (get-buffer-window sage-shell:process-buffer))
-            (args (list command insert-command-p before-sentence)))
-        (if (and (windowp win) (window-live-p win))
-            (with-selected-window win
-              (apply 'sage-shell-edit:exec-cmd-internal args))
-          (apply 'sage-shell-edit:exec-cmd-internal args)))
-      (when post-message
-        (sage-shell:after-output-finished
-          (message post-message)))
-      ;; display buffer
-      (when display-function
-        (sage-shell:after-output-finished
-          (let ((win (funcall display-function sage-shell:process-buffer)))
-            (when (and (windowp win)
-                       (window-live-p win))
-              (with-selected-window win
-                (goto-char
-                 (process-mark
-                  (get-buffer-process sage-shell:process-buffer))))))))
+  (sage-shell:as-soon-as (sage-shell:output-finished-p)
+    (let ((win (get-buffer-window sage-shell:process-buffer))
+          (args (list command insert-command-p before-sentence)))
+      (if (and (windowp win) (window-live-p win))
+          (with-selected-window win
+            (apply 'sage-shell-edit:exec-cmd-internal args))
+        (apply 'sage-shell-edit:exec-cmd-internal args)))
+    (when post-message
       (sage-shell:after-output-finished
-        (with-current-buffer sage-shell:process-buffer
-          (sage-shell:change-mode-line-process nil))))
-    (when switch-p (pop-to-buffer sage-shell:process-buffer))))
+        (message post-message)))
+    ;; display buffer
+    (when display-function
+      (sage-shell:after-output-finished
+        (let ((win (funcall display-function sage-shell:process-buffer)))
+          (when (and (windowp win)
+                     (window-live-p win))
+            (with-selected-window win
+              (goto-char
+               (process-mark
+                (get-buffer-process sage-shell:process-buffer))))))))
+    (sage-shell:after-output-finished
+      (with-current-buffer sage-shell:process-buffer
+        (sage-shell:change-mode-line-process nil))))
+  (when switch-p (pop-to-buffer sage-shell:process-buffer)))
 
 (defun sage-shell-edit:exec-cmd-internal
     (command insert-command-p before-sentence)
@@ -4149,23 +4136,20 @@ file name.")
 
 (defun sage-shell-sagetex:-load-and-run-latex (f)
   (sage-shell-sagetex:load-file f)
-  (lexical-let ((f f))
-    (sage-shell:after-output-finished
-      ;; Run process in the same directory of as f.
-      (sage-shell:with-default-directory (file-name-directory f)
-        (sage-shell-sagetex:-run-latex f t)))))
+  (sage-shell:after-output-finished
+    ;; Run process in the same directory of as f.
+    (sage-shell:with-default-directory (file-name-directory f)
+      (sage-shell-sagetex:-run-latex f t))))
 
 (defun sage-shell-sagetex:-run-latex (f &optional verbose)
-  (lexical-let* ((verbose verbose)
-                 (f f)
-                 (cmd (let ((b (or (get-file-buffer f)
-                                   (current-buffer))))
-                        (with-current-buffer b
-                          (funcall sage-shell-sagetex:latex-command-func f))))
-                 (cmd-name
-                  (sage-shell:aif (sage-shell-sagetex:-auctex-cmd)
-                      (format "`%s' %s" it (file-name-nondirectory f))
-                    cmd)))
+  (let* ((cmd (let ((b (or (get-file-buffer f)
+                           (current-buffer))))
+                (with-current-buffer b
+                  (funcall sage-shell-sagetex:latex-command-func f))))
+         (cmd-name
+          (sage-shell:aif (sage-shell-sagetex:-auctex-cmd)
+              (format "`%s' %s" it (file-name-nondirectory f))
+            cmd)))
     (deferred:$
       (deferred:$
         (deferred:next
@@ -4184,7 +4168,7 @@ file name.")
 (defmacro sage-shell-sagetex:-run-latex-and-do (f sym)
   `(progn
      (sage-shell-edit:set-sage-proc-buf-internal)
-     (lexical-let ((f ,f))
+     (let ((f ,f))
        (sage-shell:as-soon-as (sage-shell:output-finished-p)
          (deferred:$
            (deferred:$
