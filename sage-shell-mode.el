@@ -264,6 +264,7 @@ the value of last sym"
   (defvar sage-shell:gensym-counter 0))
 (defvar sage-shell:gensym-counter 0)
 
+(eval-when-compile (require 'cl-lib))
 (defsubst sage-shell:gensym (&optional prefix)
   "Generate a new uninterned symbol.
 The name is made by appending a number to PREFIX, default
