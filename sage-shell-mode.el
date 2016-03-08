@@ -352,15 +352,16 @@ The name is made by appending a number to PREFIX, default
 
 (defmacro sage-shell:as-soon-as (form &rest body)
   (declare (indent 1))
-  `(cond (,form (progn ,@body))
-         (t (lexical-let ((timer-sym (sage-shell:gensym "sage-shell")))
-              (set timer-sym
-                   (run-with-timer
-                    0.01 0.01
-                    (lambda () (when ,form
-                             (unwind-protect
-                                 (progn ,@body)
-                               (cancel-timer (symbol-value timer-sym)))))))))))
+  (let ((sym (sage-shell:gensym "sage-shell")))
+    `(cond (,form (progn ,@body))
+           (t (lexical-let ((,sym nil))
+                (setq ,sym
+                     (run-with-timer
+                      0.01 0.01
+                      (lambda () (when ,form
+                               (unwind-protect
+                                   (progn ,@body)
+                                 (cancel-timer ,sym)))))))))))
 
 (defmacro sage-shell:substitute-key-def (old-command new-command
                                                      search-keymap
