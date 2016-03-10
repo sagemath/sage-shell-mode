@@ -354,13 +354,13 @@ The name is made by appending a number to PREFIX, default
   (let ((sym (sage-shell:gensym "sage-shell")))
     `(cond (,form (progn ,@body))
            (t (let ((,sym nil))
-                (set ,sym
-                     (run-with-timer
-                      0.01 0.01
-                      (lambda () (when ,form
-                               (unwind-protect
-                                   (progn ,@body)
-                                 (cancel-timer ,sym)))))))))))
+                (setq ,sym
+                      (run-with-timer
+                       0.01 0.01
+                       (lambda () (when ,form
+                                (unwind-protect
+                                    (progn ,@body)
+                                  (cancel-timer ,sym)))))))))))
 
 (defmacro sage-shell:substitute-key-def (old-command new-command
                                                      search-keymap
