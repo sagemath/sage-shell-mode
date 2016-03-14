@@ -35,8 +35,9 @@
   1. See http://melpa.org/#/getting-started if you do not have a
      configuration for MELPA.
 
-  2. Install =sage-shell-mode= by =M-x package-install RET
-     sage-shell-mode RET=.
+  2. Install =sage-shell-mode= by
+     - =M-x package-refresh-contents=
+     - =M-x package-install RET sage-shell-mode=.
 
   3. You can run Sage inside Emacs by =M-x sage-shell:run-sage= if Emacs
      can find the executable file of Sage.
