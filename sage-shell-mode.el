@@ -237,16 +237,6 @@ $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
       (list 'set (list 'make-local-variable (list 'quote var)) val))))
 
 ;;; Anaphoric macros
-(defmacro sage-shell:ansetq (&rest rest)
-  "Anaphoric setq. REST is a list of sym val sym1 val1... `it' is
-the value of last sym"
-  (declare (indent 0) (debug t))
-  (cond ((eq (length rest) 2) `(let ((it ,(car rest)))
-                                 (setq ,(nth 0 rest) ,(nth 1 rest))))
-        ((> (length rest) 3) `(let ((it ,(car rest)))
-                                (setq ,(nth 0 rest) ,(nth 1 rest))
-                                (sage-shell:ansetq ,@(nthcdr 2 rest))))))
-
 (defmacro sage-shell:aand (&rest args)
   "`it' is binded to the last evaluated argument"
   (declare (indent 0) (debug t))
