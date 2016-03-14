@@ -177,6 +177,12 @@ If the value is equal to '(\"\"), then it does not ignore anything."
   :group 'sage-shell
   :type '(repeat string))
 
+(defcustom sage-shell-edit:temp-file-header "# -*- coding: utf-8 -*-\n"
+  "`sage-shell-edit:send-region', `sage-shell-edit:send-buffer' and related commands use a temporary file.
+This string will be inserted to the temporary file before evaluating code."
+  :type 'string
+  :group 'sage-shell)
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -3546,8 +3552,6 @@ inserted in the process buffer before executing the command."
   (expand-file-name
    (concat sage-shell-edit:temp-file-base-name "." ext)
    sage-shell-edit:temp-directory))
-
-(defvar sage-shell-edit:temp-file-header "# -*- coding: utf-8 -*-\n")
 
 (defun sage-shell-edit:write-region-to-file (start end file)
   (let* ((orig-start (min start end))
