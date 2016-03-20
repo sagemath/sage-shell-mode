@@ -138,7 +138,10 @@ def all_commands(compl_dct):
             try:
                 return intfc.trait_names(verbose=False)
             except:
-                return intfc.trait_names()
+                try:
+                    return intfc.trait_names()
+                except:
+                    return ip.ev('dir(%s)' % (interface, ))
         else:
             return []
 
