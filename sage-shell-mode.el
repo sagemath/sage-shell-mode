@@ -1,6 +1,6 @@
 ;;; sage-shell-mode.el --- A front-end for Sage Math -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012 - 2015 Sho Takemori.
+;; Copyright (C) 2012 - 2016 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/stakemori/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1") (emacs "24"))
