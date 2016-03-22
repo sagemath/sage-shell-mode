@@ -3900,7 +3900,7 @@ inserted in the process buffer before executing the command."
       (defvaralias (cdr c) (car c)))))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist (cons "\\.sage$" 'sage-shell:sage-mode))
+(add-to-list 'auto-mode-alist `(,(rx ".sage" eos) . sage-shell:sage-mode))
 
 
 ;;; sage-shell-pdb
