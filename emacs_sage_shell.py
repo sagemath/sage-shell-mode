@@ -75,14 +75,8 @@ def _all_modules(module_name):
     if module_name is None:
         return list_modules_in_syspath()
     else:
-        # Prefer naive implementation because module_completion seem to have
-        # side effect.
-        mod_path = resolve_module_path(module_name)
-        if mod_path is None:
-            return [a.split(".")[-1] for a in
-                    module_completion("import %s." % (module_name, ))]
-        else:
-            return list_modules_in(mod_path)
+        return [a.split(".")[-1] for a in
+                module_completion("import %s." % (module_name, ))]
 
 
 def all_vars_in_module(compl_dct):
