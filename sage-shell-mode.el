@@ -3100,14 +3100,11 @@ send current line to Sage process buffer."
 
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer (sage-shell:output-buffer))
-          (compl-state sage-shell-cpl:current-state)
-          (cont nil))
+          (compl-state sage-shell-cpl:current-state))
   "If SYNC is non-nil, return a sexp. If not return value has no
 meaning and `sage-shell-cpl:-last-sexp' will be set when the
-redirection is finished.  If CONT is non-nil, it should be a
-function with no arguments.  CONT will be called when the
-redirection is finished.  This function set the command list by
-using `sage-shell-cpl:set-cmd-lst'"
+redirection is finished.
+This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:with-current-buffer-safe sage-shell:process-buffer
@@ -3142,7 +3139,6 @@ using `sage-shell-cpl:set-cmd-lst'"
           (sage-shell:send-command cmd nil output-buffer sync)
           (lexical-let ((output-buffer output-buffer)
                         (proc-buf sage-shell:process-buffer)
-                        (cont cont)
                         (compl-state compl-state))
             (sage-shell:after-redirect-finished
               (with-current-buffer output-buffer
@@ -3167,9 +3163,7 @@ using `sage-shell-cpl:set-cmd-lst'"
               (sage-shell-cpl:-set-cmd-lst
                compl-state sage-shell-cpl:-last-sexp)
               (sage-shell-cpl:-push-cache-argspec
-               compl-state sage-shell-cpl:-last-sexp)
-              (when cont
-                (funcall cont))))
+               compl-state sage-shell-cpl:-last-sexp)))
 
           (if sync
               sage-shell-cpl:-last-sexp))))))
