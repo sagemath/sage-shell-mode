@@ -769,7 +769,7 @@ succesive lines in history."
     (with-current-buffer proc-buf
       (sage-shell:redirect-setup out-buf proc-buf raw)
       (process-send-string
-       proc-buf (sage-shell:-make-exec-cmd command raw nil))
+       proc-buf (sage-shell:-make-exec-cmd command raw))
       (sage-shell:wait-for-redirection-to-complete))
     (when to-string
       (sage-shell:with-current-buffer-safe out-buf
@@ -801,20 +801,21 @@ When sync is nill this return a lambda function to get the result."
         (sage-shell:wait-for-redirection-to-complete)
         (sage-shell:redirect-setup out-buf proc-buf raw)
         (process-send-string
-         proc-buf (sage-shell:-make-exec-cmd command raw nil)))
+         proc-buf (sage-shell:-make-exec-cmd command raw)))
       (lexical-let ((out-buf out-buf))
         (lambda () (sage-shell:with-current-buffer-safe out-buf
                  (buffer-string)))))))
 
 (defvar sage-shell:-dummy-promt-prefix nil)
 
-(defun sage-shell:-make-exec-cmd (raw-cmd raw print-success)
-  (cond (raw (format "%s\n" raw-cmd))
-        (print-success "")
-        (t (format "%s(\"%s\", '%s')\n"
-                   (sage-shell:py-mod-func "run_cell_dummy_prompt")
-                   (sage-shell:escepe-string raw-cmd)
-                   sage-shell:-dummy-promt-prefix))))
+(defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
+  (if raw (format "%s\n" raw-cmd)
+    (let ((evaluator
+           (or evaluator (sage-shell:py-mod-func "run_cell_dummy_prompt"))))
+      (format "%s(\"%s\", '%s')\n"
+              evaluator
+              (sage-shell:escepe-string raw-cmd)
+              sage-shell:-dummy-promt-prefix))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
