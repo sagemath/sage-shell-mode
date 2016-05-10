@@ -789,7 +789,6 @@ succesive lines in history."
   "CELL is a string which will be sent to the proces buffer,
 Call-BACK should be a function with one argument and will be called if the
 evaluation completes. The output will be passed as its argument.
-Call-BACK has a meaning only when SYNC is nil.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
@@ -812,15 +811,17 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
       (when sync
         (sage-shell:wait-for-redirection-to-complete)))
 
-    (cond (to-string (sage-shell:with-current-buffer-safe out-buf
-                       (buffer-string)))
-          ((functionp call-back)
-           (lexical-let ((out-buf out-buf)
-                         (call-back call-back))
-             (sage-shell:after-redirect-finished
-               (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
-                                   (buffer-string))))
-                 (funcall call-back raw-output))))))))
+
+    (when (functionp call-back)
+      (lexical-let ((out-buf out-buf)
+                    (call-back call-back))
+        (sage-shell:after-redirect-finished
+          (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
+                              (buffer-string))))
+            (funcall call-back raw-output)))))
+    (when to-string
+      (sage-shell:with-current-buffer-safe out-buf
+        (buffer-string)))))
 
 (defun sage-shell:send-command
     (command &optional process-buffer output-buffer sync raw)
