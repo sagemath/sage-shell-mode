@@ -768,7 +768,7 @@ succesive lines in history."
     (with-current-buffer out-buf (erase-buffer))
     (with-current-buffer proc-buf
       (sage-shell:redirect-send-cmd-to-proc
-       command out-buf proc-buf raw)
+       (sage-shell:-make-exec-cmd command raw nil) out-buf proc-buf raw)
       (sage-shell:wait-for-redirection-to-complete))
     (when to-string
       (sage-shell:with-current-buffer-safe out-buf
@@ -798,10 +798,22 @@ When sync is nill this return a lambda function to get the result."
       (with-current-buffer out-buf (erase-buffer))
       (with-current-buffer proc-buf
         (sage-shell:wait-for-redirection-to-complete)
-        (sage-shell:redirect-send-cmd-to-proc command out-buf proc-buf raw))
+        (sage-shell:redirect-send-cmd-to-proc
+         (sage-shell:-make-exec-cmd command raw nil)
+         out-buf proc-buf raw))
       (lexical-let ((out-buf out-buf))
         (lambda () (sage-shell:with-current-buffer-safe out-buf
                  (buffer-string)))))))
+
+(defvar sage-shell:-dummy-promt-prefix nil)
+
+(defun sage-shell:-make-exec-cmd (raw-cmd raw print-success)
+  (cond (raw (format "%s\n" raw-cmd))
+        (print-success "")
+        (t (format "%s(\"%s\", '%s')\n"
+                   (sage-shell:py-mod-func "run_cell_dummy_prompt")
+                   (sage-shell:escepe-string raw-cmd)
+                   sage-shell:-dummy-promt-prefix))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
@@ -1708,7 +1720,6 @@ Does not delete the prompt."
 
 (defvar sage-shell:redirect-last-point nil)
 
-(defvar sage-shell:-dummy-promt-prefix nil)
 
 (defsubst sage-shell:-redirect-finished-regexp (dummy-pfx)
   (cond ((string= dummy-pfx "")
@@ -1813,14 +1824,7 @@ Does not delete the prompt."
                                        'sage-shell:redirect-filter
                                        raw)
       ;; Send the command
-      (process-send-string
-       (current-buffer)
-       (if raw
-           (format "%s\n" command)
-         (format "%s(\"%s\", '%s')\n"
-                 (sage-shell:py-mod-func "run_cell_dummy_prompt")
-                 (sage-shell:escepe-string command)
-                 sage-shell:-dummy-promt-prefix))))))
+      (process-send-string (current-buffer) command))))
 
 (defun sage-shell:comint-send-input (&optional no-newline artificial)
   "This function is almost same as `comint-send-input'. But this
