@@ -808,7 +808,7 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
     (with-current-buffer proc-buf
       (sage-shell:redirect-setup out-buf proc-buf raw)
       (process-send-string
-       proc-buf (sage-shell:-make-exec-cmd cell raw))
+       proc-buf (sage-shell:-make-exec-cmd cell raw evaluator))
       (when sync
         (sage-shell:wait-for-redirection-to-complete)))
 
@@ -817,9 +817,10 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
           ((functionp call-back)
            (lexical-let ((out-buf out-buf)
                          (call-back call-back))
-             (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
-                                 (buffer-string))))
-               (funcall raw-output)))))))
+             (sage-shell:after-redirect-finished
+               (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
+                                   (buffer-string))))
+                 (funcall call-back raw-output))))))))
 
 (defun sage-shell:send-command
     (command &optional process-buffer output-buffer sync raw)
@@ -828,12 +829,23 @@ buffer where process is alive.  If OUTPUT-BUFFER is the exisiting
 bufffer then the out put is inserted to the buffer. Otherwise
 output buffer is the return value of `sage-shell:output-buffer'.
 When sync is nill this return a lambda function to get the result."
-  (sage-shell:run-cell
-   command
-   :process-buffer process-buffer
-   :output-buffer output-buffer
-   :sync sync
-   :raw raw))
+  (lexical-let* ((output nil)
+                 (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
+                 (call-back
+                  (unless sync
+                    (lambda (output)
+                      (setq output
+                            (sage-shell:with-current-buffer-safe output-buffer
+                              (setq output (buffer-string)))))))
+                 (res (lambda () output)))
+    (sage-shell:run-cell
+     command
+     :process-buffer process-buffer
+     :output-buffer output-buffer
+     :call-back call-back
+     :sync sync
+     :raw raw)
+    (unless sync res)))
 
 (defvar sage-shell:-dummy-promt-prefix nil)
 
@@ -1451,14 +1463,7 @@ This ring remebers the parts.")
               (add-to-list 'sage-shell:output-filter-finished-hook
                            (lambda () ,@body))))))
 
-(defmacro sage-shell:after-redirect-finished (&rest body)
-  (declare (indent 0))
-  `(cond ((sage-shell:redirect-finished-p)
-          (with-current-buffer sage-shell:process-buffer
-            (progn ,@body)))
-         (t (with-current-buffer sage-shell:process-buffer
-              (add-to-list 'sage-shell:redirect-filter-finished-hook
-                           (lambda () ,@body))))))
+
 
 (defun sage-shell:run-hook-and-remove (hook)
   (let ((hook-saved (symbol-value hook)))
