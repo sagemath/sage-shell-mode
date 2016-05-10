@@ -1764,35 +1764,6 @@ Does not delete the prompt."
           (with-current-buffer proc-buf
             (setq sage-shell:redirect-last-point (point))))))))
 
-(defun sage-shell:prepare-for-redirect (proc output-buffer
-                                             &optional filter raw)
-  "Assumes evaluated in process buffer of PROC"
-  ;; Make sure there's a prompt in the current process buffer
-  (and comint-redirect-perform-sanity-check
-       (save-excursion
-         (goto-char (point-max))
-         (or (re-search-backward comint-prompt-regexp nil t)
-             (error "No prompt found."))))
-
-  ;; Set up for redirection
-  (setq sage-shell:redirect-last-point nil)
-  (setq-local sage-shell:-dummy-promt-prefix
-              (if raw
-                  ""
-                (sage-shell:-new-dummy-prompt-pfx)))
-  (let ((mode-line-process mode-line-process))
-    (comint-redirect-setup
-     output-buffer
-     (current-buffer)                   ; Comint Buffer
-     comint-redirect-finished-regexp    ; Finished Regexp
-     nil))                              ; Echo input
-
-  (when filter
-    ;; Save the old filter
-    (setq sage-shell:comint-redirect-original-filter-function
-          (process-filter proc))
-    (set-process-filter proc filter)))
-
 (cl-defun sage-shell:redirect-cleanup ()
   (when sage-shell:redirect-restore-filter-p
     (set-process-filter (get-buffer-process (current-buffer))
@@ -1811,18 +1782,41 @@ Does not delete the prompt."
   (setq s (replace-regexp-in-string (rx "\n") "\\n" s t t))
   (replace-regexp-in-string (rx "\"") "\\\"" s t t))
 
-(defun sage-shell:redirect-send-cmd-to-proc (command output-buffer process raw)
-  (let* ( ;; The process buffer
-         (process-buffer (if (processp process)
+(cl-defun sage-shell:redirect-send-cmd-to-proc
+    (command output-buffer process raw &optional
+             (filter 'sage-shell:redirect-filter))
+  (let* ((process-buffer (if (processp process)
                              (process-buffer process)
                            process))
          (proc (get-buffer-process process-buffer)))
     ;; Change to the process buffer
     (with-current-buffer process-buffer
+      ;; Make sure there's a prompt in the current process buffer
+      (and comint-redirect-perform-sanity-check
+           (save-excursion
+             (goto-char (point-max))
+             (or (re-search-backward comint-prompt-regexp nil t)
+                 (error "No prompt found."))))
 
-      (sage-shell:prepare-for-redirect proc output-buffer
-                                       'sage-shell:redirect-filter
-                                       raw)
+      ;; Set up for redirection
+      (setq sage-shell:redirect-last-point nil)
+      (setq-local sage-shell:-dummy-promt-prefix
+                  (if raw
+                      ""
+                    (sage-shell:-new-dummy-prompt-pfx)))
+      (let ((mode-line-process mode-line-process))
+        (comint-redirect-setup
+         output-buffer
+         (current-buffer)                   ; Comint Buffer
+         comint-redirect-finished-regexp    ; Finished Regexp
+         nil))                              ; Echo input
+
+      (when filter
+        ;; Save the old filter
+        (setq sage-shell:comint-redirect-original-filter-function
+              (process-filter proc))
+        (set-process-filter proc filter))
+
       ;; Send the command
       (process-send-string (current-buffer) command))))
 
