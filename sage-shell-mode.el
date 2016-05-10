@@ -798,13 +798,17 @@ succesive lines in history."
                                                     &key call-back
                                                     process-buffer
                                                     output-buffer
-                                                    sync)
-  (let* ((outputvar (make-symbol "output"))
-         (evaluator (sage-shell:py-mod-func "run_cell_and_print_state")))
+                                                    sync
+                                                    call-back-rest-args)
+  (let ((outputvar (make-symbol "output"))
+        (evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
+        (argsvar (make-symbol "args")))
     (lexical-let ((call-back
-                   `(lambda (,outputvar)
-                      (funcall ,call-back
-                               (sage-shell:eval-state ,outputvar)))))
+                   ;; FIXME
+                   `(lambda (,outputvar &rest ,argsvar)
+                      (apply #',call-back
+                             (sage-shell:eval-state ,outputvar)
+                             ,argsvar))))
       (plist-put plst :call-back call-back)
       (plist-put plst :evaluator evaluator)
       (apply #'sage-shell:run-cell cell plst))))
@@ -824,10 +828,12 @@ succesive lines in history."
                                     sync
                                     raw
                                     evaluator
-                                    to-string)
+                                    to-string
+                                    call-back-rest-args)
   "CELL is a string which will be sent to the proces buffer,
-Call-BACK should be a function with one argument and will be called if the
-evaluation completes. The output will be passed as its argument.
+When non-nil, Call-BACK should be a function and will be called if the
+evaluation completes. The output will be passed as its first argument
+and CALL-BACK-REST-ARGS will be passed as the rest args.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
@@ -853,11 +859,13 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
 
     (when (functionp call-back)
       (lexical-let ((out-buf out-buf)
-                    (call-back call-back))
+                    (call-back call-back)
+                    (call-back-rest-args call-back-rest-args))
         (sage-shell:after-redirect-finished
           (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
                               (buffer-string))))
-            (funcall call-back raw-output)))))
+            (apply call-back raw-output
+                   call-back-rest-args)))))
     (when to-string
       (sage-shell:with-current-buffer-safe out-buf
         (buffer-string)))))
