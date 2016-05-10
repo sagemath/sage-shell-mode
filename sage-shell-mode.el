@@ -767,8 +767,9 @@ succesive lines in history."
       (sage-shell:wait-for-redirection-to-complete))
     (with-current-buffer out-buf (erase-buffer))
     (with-current-buffer proc-buf
-      (sage-shell:redirect-send-cmd-to-proc
-       (sage-shell:-make-exec-cmd command raw nil) out-buf proc-buf raw)
+      (sage-shell:redirect-setup out-buf proc-buf raw)
+      (process-send-string
+       proc-buf (sage-shell:-make-exec-cmd command raw nil))
       (sage-shell:wait-for-redirection-to-complete))
     (when to-string
       (sage-shell:with-current-buffer-safe out-buf
@@ -798,9 +799,9 @@ When sync is nill this return a lambda function to get the result."
       (with-current-buffer out-buf (erase-buffer))
       (with-current-buffer proc-buf
         (sage-shell:wait-for-redirection-to-complete)
-        (sage-shell:redirect-send-cmd-to-proc
-         (sage-shell:-make-exec-cmd command raw nil)
-         out-buf proc-buf raw))
+        (sage-shell:redirect-setup out-buf proc-buf raw)
+        (process-send-string
+         proc-buf (sage-shell:-make-exec-cmd command raw nil)))
       (lexical-let ((out-buf out-buf))
         (lambda () (sage-shell:with-current-buffer-safe out-buf
                  (buffer-string)))))))
@@ -1782,9 +1783,9 @@ Does not delete the prompt."
   (setq s (replace-regexp-in-string (rx "\n") "\\n" s t t))
   (replace-regexp-in-string (rx "\"") "\\\"" s t t))
 
-(cl-defun sage-shell:redirect-send-cmd-to-proc
-    (command output-buffer process raw &optional
-             (filter 'sage-shell:redirect-filter))
+(cl-defun sage-shell:redirect-setup
+    (output-buffer process raw &optional
+                   (filter 'sage-shell:redirect-filter))
   (let* ((process-buffer (if (processp process)
                              (process-buffer process)
                            process))
@@ -1807,18 +1808,15 @@ Does not delete the prompt."
       (let ((mode-line-process mode-line-process))
         (comint-redirect-setup
          output-buffer
-         (current-buffer)                   ; Comint Buffer
-         comint-redirect-finished-regexp    ; Finished Regexp
-         nil))                              ; Echo input
+         (current-buffer)                ; Comint Buffer
+         comint-redirect-finished-regexp ; Finished Regexp
+         nil))                           ; Echo input
 
       (when filter
         ;; Save the old filter
         (setq sage-shell:comint-redirect-original-filter-function
               (process-filter proc))
-        (set-process-filter proc filter))
-
-      ;; Send the command
-      (process-send-string (current-buffer) command))))
+        (set-process-filter proc filter)))))
 
 (defun sage-shell:comint-send-input (&optional no-newline artificial)
   "This function is almost same as `comint-send-input'. But this
