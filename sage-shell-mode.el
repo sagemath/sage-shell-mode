@@ -760,20 +760,12 @@ succesive lines in history."
 (defun sage-shell:send-command-sync
     (command &optional process-buffer output-buffer to-string raw)
   "internal function"
-  (let ((out-buf (sage-shell:-make-buf-if-needed output-buffer))
-        (proc-buf
-         (or process-buffer sage-shell:process-buffer)))
-    (with-current-buffer proc-buf
-      (sage-shell:wait-for-redirection-to-complete))
-    (with-current-buffer out-buf (erase-buffer))
-    (with-current-buffer proc-buf
-      (sage-shell:redirect-setup out-buf proc-buf raw)
-      (process-send-string
-       proc-buf (sage-shell:-make-exec-cmd command raw))
-      (sage-shell:wait-for-redirection-to-complete))
-    (when to-string
-      (sage-shell:with-current-buffer-safe out-buf
-        (buffer-string)))))
+  (sage-shell:run-cell
+   command :sync t
+   :process-buffer process-buffer
+   :output-buffer output-buffer
+   :to-string to-string
+   :raw raw))
 
 (defun sage-shell:wait-for-redirection-to-complete
     (&optional msec process-buffer)
@@ -784,6 +776,51 @@ succesive lines in history."
         (while (null comint-redirect-completed)
           (accept-process-output nil 0 msec))))))
 
+(cl-defstruct sage-shell:exec-state
+  output success)
+
+(cl-defun sage-shell:run-cell (cell &key call-back
+                                    process-buffer
+                                    output-buffer
+                                    sync
+                                    raw
+                                    evaluator
+                                    to-string)
+  "CELL is a string which will be sent to the proces buffer,
+Call-BACK should be a function with one argument and will be called if the
+evaluation completes. The output will be passed as its argument.
+Call-BACK has a meaning only when SYNC is nil.
+If RAW is non-nil, CELL will be sent by process-send-string directly.
+Otherwise return value of `sage-shell:-make-exec-cmd' is used.
+If EVALUATOR is non-nil, it should be a Python function with two arguments
+which is similar to emacs_sage_shell.run_cell_dummy_prompt."
+  (let ((proc-buf (or process-buffer sage-shell:process-buffer))
+        (out-buf (sage-shell:-make-buf-if-needed output-buffer))
+        ;; If to-string is non-nil sync should be non-nil
+        (sync (if to-string t sync)))
+
+    (with-current-buffer proc-buf
+      (sage-shell:wait-for-redirection-to-complete))
+
+    (with-current-buffer out-buf
+      (erase-buffer))
+
+    (with-current-buffer proc-buf
+      (sage-shell:redirect-setup out-buf proc-buf raw)
+      (process-send-string
+       proc-buf (sage-shell:-make-exec-cmd cell raw))
+      (when sync
+        (sage-shell:wait-for-redirection-to-complete)))
+
+    (cond (to-string (sage-shell:with-current-buffer-safe out-buf
+                       (buffer-string)))
+          ((functionp call-back)
+           (lexical-let ((out-buf out-buf)
+                         (call-back call-back))
+             (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
+                                 (buffer-string))))
+               (funcall raw-output)))))))
+
 (defun sage-shell:send-command
     (command &optional process-buffer output-buffer sync raw)
   "Send COMMAND to PROCESS-BUFFER's process.  PROCESS-BUFFER is a
@@ -791,20 +828,12 @@ buffer where process is alive.  If OUTPUT-BUFFER is the exisiting
 bufffer then the out put is inserted to the buffer. Otherwise
 output buffer is the return value of `sage-shell:output-buffer'.
 When sync is nill this return a lambda function to get the result."
-  (if sync
-      (sage-shell:send-command-sync command process-buffer output-buffer raw)
-    (let ((proc-buf (or process-buffer sage-shell:process-buffer))
-          (out-buf (sage-shell:-make-buf-if-needed
-                    output-buffer)))
-      (with-current-buffer out-buf (erase-buffer))
-      (with-current-buffer proc-buf
-        (sage-shell:wait-for-redirection-to-complete)
-        (sage-shell:redirect-setup out-buf proc-buf raw)
-        (process-send-string
-         proc-buf (sage-shell:-make-exec-cmd command raw)))
-      (lexical-let ((out-buf out-buf))
-        (lambda () (sage-shell:with-current-buffer-safe out-buf
-                 (buffer-string)))))))
+  (sage-shell:run-cell
+   command
+   :process-buffer process-buffer
+   :output-buffer output-buffer
+   :sync sync
+   :raw raw))
 
 (defvar sage-shell:-dummy-promt-prefix nil)
 
