@@ -3144,37 +3144,39 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
                      (cl-loop for a in sage-shell-cpl:-dict-keys
                               collect
                               (cons a (assoc-default a compl-state)))))))
-          (sage-shell:send-command cmd nil output-buffer sync)
-          (lexical-let ((output-buffer output-buffer)
-                        (proc-buf sage-shell:process-buffer)
-                        (compl-state compl-state))
-            (sage-shell:after-redirect-finished
-              (with-current-buffer output-buffer
-                (setq sage-shell-cpl:-last-sexp
-                      (condition-case err
-                          (progn
-                            (goto-char (point-max))
-                            (forward-line -1)
-                            (let ((beg (point-min))
-                                  (end (point)))
-                              (unless (= beg end)
-                                (message (buffer-substring beg end))
-                                (delete-region beg end)))
-                            (read (current-buffer)))
-                        (end-of-file (unless (= (buffer-size) 0)
-                                       (signal (car err) (cdr err))))
-                        (error (signal (car err) (cdr err))))))
-
-              ;; Code for side effects
-              (sage-shell-cpl:-push-cache-modules
-               compl-state sage-shell-cpl:-last-sexp)
-              (sage-shell-cpl:-set-cmd-lst
-               compl-state sage-shell-cpl:-last-sexp)
-              (sage-shell-cpl:-push-cache-argspec
-               compl-state sage-shell-cpl:-last-sexp)))
+          (sage-shell:run-cell-w-success-state
+           cmd
+           :output-buffer output-buffer
+           :sync sync
+           :call-back-rest-args (lexical-let ((compl-state compl-state))
+                                  (list compl-state))
+           :call-back #'sage-shell-cpl:-cpl-init-call-back)
 
           (if sync
               sage-shell-cpl:-last-sexp))))))
+
+(defun sage-shell-cpl:-cpl-init-call-back (s compl-state)
+  (cond ((sage-shell:output-stct-success s)
+         (let ((output (sage-shell:output-stct-output s)))
+           (unless (string-match (rx "))\n" buffer-end) output)
+             (error "Invalid output"))
+           (let ((lines (butlast (split-string output "\n"))))
+             (when (cdr-safe lines)
+               (display-message-or-buffer
+                (cl-loop for a in (butlast lines)
+                         concat a)))
+             (setq sage-shell-cpl:-last-sexp
+                   (read (car (last lines))))
+             ;; Code for caching (change global vars)
+             (sage-shell-cpl:-push-cache-modules
+              compl-state sage-shell-cpl:-last-sexp)
+             (sage-shell-cpl:-set-cmd-lst
+              compl-state sage-shell-cpl:-last-sexp)
+             (sage-shell-cpl:-push-cache-argspec
+              compl-state sage-shell-cpl:-last-sexp))))
+        ;; Error
+        (t (display-message-or-buffer
+            (sage-shell:output-stct-output s)))))
 
 (defun sage-shell-cpl:-set-cmd-lst (state sexp)
   (let ((int (sage-shell-cpl:get state 'interface)))
