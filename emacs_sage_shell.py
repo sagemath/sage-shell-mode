@@ -438,6 +438,15 @@ def print_short_doc_and_def(name, base_name=None):
         pass
 
 
+def run_cell_and_print_state(code, dummy):
+    res = ip.run_cell(code)
+    if res.success:
+        print(0)
+    else:
+        print(1)
+    print(dummy)
+
+
 def run_cell_dummy_prompt(code, dummy):
     ip.run_cell(code)
     print(dummy)

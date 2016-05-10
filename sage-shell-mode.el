@@ -776,8 +776,47 @@ succesive lines in history."
         (while (null comint-redirect-completed)
           (accept-process-output nil 0 msec))))))
 
-(cl-defstruct sage-shell:exec-state
+(cl-defstruct sage-shell:output-stct
   output success)
+
+(defun sage-shell:eval-state (raw-output)
+  "Parse output of run_cell_and_print_state."
+  (let* ((success-str (substring-no-properties raw-output -2 -1))
+         (output (substring-no-properties raw-output 0 -2))
+         (success (cond ((string= success-str "0")
+                         t)
+                        ((string= success-str "1")
+                         nil)
+                        (t (error "Invalid output.")))))
+    (make-sage-shell:output-stct
+     :success success
+     :output output)))
+
+
+
+(cl-defun sage-shell:run-cell-w-success-state (cell &rest plst
+                                                    &key call-back
+                                                    process-buffer
+                                                    output-buffer
+                                                    sync)
+  (let* ((outputvar (make-symbol "output"))
+         (evaluator (sage-shell:py-mod-func "run_cell_and_print_state")))
+    (lexical-let ((call-back
+                   `(lambda (,outputvar)
+                      (funcall ,call-back
+                               (sage-shell:eval-state ,outputvar)))))
+      (plist-put plst :call-back call-back)
+      (plist-put plst :evaluator evaluator)
+      (apply #'sage-shell:run-cell cell plst))))
+
+(defmacro sage-shell:after-redirect-finished (&rest body)
+  (declare (indent 0))
+  `(cond ((sage-shell:redirect-finished-p)
+          (with-current-buffer sage-shell:process-buffer
+            (progn ,@body)))
+         (t (with-current-buffer sage-shell:process-buffer
+              (add-to-list 'sage-shell:redirect-filter-finished-hook
+                           (lambda () ,@body))))))
 
 (cl-defun sage-shell:run-cell (cell &key call-back
                                     process-buffer
