@@ -802,12 +802,12 @@ succesive lines in history."
   (let ((outputvar (make-symbol "output"))
         (evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
         (argsvar (make-symbol "args")))
-    (lexical-let ((call-back
-                   ;; FIXME
-                   `(lambda (,outputvar &rest ,argsvar)
-                      (apply #',call-back
-                             (sage-shell:eval-state ,outputvar)
-                             ,argsvar))))
+    (let ((call-back
+           ;; FIXME
+           `(lambda (,outputvar &rest ,argsvar)
+              (apply #',call-back
+                     (sage-shell:eval-state ,outputvar)
+                     ,argsvar))))
       (plist-put plst :call-back call-back)
       (plist-put plst :evaluator evaluator)
       (apply #'sage-shell:run-cell cell plst))))
@@ -857,14 +857,11 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
 
 
     (when (functionp call-back)
-      (lexical-let ((out-buf out-buf)
-                    (call-back call-back)
-                    (call-back-rest-args call-back-rest-args))
-        (sage-shell:after-redirect-finished
-          (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
-                              (buffer-string))))
-            (apply call-back raw-output
-                   call-back-rest-args)))))
+      (sage-shell:after-redirect-finished
+        (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
+                            (buffer-string))))
+          (apply call-back raw-output
+                 call-back-rest-args))))
     (when to-string
       (sage-shell:with-current-buffer-safe out-buf
         (buffer-string)))))
@@ -876,15 +873,13 @@ buffer where process is alive.  If OUTPUT-BUFFER is the exisiting
 bufffer then the out put is inserted to the buffer. Otherwise
 output buffer is the return value of `sage-shell:output-buffer'.
 When sync is nill this return a lambda function to get the result."
-  (lexical-let* ((output nil)
-                 (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
-                 (call-back
-                  (unless sync
-                    (lambda (output)
-                      (setq output
-                            (sage-shell:with-current-buffer-safe output-buffer
-                              (setq output (buffer-string)))))))
-                 (res (lambda () output)))
+  (let* ((output nil)
+         (res-func (lambda () output))
+         (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
+         (call-back
+          (unless sync
+            (lambda (x)
+              (setq output x)))))
     (sage-shell:run-cell
      command
      :process-buffer process-buffer
@@ -892,7 +887,7 @@ When sync is nill this return a lambda function to get the result."
      :call-back call-back
      :sync sync
      :raw raw)
-    (unless sync res)))
+    (unless sync res-func)))
 
 (defvar sage-shell:-dummy-promt-prefix nil)
 
