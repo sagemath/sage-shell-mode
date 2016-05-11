@@ -759,19 +759,12 @@ succesive lines in history."
 (defun sage-shell:send-command-sync
     (command &optional process-buffer output-buffer to-string raw)
   "internal function"
-  (let ((out-buf (sage-shell:-make-buf-if-needed output-buffer))
-        (proc-buf
-         (or process-buffer sage-shell:process-buffer)))
-    (with-current-buffer proc-buf
-      (sage-shell:wait-for-redirection-to-complete))
-    (with-current-buffer out-buf (erase-buffer))
-    (with-current-buffer proc-buf
-      (sage-shell:redirect-send-cmd-to-proc
-       command out-buf proc-buf raw)
-      (sage-shell:wait-for-redirection-to-complete))
-    (when to-string
-      (sage-shell:with-current-buffer-safe out-buf
-        (buffer-string)))))
+  (sage-shell:run-cell
+   command :sync t
+   :process-buffer process-buffer
+   :output-buffer output-buffer
+   :to-string to-string
+   :raw raw))
 
 (defun sage-shell:wait-for-redirection-to-complete
     (&optional msec process-buffer)
@@ -782,6 +775,100 @@ succesive lines in history."
         (while (null comint-redirect-completed)
           (accept-process-output nil 0 msec))))))
 
+(cl-defstruct sage-shell:output-stct
+  output success)
+
+(defun sage-shell:eval-state (raw-output)
+  "Parse output of run_cell_and_print_state."
+  (let* ((success-str (substring-no-properties raw-output -2 -1))
+         (output (substring-no-properties raw-output 0 -2))
+         (success (cond ((string= success-str "0")
+                         t)
+                        ((string= success-str "1")
+                         nil)
+                        (t (error "Invalid output.")))))
+    (make-sage-shell:output-stct
+     :success success
+     :output output)))
+
+
+
+(cl-defun sage-shell:run-cell-w-success-state (cell &rest plst
+                                                    &key call-back
+                                                    process-buffer
+                                                    output-buffer
+                                                    sync
+                                                    call-back-rest-args)
+  (let ((outputvar (make-symbol "output"))
+        (evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
+        (argsvar (make-symbol "args")))
+    (lexical-let ((call-back
+                   ;; FIXME
+                   `(lambda (,outputvar &rest ,argsvar)
+                      (apply #',call-back
+                             (sage-shell:eval-state ,outputvar)
+                             ,argsvar))))
+      (plist-put plst :call-back call-back)
+      (plist-put plst :evaluator evaluator)
+      (apply #'sage-shell:run-cell cell plst))))
+
+(defmacro sage-shell:after-redirect-finished (&rest body)
+  (declare (indent 0))
+  `(cond ((sage-shell:redirect-finished-p)
+          (with-current-buffer sage-shell:process-buffer
+            (progn ,@body)))
+         (t (with-current-buffer sage-shell:process-buffer
+              (add-to-list 'sage-shell:redirect-filter-finished-hook
+                           (lambda () ,@body))))))
+
+(cl-defun sage-shell:run-cell (cell &key call-back
+                                    process-buffer
+                                    output-buffer
+                                    sync
+                                    raw
+                                    evaluator
+                                    to-string
+                                    call-back-rest-args)
+  "CELL is a string which will be sent to the proces buffer,
+When non-nil, Call-BACK should be a function and will be called if the
+evaluation completes. The output will be passed as its first argument
+and CALL-BACK-REST-ARGS will be passed as the rest args.
+If RAW is non-nil, CELL will be sent by process-send-string directly.
+Otherwise return value of `sage-shell:-make-exec-cmd' is used.
+If EVALUATOR is non-nil, it should be a Python function with two arguments
+which is similar to emacs_sage_shell.run_cell_dummy_prompt."
+  (let ((proc-buf (or process-buffer sage-shell:process-buffer))
+        (out-buf (sage-shell:-make-buf-if-needed output-buffer))
+        ;; If to-string is non-nil sync should be non-nil
+        (sync (if to-string t sync)))
+
+    (with-current-buffer proc-buf
+      (sage-shell:wait-for-redirection-to-complete))
+
+    (with-current-buffer out-buf
+      (erase-buffer))
+
+    (with-current-buffer proc-buf
+      (sage-shell:redirect-setup out-buf proc-buf raw)
+      (process-send-string
+       proc-buf (sage-shell:-make-exec-cmd cell raw evaluator))
+      (when sync
+        (sage-shell:wait-for-redirection-to-complete)))
+
+
+    (when (functionp call-back)
+      (lexical-let ((out-buf out-buf)
+                    (call-back call-back)
+                    (call-back-rest-args call-back-rest-args))
+        (sage-shell:after-redirect-finished
+          (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
+                              (buffer-string))))
+            (apply call-back raw-output
+                   call-back-rest-args)))))
+    (when to-string
+      (sage-shell:with-current-buffer-safe out-buf
+        (buffer-string)))))
+
 (defun sage-shell:send-command
     (command &optional process-buffer output-buffer sync raw)
   "Send COMMAND to PROCESS-BUFFER's process.  PROCESS-BUFFER is a
@@ -789,17 +876,34 @@ buffer where process is alive.  If OUTPUT-BUFFER is the exisiting
 bufffer then the out put is inserted to the buffer. Otherwise
 output buffer is the return value of `sage-shell:output-buffer'.
 When sync is nill this return a lambda function to get the result."
-  (if sync
-      (sage-shell:send-command-sync command process-buffer output-buffer raw)
-    (let ((proc-buf (or process-buffer sage-shell:process-buffer))
-          (out-buf (sage-shell:-make-buf-if-needed
-                    output-buffer)))
-      (with-current-buffer out-buf (erase-buffer))
-      (with-current-buffer proc-buf
-        (sage-shell:wait-for-redirection-to-complete)
-        (sage-shell:redirect-send-cmd-to-proc command out-buf proc-buf raw))
-      (lambda () (sage-shell:with-current-buffer-safe out-buf
-               (buffer-string))))))
+  (lexical-let* ((output nil)
+                 (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
+                 (call-back
+                  (unless sync
+                    (lambda (output)
+                      (setq output
+                            (sage-shell:with-current-buffer-safe output-buffer
+                              (setq output (buffer-string)))))))
+                 (res (lambda () output)))
+    (sage-shell:run-cell
+     command
+     :process-buffer process-buffer
+     :output-buffer output-buffer
+     :call-back call-back
+     :sync sync
+     :raw raw)
+    (unless sync res)))
+
+(defvar sage-shell:-dummy-promt-prefix nil)
+
+(defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
+  (if raw (format "%s\n" raw-cmd)
+    (let ((evaluator
+           (or evaluator (sage-shell:py-mod-func "run_cell_dummy_prompt"))))
+      (format "%s(\"%s\", '%s')\n"
+              evaluator
+              (sage-shell:escepe-string raw-cmd)
+              sage-shell:-dummy-promt-prefix))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
@@ -1406,14 +1510,7 @@ This ring remebers the parts.")
               (add-to-list 'sage-shell:output-filter-finished-hook
                            (lambda () ,@body))))))
 
-(defmacro sage-shell:after-redirect-finished (&rest body)
-  (declare (indent 0))
-  `(cond ((sage-shell:redirect-finished-p)
-          (with-current-buffer sage-shell:process-buffer
-            (progn ,@body)))
-         (t (with-current-buffer sage-shell:process-buffer
-              (add-to-list 'sage-shell:redirect-filter-finished-hook
-                           (lambda () ,@body))))))
+
 
 (defun sage-shell:run-hook-and-remove (hook)
   (let ((hook-saved (symbol-value hook)))
@@ -1706,7 +1803,6 @@ Does not delete the prompt."
 
 (defvar sage-shell:redirect-last-point nil)
 
-(defvar sage-shell:-dummy-promt-prefix nil)
 
 (defsubst sage-shell:-redirect-finished-regexp (dummy-pfx)
   (cond ((string= dummy-pfx "")
@@ -1751,35 +1847,6 @@ Does not delete the prompt."
           (with-current-buffer proc-buf
             (setq sage-shell:redirect-last-point (point))))))))
 
-(defun sage-shell:prepare-for-redirect (proc output-buffer
-                                             &optional filter raw)
-  "Assumes evaluated in process buffer of PROC"
-  ;; Make sure there's a prompt in the current process buffer
-  (and comint-redirect-perform-sanity-check
-       (save-excursion
-         (goto-char (point-max))
-         (or (re-search-backward comint-prompt-regexp nil t)
-             (error "No prompt found."))))
-
-  ;; Set up for redirection
-  (setq sage-shell:redirect-last-point nil)
-  (setq-local sage-shell:-dummy-promt-prefix
-              (if raw
-                  ""
-                (sage-shell:-new-dummy-prompt-pfx)))
-  (let ((mode-line-process mode-line-process))
-    (comint-redirect-setup
-     output-buffer
-     (current-buffer)                   ; Comint Buffer
-     comint-redirect-finished-regexp    ; Finished Regexp
-     nil))                              ; Echo input
-
-  (when filter
-    ;; Save the old filter
-    (setq sage-shell:comint-redirect-original-filter-function
-          (process-filter proc))
-    (set-process-filter proc filter)))
-
 (cl-defun sage-shell:redirect-cleanup ()
   (when sage-shell:redirect-restore-filter-p
     (set-process-filter (get-buffer-process (current-buffer))
@@ -1798,27 +1865,40 @@ Does not delete the prompt."
   (setq s (replace-regexp-in-string (rx "\n") "\\n" s t t))
   (replace-regexp-in-string (rx "\"") "\\\"" s t t))
 
-(defun sage-shell:redirect-send-cmd-to-proc (command output-buffer process raw)
-  (let* ( ;; The process buffer
-         (process-buffer (if (processp process)
+(cl-defun sage-shell:redirect-setup
+    (output-buffer process raw &optional
+                   (filter 'sage-shell:redirect-filter))
+  (let* ((process-buffer (if (processp process)
                              (process-buffer process)
                            process))
          (proc (get-buffer-process process-buffer)))
     ;; Change to the process buffer
     (with-current-buffer process-buffer
+      ;; Make sure there's a prompt in the current process buffer
+      (and comint-redirect-perform-sanity-check
+           (save-excursion
+             (goto-char (point-max))
+             (or (re-search-backward comint-prompt-regexp nil t)
+                 (error "No prompt found."))))
 
-      (sage-shell:prepare-for-redirect proc output-buffer
-                                       'sage-shell:redirect-filter
-                                       raw)
-      ;; Send the command
-      (process-send-string
-       (current-buffer)
-       (if raw
-           (format "%s\n" command)
-         (format "%s(\"%s\", '%s')\n"
-                 (sage-shell:py-mod-func "run_cell_dummy_prompt")
-                 (sage-shell:escepe-string command)
-                 sage-shell:-dummy-promt-prefix))))))
+      ;; Set up for redirection
+      (setq sage-shell:redirect-last-point nil)
+      (setq-local sage-shell:-dummy-promt-prefix
+                  (if raw
+                      ""
+                    (sage-shell:-new-dummy-prompt-pfx)))
+      (let ((mode-line-process mode-line-process))
+        (comint-redirect-setup
+         output-buffer
+         (current-buffer)                ; Comint Buffer
+         comint-redirect-finished-regexp ; Finished Regexp
+         nil))                           ; Echo input
+
+      (when filter
+        ;; Save the old filter
+        (setq sage-shell:comint-redirect-original-filter-function
+              (process-filter proc))
+        (set-process-filter proc filter)))))
 
 (defun sage-shell:comint-send-input (&optional no-newline artificial)
   "This function is almost same as `comint-send-input'. But this
@@ -3026,14 +3106,11 @@ send current line to Sage process buffer."
 
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer (sage-shell:output-buffer))
-          (compl-state sage-shell-cpl:current-state)
-          (cont nil))
+          (compl-state sage-shell-cpl:current-state))
   "If SYNC is non-nil, return a sexp. If not return value has no
 meaning and `sage-shell-cpl:-last-sexp' will be set when the
-redirection is finished.  If CONT is non-nil, it should be a
-function with no arguments.  CONT will be called when the
-redirection is finished.  This function set the command list by
-using `sage-shell-cpl:set-cmd-lst'"
+redirection is finished.
+This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:with-current-buffer-safe sage-shell:process-buffer
@@ -3065,36 +3142,39 @@ using `sage-shell-cpl:set-cmd-lst'"
                      (cl-loop for a in sage-shell-cpl:-dict-keys
                               collect
                               (cons a (assoc-default a compl-state)))))))
-          (sage-shell:send-command cmd nil output-buffer sync)
-          (sage-shell:after-redirect-finished
-            (with-current-buffer output-buffer
-              (setq sage-shell-cpl:-last-sexp
-                    (condition-case err
-                        (progn
-                          (goto-char (point-max))
-                          (forward-line -1)
-                          (let ((beg (point-min))
-                                (end (point)))
-                            (unless (= beg end)
-                              (message (buffer-substring beg end))
-                              (delete-region beg end)))
-                          (read (current-buffer)))
-                      (end-of-file (unless (= (buffer-size) 0)
-                                     (signal (car err) (cdr err))))
-                      (error (signal (car err) (cdr err))))))
-
-            ;; Code for side effects
-            (sage-shell-cpl:-push-cache-modules
-             compl-state sage-shell-cpl:-last-sexp)
-            (sage-shell-cpl:-set-cmd-lst
-             compl-state sage-shell-cpl:-last-sexp)
-            (sage-shell-cpl:-push-cache-argspec
-             compl-state sage-shell-cpl:-last-sexp)
-            (when cont
-              (funcall cont)))
+          (sage-shell:run-cell-w-success-state
+           cmd
+           :output-buffer output-buffer
+           :sync sync
+           :call-back-rest-args (lexical-let ((compl-state compl-state))
+                                  (list compl-state))
+           :call-back #'sage-shell-cpl:-cpl-init-call-back)
 
           (if sync
               sage-shell-cpl:-last-sexp))))))
+
+(defun sage-shell-cpl:-cpl-init-call-back (s compl-state)
+  (cond ((sage-shell:output-stct-success s)
+         (let ((output (sage-shell:output-stct-output s)))
+           (unless (string-match (rx "))\n" buffer-end) output)
+             (error "Invalid output"))
+           (let ((lines (butlast (split-string output "\n"))))
+             (when (cdr-safe lines)
+               (display-message-or-buffer
+                (cl-loop for a in (butlast lines)
+                         concat a)))
+             (setq sage-shell-cpl:-last-sexp
+                   (read (car (last lines))))
+             ;; Code for caching (change global vars)
+             (sage-shell-cpl:-push-cache-modules
+              compl-state sage-shell-cpl:-last-sexp)
+             (sage-shell-cpl:-set-cmd-lst
+              compl-state sage-shell-cpl:-last-sexp)
+             (sage-shell-cpl:-push-cache-argspec
+              compl-state sage-shell-cpl:-last-sexp))))
+        ;; Error
+        (t (display-message-or-buffer
+            (sage-shell:output-stct-output s)))))
 
 (defun sage-shell-cpl:-set-cmd-lst (state sexp)
   (let ((int (sage-shell-cpl:get state 'interface)))
