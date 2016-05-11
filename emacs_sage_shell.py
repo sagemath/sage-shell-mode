@@ -129,7 +129,7 @@ def all_commands(compl_dct):
     else:
         intfc = ip.ev(interface)
         if isinstance(intfc, sage.interfaces.expect.Expect):
-            return ip.ev('dir(%s)' % (interface, ))
+            return _completions_attributes(interface)
         else:
             return []
 
@@ -140,22 +140,22 @@ def all_attributes(compl_dct):
         regexp = re.compile("^[ a-zA-Z0-9._\\[\\]]+$")
         if regexp.match(varname) is None:
             return []
-        var = ip.ev(preparse(varname))
         if varname in interfaces:
-            ls = ip.ev('dir(%s)' % (varname))
-        elif hasattr(var, 'trait_names'):
-            try:
-                ls = var.trait_names(verbose=False) + dir(var)
-            except TypeError:
-                ls = var.trait_names() + dir(var)
-            except:
-                ls = dir(var)
+            ls = ip.ev('dir(%s)' % (varname,))
         else:
-            ls = dir(var)
-
+            var = ip.ev(preparse(varname))
+            ls1 = _completions_attributes(varname)
+            ls2 = dir(var)
+            ls = list(sorted(list(set(ls1 + ls2))))
         return ls
     except:
         return []
+
+
+def _completions_attributes(varname):
+    completions = ip.complete('%s.' % (varname, ))[1]
+    ln = len(varname) + 1
+    return list(sorted([a[ln:] for a in completions]))
 
 
 def list_modules_in(p):
