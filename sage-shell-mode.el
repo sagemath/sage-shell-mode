@@ -879,12 +879,8 @@ output buffer is the return value of `sage-shell:output-buffer'.
 When sync is nill this return a lambda function to get the result."
   (lexical-let* ((output nil)
                  (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
-                 (call-back
-                  (unless sync
-                    (lambda (output)
-                      (setq output
-                            (sage-shell:with-current-buffer-safe output-buffer
-                              (setq output (buffer-string)))))))
+                 (call-back (unless sync
+                              (lambda (x) (setq output x))))
                  (res (lambda () output)))
     (sage-shell:run-cell
      command
