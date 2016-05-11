@@ -908,7 +908,17 @@ When sync is nill this return a lambda function to get the result."
           funcname))
 
 (defvar sage-shell:python-script-directory
-  (file-name-directory load-file-name))
+  (if load-file-name
+      (file-name-directory load-file-name)
+    default-directory))
+
+(let ((f (expand-file-name
+          (format "%s.py" sage-shell:python-module-true-name)
+          sage-shell:python-script-directory)))
+  (unless (or (file-exists-p f)
+              (file-exists-p (concat f "c")))
+    (error (format "Cannot find the module %s"
+                   sage-shell:python-module-true-name))))
 
 (defun sage-shell:remove-trailing-slash (s)
   (if (string-match (rx "/" eol) s)
