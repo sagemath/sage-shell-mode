@@ -3133,8 +3133,7 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
            cmd
            :output-buffer output-buffer
            :sync sync
-           :call-back-rest-args (lexical-let ((compl-state compl-state))
-                                  (list compl-state))
+           :call-back-rest-args (list compl-state)
            :call-back #'sage-shell-cpl:-cpl-init-call-back)
 
           (if sync
