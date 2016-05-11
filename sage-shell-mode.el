@@ -793,15 +793,11 @@ succesive lines in history."
 
 
 
-(cl-defun sage-shell:run-cell-w-success-state (cell &rest plst
-                                                    &key call-back
-                                                    process-buffer
-                                                    output-buffer
-                                                    sync
-                                                    call-back-rest-args)
+(defun sage-shell:run-cell-w-success-state (cell &rest plst)
   (let ((outputvar (make-symbol "output"))
         (evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
-        (argsvar (make-symbol "args")))
+        (argsvar (make-symbol "args"))
+        (call-back (plist-get plst :call-back)))
     (let ((call-back
            ;; FIXME
            `(lambda (,outputvar &rest ,argsvar)
