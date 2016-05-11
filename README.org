@@ -17,6 +17,7 @@
   , [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
 
 ** Table of Contents                                                    :TOC:
+     - [[#requriements][Requirements]]
      - [[#installation-and-setup][Installation and Setup]]
      - [[#aliases][Aliases]]
      - [[#basic-usage][Basic Usage]]
@@ -27,6 +28,12 @@
      - [[#screenshots][Screenshots]]
      - [[#workaround-for-flycheck][Workaround for flycheck]]
      - [[#license][License]]
+
+** Requirements
+
+   1. GNU Emacs 24 or later
+
+   2. Local install of [[http://www.sagemath.org/][Sage]]
 
 ** Installation and Setup
 
