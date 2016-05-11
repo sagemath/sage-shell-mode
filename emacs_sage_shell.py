@@ -129,13 +129,7 @@ def all_commands(compl_dct):
     else:
         intfc = ip.ev(interface)
         if isinstance(intfc, sage.interfaces.expect.Expect):
-            try:
-                return intfc.trait_names(verbose=False)
-            except:
-                try:
-                    return intfc.trait_names()
-                except:
-                    return ip.ev('dir(%s)' % (interface, ))
+            return ip.ev('dir(%s)' % (interface, ))
         else:
             return []
 
