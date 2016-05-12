@@ -143,10 +143,7 @@ def all_attributes(compl_dct):
         if varname in interfaces:
             ls = ip.ev('dir(%s)' % (varname,))
         else:
-            var = ip.ev(preparse(varname))
-            ls1 = _completions_attributes(varname)
-            ls2 = dir(var)
-            ls = list(sorted(list(set(ls1 + ls2))))
+            ls = _completions_attributes(preparse(varname))
         return ls
     except:
         return []
