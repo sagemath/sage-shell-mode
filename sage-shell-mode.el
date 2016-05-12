@@ -879,7 +879,7 @@ When sync is nill this return a lambda function to get the result."
           (unless sync
             (lambda (x)
               (setq output x)))))
-    (sage-shell:run-cell
+    (sage-shell:run-cell-raw-output
      command
      :process-buffer process-buffer
      :output-buffer output-buffer
