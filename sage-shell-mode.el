@@ -957,7 +957,7 @@ When sync is nill this return a lambda function to get the result."
 
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
-  (sage-shell:send-command
+  (sage-shell:run-cell-raw-output
    (sage-shell:join-command
     (sage-shell:aif sage-shell:inspect-ingnore-classes
         (let ((cmd (format "%s.ignore_classes = [%s]"
@@ -965,7 +965,7 @@ When sync is nill this return a lambda function to get the result."
                            (mapconcat 'identity it ", "))))
           (cons cmd sage-shell:init-command-list))
       sage-shell:init-command-list))
-   buffer nil nil t)
+   :process-buffer buffer :sync t :raw t)
   (setq sage-shell:init-finished-p t)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
