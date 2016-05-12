@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 (require 'ert)
 (require 'sage-shell-mode)
 
@@ -223,3 +225,20 @@ foo=bar(1, 2), baz=(1, 2")))
   (should (equal (sage-shell:-eldoc-highlight-beg-end
                   "foo" "foo(a, b, *args, **kwds)" "bar" nil)
                  (cons 17 23))))
+
+(defun sage-shell-test--start-sage-sync ()
+  (let ((proc-buf (sage-shell:run-sage "sage")))
+    (with-current-buffer proc-buf
+      (while (null (sage-shell:output-finished-p))
+        (accept-process-output nil 0 100))
+      proc-buf)))
+
+(when (executable-find "sage")
+  (setq sage-shell:process-buffer
+        (sage-shell-test--start-sage-sync))
+
+  (let* ((rand-str (md5 (current-time-string)))
+         (callback (sage-shell:send-command (format "print %s" rand-str))))
+    (sage-shell:after-redirect-finished
+      (ert-deftest sage-shell:test-send-command ()
+        (should (equal (funcall callback) (format "%s\n" rand-str)))))))
