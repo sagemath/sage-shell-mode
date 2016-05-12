@@ -836,7 +836,11 @@ If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
 which is similar to emacs_sage_shell.run_cell_dummy_prompt."
-  (let ((proc-buf (or process-buffer sage-shell:process-buffer))
+  (unless (and (bufferp sage-shell:process-buffer)
+               (buffer-live-p sage-shell:process-buffer)
+               (get-buffer-process sage-shell:process-buffer))
+    (setq sage-shell:process-buffer (get-buffer process-buffer)))
+  (let ((proc-buf sage-shell:process-buffer)
         (out-buf (sage-shell:-make-buf-if-needed output-buffer))
         ;; If to-string is non-nil sync should be non-nil
         (sync (if to-string t sync)))
