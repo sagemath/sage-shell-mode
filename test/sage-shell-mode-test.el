@@ -234,11 +234,43 @@ foo=bar(1, 2), baz=(1, 2")))
       proc-buf)))
 
 (when (executable-find "sage")
-  (setq sage-shell:process-buffer
-        (sage-shell-test--start-sage-sync))
 
-  (let* ((rand-str (md5 (current-time-string)))
-         (callback (sage-shell:send-command (format "print %s" rand-str))))
-    (sage-shell:after-redirect-finished
-      (ert-deftest sage-shell:test-send-command ()
-        (should (equal (funcall callback) (format "%s\n" rand-str)))))))
+  (let ((proc-buf (sage-shell-test--start-sage-sync)))
+
+    (let* ((rand-str (md5 (current-time-string)))
+           (callback (sage-shell:send-command (format "print '%s'" rand-str)
+                                              proc-buf)))
+      (sage-shell:after-redirect-finished
+        (ert-deftest sage-shell:test-send-command ()
+          (should (equal (funcall callback) (format "%s\n" rand-str))))))
+
+
+    (ert-deftest sage-shell:test-runcell-sync ()
+      (equal (sage-shell:run-cell-raw-output "10.factorial()"
+                                             :to-string t
+                                             :process-buffer proc-buf)
+             "3628800\n"))
+
+    (let ((rand-str (md5 (current-time-string))))
+      (sage-shell:run-cell
+       (format "print '%s'" rand-str)
+       :process-buffer proc-buf
+       :call-back (lambda (res)
+                    (ert-deftest sage-shell:test-run-cell-1 ()
+                      (should (equal (sage-shell:output-stct-output res)
+                                     (format "%s\n" rand-str)))
+                      (should (equal (sage-shell:output-stct-success res) t))))))
+
+    (sage-shell:run-cell
+     "x/(x - x)"
+     :process-buffer proc-buf
+     :call-back (lambda (res)
+                  (ert-deftest sage-shell:test-run-cell-2 ()
+                    (should (equal (sage-shell:output-stct-success res) nil))
+                    (should (string-match "ZeroDivisionError"
+                                          (sage-shell:output-stct-output res))))))
+
+    ;; Wait for evaliation completes
+    (with-current-buffer proc-buf
+      (while (null (sage-shell:redirect-finished-p))
+        (accept-process-output nil 0 100)))))
