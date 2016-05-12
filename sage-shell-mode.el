@@ -759,7 +759,7 @@ succesive lines in history."
 (defun sage-shell:send-command-sync
     (command &optional process-buffer output-buffer to-string raw)
   "internal function"
-  (sage-shell:run-cell
+  (sage-shell:run-cell-raw-output
    command :sync t
    :process-buffer process-buffer
    :output-buffer output-buffer
@@ -793,7 +793,7 @@ succesive lines in history."
 
 
 
-(defun sage-shell:run-cell-w-success-state (cell &rest plst)
+(defun sage-shell:run-cell (cell &rest plst)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
         (call-back (plist-get plst :call-back)))
     (let ((call-back (lambda (output &rest args)
@@ -802,7 +802,7 @@ succesive lines in history."
                               args))))
       (plist-put plst :call-back call-back)
       (plist-put plst :evaluator evaluator)
-      (apply #'sage-shell:run-cell cell plst))))
+      (apply #'sage-shell:run-cell-raw-output cell plst))))
 
 (defmacro sage-shell:after-redirect-finished (&rest body)
   (declare (indent 0))
@@ -813,14 +813,14 @@ succesive lines in history."
               (add-to-list 'sage-shell:redirect-filter-finished-hook
                            (lambda () ,@body))))))
 
-(cl-defun sage-shell:run-cell (cell &key call-back
-                                    process-buffer
-                                    output-buffer
-                                    sync
-                                    raw
-                                    evaluator
-                                    to-string
-                                    call-back-rest-args)
+(cl-defun sage-shell:run-cell-raw-output (cell &key call-back
+                                               process-buffer
+                                               output-buffer
+                                               sync
+                                               raw
+                                               evaluator
+                                               to-string
+                                               call-back-rest-args)
   "CELL is a string which will be sent to the proces buffer,
 When non-nil, Call-BACK should be a function and will be called if the
 evaluation completes. The output will be passed as its first argument
@@ -947,7 +947,7 @@ When sync is nill this return a lambda function to get the result."
 
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
-  (sage-shell:send-command
+  (sage-shell:run-cell-raw-output
    (sage-shell:join-command
     (sage-shell:aif sage-shell:inspect-ingnore-classes
         (let ((cmd (format "%s.ignore_classes = [%s]"
@@ -955,7 +955,7 @@ When sync is nill this return a lambda function to get the result."
                            (mapconcat 'identity it ", "))))
           (cons cmd sage-shell:init-command-list))
       sage-shell:init-command-list))
-   buffer nil nil t)
+   :process-buffer buffer :sync t :raw t)
   (setq sage-shell:init-finished-p t)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
@@ -3139,7 +3139,7 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
                      (cl-loop for a in sage-shell-cpl:-dict-keys
                               collect
                               (cons a (assoc-default a compl-state)))))))
-          (sage-shell:run-cell-w-success-state
+          (sage-shell:run-cell
            cmd
            :output-buffer output-buffer
            :sync sync
