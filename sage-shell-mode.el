@@ -793,16 +793,23 @@ succesive lines in history."
 
 
 
-(defun sage-shell:run-cell (cell &rest plst)
+(cl-defun sage-shell:run-cell (cell &key call-back
+                                    output-buffer
+                                    process-buffer
+                                    sync
+                                    call-back-rest-args)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
-        (call-back (plist-get plst :call-back)))
-    (let ((call-back (lambda (output &rest args)
-                       (apply call-back
-                              (sage-shell:eval-state output)
-                              args))))
-      (plist-put plst :call-back call-back)
-      (plist-put plst :evaluator evaluator)
-      (apply #'sage-shell:run-cell-raw-output cell plst))))
+        (call-back (lambda (output &rest args)
+                     (apply call-back
+                            (sage-shell:eval-state output)
+                            args))))
+    (sage-shell:run-cell-raw-output cell
+                                    :output-buffer output-buffer
+                                    :process-buffer process-buffer
+                                    :sync sync
+                                    :call-back-rest-args call-back-rest-args
+                                    :evaluator evaluator
+                                    :call-back call-back)))
 
 (defmacro sage-shell:after-redirect-finished (&rest body)
   (declare (indent 0))
