@@ -42,7 +42,9 @@
 ;; infomation.
 
 ;;; Code:
-(require 'cl-lib)
+
+;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
+(eval-and-compile (require 'cl-lib))
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
