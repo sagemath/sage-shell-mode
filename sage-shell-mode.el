@@ -42,7 +42,7 @@
 ;; infomation.
 
 ;;; Code:
-(eval-and-compile (require 'cl-lib))
+(require 'cl-lib)
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
