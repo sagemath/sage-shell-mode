@@ -32,6 +32,7 @@
 ** Requirements
 
    1. GNU Emacs 24 or later
+      As of =sage-shell-mode 0.1.0=, this package requires Emacs 24 or later for lexical closures.
 
    2. Local install of [[http://www.sagemath.org/][Sage]]
 
