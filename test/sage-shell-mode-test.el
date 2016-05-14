@@ -273,4 +273,17 @@ foo=bar(1, 2), baz=(1, 2")))
     ;; Wait for evaliation completes
     (with-current-buffer proc-buf
       (while (null (sage-shell:redirect-finished-p))
-        (accept-process-output nil 0 100)))))
+        (accept-process-output nil 0 100)))
+
+    (ert-deftest sage-shell:test-singular-vars ()
+      (with-current-buffer proc-buf
+        (let* ((state '((types "interface" "attributes")
+                        (interface . "singular")
+                        (var-base-name . "singular")))
+               (cands (sage-shell-cpl:candidates
+                       :sexp
+                       (sage-shell-cpl:completion-init t :compl-state state)
+                       :state state
+                       :regexp (sage-shell-interfaces:get "singular" 'cmd-rxp))))
+          (should (member "zerodec" cands))
+          (should (member "groebner" cands)))))))
