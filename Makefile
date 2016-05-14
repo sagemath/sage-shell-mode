@@ -2,7 +2,7 @@ EMACS ?= emacs
 CASK ?= $(HOME)/.cask/bin/cask
 
 compile:
-	$(CASK) exec $(EMACS) -Q -eval "(setq byte-compile-error-on-warn t)" \
+	$(CASK) exec $(EMACS) -Q -eval "(progn (setq byte-compile-delete-errors nil) (setq byte-compile-error-on-warn t))" \
 	-batch -f batch-byte-compile sage-shell-mode.el
 
 test: clean compile
