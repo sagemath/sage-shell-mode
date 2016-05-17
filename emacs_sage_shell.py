@@ -4,10 +4,14 @@ import re
 import sys
 import os
 from contextlib import contextmanager
+import inspect
+
+from IPython.core.completerlib import module_completion
+
 import sage
 from sage.all import preparse
-import inspect
-from IPython.core.completerlib import module_completion
+from sage.misc.all import uniq
+
 
 try:
     ip = get_ipython()
@@ -129,7 +133,7 @@ def all_commands(compl_dct):
     else:
         intfc = ip.ev(interface)
         if isinstance(intfc, sage.interfaces.expect.Expect):
-            return _completions_attributes(interface)
+            return list(sorted(_completions_attributes(interface)))
         else:
             return []
 
@@ -144,6 +148,8 @@ def all_attributes(compl_dct):
             ls = ip.ev('dir(%s)' % (varname,))
         else:
             ls = _completions_attributes(preparse(varname))
+            ls.extend(ip.ev('dir(%s)' % (preparse(varname),)))
+            ls = list(sorted(uniq(ls)))
         return ls
     except:
         return []
@@ -152,7 +158,7 @@ def all_attributes(compl_dct):
 def _completions_attributes(varname):
     completions = ip.complete('%s.' % (varname, ))[1]
     ln = len(varname) + 1
-    return list(sorted([a[ln:] for a in completions]))
+    return [a[ln:] for a in completions]
 
 
 def list_modules_in(p):
