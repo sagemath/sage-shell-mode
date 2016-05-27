@@ -284,21 +284,22 @@ The name is made by appending a number to PREFIX, default
              unless (funcall pred a)
              collect a)))
 
-(cl-defsubst sage-shell:group (l &optional (n 2))
+(defsubst sage-shell:nthcar-and-rest (m l)
+  (cl-loop for i from 0 to (1- m)
+           for a on l
+           collect (car a) into x
+           finally (return (cons x a))))
+
+(defsubst sage-shell:group (l &optional n)
   (let ((r l)
         (a nil)
+        (n (or n 2))
         (res nil))
     (while r
       (setq a (sage-shell:nthcar-and-rest n r)
             r (cdr a))
       (push (car a) res))
     (nreverse res)))
-
-(cl-defsubst sage-shell:nthcar-and-rest (m l)
-  (cl-loop for i from 0 to (1- m)
-           for a on l
-           collect (car a) into x
-           finally (return (cons x a))))
 
 (defmacro sage-shell:if-let* (varlist test-form then-form &rest else-forms)
   "VARLIST is like varlist of let*."
