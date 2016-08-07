@@ -1538,14 +1538,41 @@ This ring remebers the parts.")
     (set hook nil)
     (cl-loop for f in (nreverse hook-saved) do (funcall f))))
 
+;;; Copied from windows.el of Emacs 25.0.
+(defun sage-shell:-window-max-chars-per-line (&optional window face)
+  (with-selected-window (window-normalize-window window t)
+    (let* ((window-width (window-body-width window t))
+           (font-width (window-font-width window face))
+           (ncols (/ window-width font-width)))
+      (if (and (display-graphic-p)
+               overflow-newline-into-fringe
+               (not
+                (or (eq left-fringe-width 0)
+                    (and (null left-fringe-width)
+                         (= (frame-parameter nil 'left-fringe) 0))))
+               (not
+                (or (eq right-fringe-width 0)
+                    (and (null right-fringe-width)
+                         (= (frame-parameter nil 'right-fringe) 0)))))
+          ncols
+        ;; FIXME: This should remove 1 more column when there are no
+        ;; fringes, lines are truncated, and the window is hscrolled,
+        ;; but EOL is not in the view, because then there are 2
+        ;; truncation glyphs, not one.
+        (1- ncols)))))
+
 (defun sage-shell:-window-size (process window)
   (cond ((and (boundp 'window-adjust-process-window-size-function)
               (functionp window-adjust-process-window-size-function))
          ;; Emacs 25.1 has window-adjust-process-window-size-function
          (funcall window-adjust-process-window-size-function
                   process (list window)))
-        (t (cons (window-max-chars-per-line window)
-                 (window-body-height window)))))
+        (t (let ((width (cond ((fboundp 'window-max-chars-per-line)
+                               (window-max-chars-per-line window))
+                              (t (sage-shell:-window-max-chars-per-line
+                                  window)))))
+             (cons width
+                   (window-body-height window))))))
 
 (defun sage-shell:-adjust-window-size ()
   (dolist (win (window-list))
