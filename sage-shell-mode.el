@@ -676,8 +676,10 @@ to a process buffer.")
     (setq sage-shell:menu-defined-p t))
 
   ;; Tell the process the window size for Ipython5's newprompt
-  (unless (member 'window--adjust-process-windows
-                  (default-value 'window-configuration-change-hook))
+  (unless (or (member 'window--adjust-process-windows
+                      (default-value 'window-configuration-change-hook))
+              (member 'window--adjust-process-windows
+                      window-configuration-change-hook))
     (add-hook 'window-configuration-change-hook
               #'sage-shell:-adjust-window-size nil t))
 
