@@ -1538,11 +1538,29 @@ This ring remebers the parts.")
     (set hook nil)
     (cl-loop for f in (nreverse hook-saved) do (funcall f))))
 
-;;; Copied from windows.el of Emacs 25.0.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Copied from windows.el of Emacs 25.0.
+(defun sage-shell:-window-font-width (&optional window face)
+   "Return average character width for the font of FACE used in WINDOW.
+WINDOW must be a live window and defaults to the selected one.
+
+If FACE is nil or omitted, the default face is used.  If FACE is
+remapped (see `face-remapping-alist'), the function returns the
+information for the remapped face."
+   (with-selected-window (window-normalize-window window t)
+     (if (display-multi-font-p)
+         (let* ((face (if face face 'default))
+                (info (font-info (face-font face)))
+                (width (aref info 11)))
+           (if (> width 0)
+              width
+             (aref info 10)))
+       (frame-char-width))))
+
 (defun sage-shell:-window-max-chars-per-line (&optional window face)
   (with-selected-window (window-normalize-window window t)
     (let* ((window-width (window-body-width window t))
-           (font-width (window-font-width window face))
+           (font-width (sage-shell:-window-font-width window face))
            (ncols (/ window-width font-width)))
       (if (and (display-graphic-p)
                overflow-newline-into-fringe
@@ -1560,6 +1578,7 @@ This ring remebers the parts.")
         ;; but EOL is not in the view, because then there are 2
         ;; truncation glyphs, not one.
         (1- ncols)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun sage-shell:-window-size (process window)
   (cond ((and (boundp 'window-adjust-process-window-size-function)
