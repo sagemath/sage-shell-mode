@@ -675,6 +675,12 @@ to a process buffer.")
       sage-shell:menu-spec)
     (setq sage-shell:menu-defined-p t))
 
+  ;; Tell the process the window size for Ipython5's newprompt
+  (unless (member 'window--adjust-process-windows
+                  (default-value 'window-configuration-change-hook))
+    (add-hook 'window-configuration-change-hook
+              #'sage-shell:-adjust-window-size nil t))
+
   ;; Run init functions after Sage loaded.
   (add-to-list 'sage-shell:output-filter-finished-hook
                (lambda () (sage-shell:after-init-function
@@ -1529,6 +1535,25 @@ This ring remebers the parts.")
   (let ((hook-saved (symbol-value hook)))
     (set hook nil)
     (cl-loop for f in (nreverse hook-saved) do (funcall f))))
+
+(defun sage-shell:-window-size (process window)
+  (cond ((and (boundp 'window-adjust-process-window-size-function)
+              (functionp window-adjust-process-window-size-function))
+         ;; Emacs 25.1 has window-adjust-process-window-size-function
+         (funcall window-adjust-process-window-size-function
+                  process (list window)))
+        (t (cons (window-max-chars-per-line window)
+                 (window-body-height window)))))
+
+(defun sage-shell:-adjust-window-size ()
+  (dolist (win (window-list))
+    (let* ((buf (window-buffer win))
+           (proc (get-buffer-process buf)))
+      (when (and proc (process-live-p proc)
+                 (eq (buffer-local-value 'major-mode buf) 'sage-shell-mode))
+        (let ((sizes (sage-shell:-window-size proc win)))
+          (when sizes
+            (set-process-window-size proc (cdr sizes) (car sizes))))))))
 
 (defun sage-shell:ansi-color-filter-apply (string)
   (let* ((ansi-color-context nil)
