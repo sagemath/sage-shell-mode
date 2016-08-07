@@ -1546,7 +1546,7 @@ This ring remebers the parts.")
            (font-width (frame-char-width))
            (ncols (/ window-width font-width)))
       (if (and (display-graphic-p)
-               overflow-newline-into-fringe
+               (bound-and-true-p 'overflow-newline-into-fringe)
                (not
                 (or (eq left-fringe-width 0)
                     (and (null left-fringe-width)
