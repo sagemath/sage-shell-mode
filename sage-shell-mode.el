@@ -1601,6 +1601,104 @@ This ring remebers the parts.")
                            (replace-regexp-in-string (rx (or "│" "┃")) "|")))
           (t res))))
 
+(defvar sage-shell:-ansi-escpace-handler-alist
+  `((?n . ,#'sage-shell:-report-cursor-pos)
+    (?J . ,#'sage-shell:-delete-line)
+    (?D . ,#'sage-shell:-cursor-back)
+    (?C . ,#'sage-shell:-cursor-forward)
+    (?A . ,#'sage-shell:-cursor-up)
+    (?B . ,#'sage-shell:-cursor-down)
+    (?H . ,#'sage-shell:-move-cursor-pos))
+  "An alist for ansi escapse sequences consisting of
+(cons char function-symbol)).")
+
+(defvar sage-shell:-ansi-escape-regexp
+  (rx "[" (group (0+ (or num ";")))
+      (group (or "n" "A" "B" "C" "D" "J"))))
+
+(defun sage-shell:-handle-ansi-escape (proc str)
+  "Handle ANSI escape sequences for STR, remove sequences matched
+by sage-shell:-ansi-escape-regexp."
+  (let ((case-fold-search nil))
+    (cl-loop while (string-match-p sage-shell:-ansi-escape-regexp str)
+             for chr = (match-string-no-properties 2)
+             for args = (mapcar (lambda (s) (when s
+                                          (string-to-number s)))
+                                (split-string (match-string-no-properties 1) ";"))
+             do
+             (apply (assoc-default chr sage-shell:-ansi-escpace-handler-alist)
+                    proc args)
+             (setq str (concat (substring str 0 (1- (match-beginning 0)))
+                               (substring str (1+ (match-end 0)))))
+             finally return str)))
+
+(defun sage-shell:-bol ()
+  (goto-char (sage-shell:line-beginning-position))
+  (when (or (looking-at sage-shell:prompt-regexp)
+            (looking-at (rx-to-string
+                         `(and
+                           (or ,@sage-shell-interfaces:other-interfaces)
+                           ": "))))
+    (goto-char (match-end 0))))
+
+(defun sage-shell:-move-cursor-pos (_proc &optional args)
+  (let ((c (or (car args) 1))
+        (r (or (cadr args) 1))
+        (start-line (save-excursion
+                      (goto-char (window-start))
+                      (line-number-at-pos))))
+    (goto-char (point-min))
+    (forward-line (- 2 (+ r start-line)))
+    (sage-shell:-bol)
+    (forward-char (1- c))))
+
+(defun sage-shell:-cursor-down (_proc &optional args)
+  (let ((n (or (car args) 1)))
+    (forward-line n)))
+
+(defun sage-shell:-cursor-up (_proc &optional args)
+  (let ((n (or (car args) 1)))
+    (forward-line (- n))))
+
+(defun sage-shell:-cursor-back (_proc &optional args)
+  (let ((n (or (car args) 1)))
+    (forward-char (- n))))
+
+(defun sage-shell:-cursor-forward (_proc &optional args)
+  (let ((n (or (car args) 1)))
+    (forward-char n)))
+
+(defun sage-shell:-current-column ()
+  "Return the current column."
+  (1+ (- (current-column)
+         (save-excursion
+           (sage-shell:-bol)
+           (current-column)))))
+
+(defun sage-shell:-current-row ()
+  "Return the current row."
+  (let ((start-line (save-excursion
+                      (goto-char (window-start))
+                      (line-number-at-pos))))
+    (1+ (- (line-number-at-pos) start-line))))
+
+(defun sage-shell:-report-cursor-pos (proc &optional _args)
+  (process-send-string proc
+   (format "\e[%s;%sR"
+           (sage-shell:-current-row)
+           (sage-shell:-current-column))))
+
+(defun sage-shell:-delete-line (_proc &optional args)
+  (let ((n (car args))
+        (inhibit-read-only t))
+    (cond ((or (null n)
+               (equal n 0))
+           (delete-region (point) (point-max)))
+          ((equal n 1)
+           (delete-region (window-start) (point)))
+          (t
+           (delete-region (window-start) (point-max))))))
+
 ;; In recent version comint.el,
 ;; `comint-redirect-original-filter-function` is removed.
 (defvar sage-shell:comint-redirect-original-filter-function nil)
@@ -1637,10 +1735,12 @@ This ring remebers the parts.")
     ;; We temporarily remove any buffer narrowing, in case the
     ;; process mark is outside of the restriction
     (save-restriction
+      (setq string (sage-shell:-handle-ansi-escape process string))
       (widen)
 
       (goto-char (process-mark process))
       (set-marker comint-last-output-start (point))
+
       ;; insert-before-markers is a bad thing. XXX
       ;; Luckily we don't have to use it any more, we use
       ;; window-point-insertion-type instead.
@@ -1884,6 +1984,7 @@ Does not delete the prompt."
 
 (defun sage-shell:redirect-filter (process input-string)
   (when process
+    (setq input-string (sage-shell:-handle-ansi-escape process input-string))
     (let ((proc-buf (process-buffer process))
           (input-string (sage-shell:ansi-color-filter-apply input-string)))
       (with-current-buffer proc-buf
