@@ -1897,19 +1897,24 @@ Return the remaining string."
         (sage-shell-indent:insert-whitespace))
 
       (when sage-shell:output-finished-p
-        (let ((lbp (sage-shell:line-beginning-position)))
-          ;; Highlight the prompt
-          (sage-shell:highlight-prompt lbp)
+        ;; create links in the output buffer.
+        (when sage-shell:make-error-link-p
+          (sage-shell:make-error-links comint-last-input-end (point)))
+        (sage-shell-pdb:comint-output-filter-function string))
 
-          ;; create links in the output buffer.
-          (when sage-shell:make-error-link-p
-            (sage-shell:make-error-links comint-last-input-end (point)))
-          (sage-shell-pdb:comint-output-filter-function string)))
+      ;; Highlight the prompt
+      (save-excursion
+        (goto-char comint-last-output-start)
+        (forward-line 0)
+        (while (re-search-forward sage-shell:-prompt-regexp-no-eol nil t)
+          (sage-shell:highlight-prompt (match-beginning 0)
+                                       (match-end 0))))
+
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
         (goto-char saved-point)))))
 
-(defun sage-shell:highlight-prompt (prompt-start)
+(defun sage-shell:highlight-prompt (prompt-start prompt-end)
   (let ((inhibit-read-only t)
         (inhibit-modification-hooks t))
     (when comint-prompt-read-only
@@ -1920,10 +1925,11 @@ Return the remaining string."
       (add-text-properties
        prompt-start (point)
        '(read-only t rear-nonsticky t front-sticky (read-only) field output)))
-    (unless (bolp)
-      (let ((ov (make-overlay prompt-start (point))))
-        (overlay-put ov
-                     'font-lock-face 'comint-highlight-prompt)))))
+    (when (not (cl-loop for ov in (overlays-at prompt-start)
+                        thereis (overlay-get ov 'sage)))
+      (let ((ov (make-overlay prompt-start prompt-end)))
+        (overlay-put ov 'font-lock-face 'comint-highlight-prompt)
+        (overlay-put ov 'sage t)))))
 
 (defun sage-shell:-delete-output (pt)
   "Delete region between pt and process-mark"
