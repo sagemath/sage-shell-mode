@@ -691,14 +691,6 @@ to a process buffer.")
       sage-shell:menu-spec)
     (setq sage-shell:menu-defined-p t))
 
-  ;; Tell the process the window size for Ipython5's newprompt
-  (unless (or (member 'window--adjust-process-windows
-                      (default-value 'window-configuration-change-hook))
-              (member 'window--adjust-process-windows
-                      window-configuration-change-hook))
-    (add-hook 'window-configuration-change-hook
-              #'sage-shell:-adjust-window-size nil t))
-
   ;; Run init functions after Sage loaded.
   (add-to-list 'sage-shell:output-filter-finished-hook
                (lambda () (sage-shell:after-init-function
@@ -1081,11 +1073,20 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
-        (set-process-filter (get-buffer-process buf) 'sage-shell:output-filter)
-        (sage-shell-mode)))
+
+        (let ((proc (get-buffer-process buf)))
+          (set-process-filter proc 'sage-shell:output-filter)
+          ;; Don't call window--adjust-process-windows in windows.el
+          ;; It calls the process-filter and modify the output buffer.
+          (when sage-shell:use-ipython5-prompt
+            (process-put proc 'adjust-window-size-function (lambda (_proc _win) nil)))
+          (sage-shell-mode))))
     (cond ((eq switch-function 'no-switch)
            (switch-to-buffer cur-buf))
           (t (funcall switch-function buf)))
+    ;; Tell the process the window size for Ipython5's newprompt
+    (when sage-shell:use-ipython5-prompt
+      (sage-shell:-adjust-window-size))
     buf))
 
 ;;;###autoload
@@ -1599,15 +1600,23 @@ This ring remebers the parts.")
              (cons width
                    (window-body-height window))))))
 
-(defun sage-shell:-adjust-window-size ()
-  (dolist (win (window-list))
-    (let* ((buf (window-buffer win))
-           (proc (get-buffer-process buf)))
+(defun sage-shell:-adjust-window-size-each (proc win)
+  (let ((buf (window-buffer win)))
+    (with-current-buffer buf
       (when (and proc (process-live-p proc)
-                 (eq (buffer-local-value 'major-mode buf) 'sage-shell-mode))
+                 (eq major-mode 'sage-shell-mode))
         (let ((sizes (sage-shell:-window-size proc win)))
           (when sizes
-            (set-process-window-size proc (cdr sizes) (car sizes))))))))
+            (unless sage-shell:init-finished-p
+              (set-process-window-size proc  (cdr sizes) (car sizes)))))))))
+
+(defun sage-shell:-adjust-window-size ()
+  (walk-windows
+   (lambda (win)
+     (let* ((buf (window-buffer win))
+            (proc (get-buffer-process buf)))
+       (sage-shell:-adjust-window-size-each
+        proc win)))))
 
 (defun sage-shell:ansi-color-filter-apply (string)
   (let* ((ansi-color-context nil)
@@ -2163,13 +2172,6 @@ Does not delete the prompt."
     (with-current-buffer output-buffer
       (setq sage-shell:process-buffer process-buffer))
     (with-current-buffer process-buffer
-      ;; Make sure there's a prompt in the current process buffer
-      (and comint-redirect-perform-sanity-check
-           (save-excursion
-             (goto-char (point-max))
-             (or (re-search-backward comint-prompt-regexp nil t)
-                 (error "No prompt found."))))
-
       ;; Set up for redirection
       (setq sage-shell:redirect-last-point nil)
       (setq-local sage-shell:-dummy-promt-prefix
