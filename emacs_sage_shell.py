@@ -6,6 +6,7 @@ import os
 from contextlib import contextmanager
 import inspect
 
+import IPython
 from IPython.core.completerlib import module_completion
 
 import sage
@@ -20,6 +21,13 @@ except:                         # Older versions
     import IPython.ipapi
     ip = IPython.ipapi.get()
     ip.IP.shell.autoindent = False
+
+# Disable highlighting matching parentheses.
+try:
+    if IPython.version_info[0] >= 5:
+        sage.repl.interpreter.SageTerminalInteractiveShell.highlight_matching_brackets = False
+except:
+    pass
 
 # Disable color.
 ip.run_line_magic('colors', 'NoColor')
