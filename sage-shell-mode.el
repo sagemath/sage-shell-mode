@@ -48,6 +48,8 @@
 ;; 3. Fix foo?
 ;; 4. Backward compatiblity with IPython 4.*.
 ;; 5. Disabel auto indent.
+;; 6. Improve sage-shell:-down.
+
 
 ;;; Code:
 
