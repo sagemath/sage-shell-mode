@@ -41,6 +41,14 @@
 ;; Please visit https://github.com/stakemori/sage-shell-mode for more
 ;; infomation.
 
+;;; TODO
+;; 1. Fix sage-shell:-adjust-window-size-each when sage-shell:init-finished-p is t
+;; by using redirection.
+;; 2. Set process-window-size even if buffer is not displayed.
+;; 3. Fix foo?
+;; 4. Backward compatiblity with IPython 4.*.
+;; 5. Disabel auto indent.
+
 ;;; Code:
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
