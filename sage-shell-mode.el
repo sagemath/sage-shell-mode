@@ -1898,9 +1898,6 @@ Return the remaining string."
 
       (when sage-shell:output-finished-p
         (let ((lbp (sage-shell:line-beginning-position)))
-          ;; Delete duplicate propmpt
-          (when (get-text-property lbp 'read-only)
-            (delete-region lbp comint-last-output-start))
           ;; Highlight the prompt
           (sage-shell:highlight-prompt lbp)
 
