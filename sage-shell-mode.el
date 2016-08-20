@@ -184,6 +184,13 @@ This string will be inserted to the temporary file before evaluating code."
   :type 'string
   :group 'sage-shell)
 
+
+(defcustom sage-shell:use-ipython5-prompt nil
+  "Non `nil' means the Sage process uses the new prompt of IPython 5 or later."
+  :type 'bool
+  :group 'sage-shell)
+;; (make-variable-buffer-local 'sage-shell:use-ipython5-prompt)
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -1617,9 +1624,6 @@ This ring remebers the parts.")
                            (replace-regexp-in-string (rx (or "│" "┃")) "|")))
           (t res))))
 
-(defvar sage-shell:use-ipython5-prompt nil
-  "Non `nil' means the Sage process uses the new prompt of IPython 5 or later.")
-(make-variable-buffer-local 'sage-shell:use-ipython5-prompt)
 
 (defvar sage-shell:-ansi-escpace-handler-alist
   `((?n . ,#'ignore)
@@ -1682,9 +1686,7 @@ Return the remaining string."
     (set-marker mk-start (point))
     (cond ((stringp seqs)
            (insert seqs))
-          (t (with-current-buffer sage-shell:process-buffer
-               (setq sage-shell:use-ipython5-prompt t))
-             (dolist (a seqs)
+          (t (dolist (a seqs)
                (cond ((listp a)
                       (let ((args (cadr a)))
                         (apply (assoc-default
