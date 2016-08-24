@@ -1646,7 +1646,7 @@ This ring remebers the parts.")
 
 (defvar sage-shell:-ansi-escpace-handler-alist
   `((?n . ,#'ignore)
-    (?J . ,#'sage-shell:-delete-line)
+    (?J . ,#'sage-shell:-delete-display)
     (?D . ,#'sage-shell:-cursor-back)
     (?C . ,#'sage-shell:-cursor-forward)
     (?A . ,#'sage-shell:-cursor-up)
@@ -1804,7 +1804,7 @@ Return the remaining string."
            (sage-shell:-current-row)
            (sage-shell:-current-column))))
 
-(defun sage-shell:-delete-line (_proc &rest args)
+(defun sage-shell:-delete-display (_proc &rest args)
   (let ((n (car args))
         (inhibit-read-only t))
     (cond ((or (null n)
