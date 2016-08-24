@@ -1964,7 +1964,7 @@ the point to end of the buffer"
           (put-text-property
            (1- prompt-start) prompt-start 'read-only 'fence))
       (add-text-properties
-       prompt-start (point)
+       prompt-start prompt-end
        '(read-only t rear-nonsticky t front-sticky (read-only) field output)))
     (when (not (cl-loop for ov in (overlays-at prompt-start)
                         thereis (overlay-get ov 'sage)))
