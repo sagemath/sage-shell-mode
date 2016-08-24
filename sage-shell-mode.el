@@ -42,8 +42,6 @@
 ;; infomation.
 
 ;;; TODO
-;; 1. Fix sage-shell:-adjust-window-size-each when sage-shell:init-finished-p is t
-;; by using redirection.
 ;; 2. Set process-window-size even if buffer is not displayed.
 ;; 3. Fix foo?
 ;; 4. Backward compatiblity with IPython 4.*.
@@ -1096,7 +1094,10 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
           (t (funcall switch-function buf)))
     ;; Tell the process the window size for Ipython5's newprompt
     (when sage-shell:use-ipython5-prompt
-      (sage-shell:-adjust-window-size))
+      (sage-shell:-adjust-window-size)
+      (with-current-buffer buf
+        (add-hook 'window-configuration-change-hook
+                #'sage-shell:-adjust-window-size nil t)))
     buf))
 
 ;;;###autoload
@@ -1617,8 +1618,7 @@ This ring remebers the parts.")
                  (eq major-mode 'sage-shell-mode))
         (let ((sizes (sage-shell:-window-size proc win)))
           (when sizes
-            (unless sage-shell:init-finished-p
-              (set-process-window-size proc  (cdr sizes) (car sizes)))))))))
+            (set-process-window-size proc  (cdr sizes) (car sizes))))))))
 
 (defun sage-shell:-adjust-window-size ()
   (walk-windows
