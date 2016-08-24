@@ -1704,7 +1704,7 @@ Return the remaining string."
          (mk-start (make-marker)))
     (set-marker mk-start (point))
     (cond ((stringp seqs)
-           (insert seqs))
+           (insert (propertize seqs 'field 'output)))
           (t (dolist (a seqs)
                (cond ((listp a)
                       (let ((args (cadr a)))
@@ -1721,7 +1721,7 @@ Return the remaining string."
   "Insert STR. But call `sage-shell:-down' if \n is seen."
   (cl-loop for l on (split-string str "\n")
            do
-           (insert (car l))
+           (insert (propertize (car l) 'field 'output))
            (when (cdr l)
              (sage-shell:-down 1))))
 
@@ -1801,20 +1801,39 @@ Return the remaining string."
 
 (defun sage-shell:-report-cursor-pos (proc &rest _args)
   (process-send-string proc
-   (format "\e[%s;%sR"
-           (sage-shell:-current-row)
-           (sage-shell:-current-column))))
+                       (format "\e[%s;%sR"
+                               (sage-shell:-current-row)
+                               (sage-shell:-current-column))))
+
+(defun sage-shell:-delete-to-end-of-output (&optional pt)
+  "Assuming current point is at output, delete output text from
+the point to end of the buffer"
+  (let ((inhibit-field-text-motion nil)
+        (inhibit-read-only t))
+    (save-excursion
+      (when pt
+        (goto-char pt))
+      (while (progn
+               (delete-region (line-end-position) (line-beginning-position))
+               (end-of-line)
+               (not (eobp)))
+        (forward-line 1)))))
+
+(defun sage-shell:-at-output-p (pt)
+  "Return non-nil if the pt is on output."
+  (eq (plist-get (text-properties-at pt) 'field) 'output))
 
 (defun sage-shell:-delete-display (_proc &rest args)
-  (let ((n (car args))
-        (inhibit-read-only t))
-    (cond ((or (null n)
-               (equal n 0))
-           (delete-region (point) (point-max)))
-          ((equal n 1)
-           (delete-region (window-start) (point)))
-          (t
-           (delete-region (window-start) (point-max))))))
+  ;; Don't delete user's input.
+  (when (sage-shell:-at-output-p (point))
+    (let ((n (car args))
+          (inhibit-read-only t))
+      (cond ((or (null n) (equal n 0))
+             (sage-shell:-delete-to-end-of-output))
+            ((equal n 1)
+             (delete-region (point-min) (point)))
+            (t
+             (sage-shell:-delete-to-end-of-output (point-min)))))))
 
 ;; In recent version comint.el,
 ;; `comint-redirect-original-filter-function` is removed.
