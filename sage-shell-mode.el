@@ -1779,7 +1779,8 @@ Return the remaining string."
     (goto-char to)))
 
 (defun sage-shell:-cursor-forward (_proc &rest args)
-  (let* ((n (or (car args) 1))
+  (let* ((inhibit-field-text-motion t)
+         (n (or (car args) 1))
          (le (line-end-position))
          (to (min le (+ (point) n))))
     (goto-char to)))
