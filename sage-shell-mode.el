@@ -1843,6 +1843,24 @@ the point to end of the buffer"
 (defvar sage-shell:-pending-outputs nil)
 (make-variable-buffer-local 'sage-shell:-pending-outputs)
 
+
+(defun sage-shell:-psh-to-pending-out (string)
+  "Push string to sage-shell:-pending-outputs if necessary and
+return string for output."
+  (cond (sage-shell:-pending-outputs
+         (prog1
+             (mapconcat #'identity sage-shell:-pending-outputs "")
+           (setq sage-shell:-pending-outputs nil)))
+        ((string-match-p
+          (rx (or (and "[" (0+ (or num ";" "?")))
+                  "")
+              eol)
+          string)
+         (push string sage-shell:-pending-outputs)
+         ;; Return the empty and wait for next output
+         "")
+        (t string)))
+
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process)))
     (sage-shell:with-current-buffer-safe (and string oprocbuf)
@@ -1851,18 +1869,7 @@ the point to end of the buffer"
           (when (and (windowp win) (window-live-p win))
             (select-window win))
           (setq string (sage-shell:-ansi-escape-filter-out string))
-          (cond (sage-shell:-pending-outputs
-                 (setq string
-                       (mapconcat #'identity sage-shell:-pending-outputs ""))
-                 (setq sage-shell:-pending-outputs nil))
-                ((string-match-p
-                  (rx (or (and "[" (0+ (or num ";" "?")))
-                          "")
-                      eol)
-                  string)
-                 (push string sage-shell:-pending-outputs)
-                 ;; Set string empty and wait for next output
-                 (setq string "")))
+          (setq string (sage-shell:-psh-to-pending-out string))
           (unless (string= (sage-shell:-ansi-escape-filter-out string) "")
             (sage-shell:output-filter-no-rdct process string)))
         (when sage-shell:output-finished-p
@@ -2143,6 +2150,7 @@ Does not delete the prompt."
 
     (let ((proc-buf (process-buffer process)))
       (with-current-buffer proc-buf
+        (setq input-string (sage-shell:-psh-to-pending-out input-string))
         (let ((out-buf comint-redirect-output-buffer)
               (f-regexp (sage-shell:-redirect-finished-regexp
                          sage-shell:-dummy-promt-prefix)))
@@ -2204,6 +2212,7 @@ Does not delete the prompt."
     (with-current-buffer process-buffer
       ;; Set up for redirection
       (setq sage-shell:redirect-last-point nil)
+      (setq sage-shell:-pending-outputs nil)
       (setq-local sage-shell:-dummy-promt-prefix
                   (if raw
                       ""
