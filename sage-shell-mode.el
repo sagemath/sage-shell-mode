@@ -2428,13 +2428,24 @@ function does not highlight the input."
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
-           (lambda (proc _str) (comint-simple-send proc "")))
+           (lambda (proc _str) (comint-simple-send proc "")))
           (win (get-buffer-window sage-shell:process-buffer)))
-      (if (and (windowp win)
-               (window-live-p win))
-          (with-selected-window win
-            (sage-shell:comint-send-input))
-        (sage-shell:comint-send-input)))))
+      (let ((line (buffer-substring
+                   (line-beginning-position)
+                   (line-end-position)))
+            (pt (point)))
+        (when sage-shell:use-ipython5-prompt
+          (delete-region (line-beginning-position)
+                         (line-end-position)))
+        (if (and (windowp win)
+                 (window-live-p win))
+            (with-selected-window win
+              (sage-shell:comint-send-input t))
+          (sage-shell:comint-send-input t))
+        (when sage-shell:use-ipython5-prompt
+          (save-excursion
+            (goto-char pt)
+            (insert line)))))))
 
 (defun sage-shell:at-top-level-p ()
   (save-excursion
