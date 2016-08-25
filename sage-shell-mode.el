@@ -1856,7 +1856,7 @@ the point to end of the buffer"
                        (mapconcat #'identity sage-shell:-pending-outputs ""))
                  (setq sage-shell:-pending-outputs nil))
                 ((string-match-p
-                  (rx (or (and "[" (0+ (or num ";")))
+                  (rx (or (and "[" (0+ (or num ";" "?")))
                           "")
                       eol)
                   string)
