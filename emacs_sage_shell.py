@@ -320,8 +320,6 @@ def _is_safe_str(s):
 
 def print_info(name):
     ip.run_cell("%s?" % (name,))
-    # In some cases, the next line is not blank.
-    ip.set_next_input("")
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
@@ -454,4 +452,6 @@ def run_cell_and_print_state(code, dummy):
 
 def run_cell_dummy_prompt(code, dummy):
     ip.run_cell(code)
+    # If input is "foo.bar?", the next input may not be empty.
+    ip.set_next_input("")
     print(dummy)
