@@ -1571,7 +1571,7 @@ Match group 1 will be replaced with devel/sage-branch")
 
 
 
-(defun sage-shell:run-hook-and-remove (hook)
+(defun sage-shell:run-hook-once (hook)
   (let ((hook-saved (symbol-value hook)))
     (set hook nil)
     (cl-loop for f in (nreverse hook-saved) do (funcall f))))
@@ -1897,7 +1897,7 @@ return string for output."
           (when sage-shell:scroll-to-the-bottom
             (comint-postoutput-scroll-to-bottom string))
           (setq buffer-undo-list nil)
-          (sage-shell:run-hook-and-remove
+          (sage-shell:run-hook-once
            'sage-shell:output-filter-finished-hook))))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
@@ -1917,7 +1917,7 @@ return string for output."
       (widen)
 
       (goto-char (process-mark process))
-      (sage-shell:run-hook-and-remove
+      (sage-shell:run-hook-once
        'sage-shell:-pre-output-filter-hook)
       (set-marker comint-last-output-start (point))
 
@@ -2189,7 +2189,7 @@ Does not delete the prompt."
             (replace-match "")
             (set-buffer proc-buf)
             (sage-shell:redirect-cleanup)
-            (sage-shell:run-hook-and-remove
+            (sage-shell:run-hook-once
              'sage-shell:redirect-filter-finished-hook))
           ;; sage-shell:redirect-filter-finished-hook may change the current
           ;; buffer
