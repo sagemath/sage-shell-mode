@@ -1763,13 +1763,17 @@ Return the remaining string."
 
 (defun sage-shell:-down (down)
   "Similar to term-down."
-  (let ((start-column (current-column)))
+  (let ((start-column (current-column))
+        (inhibit-field-text-motion t))
     (cond ((>= down 0)
            (dotimes (_ down)
-             (when (or (> (forward-line 1) 0)
-                       (save-excursion (end-of-line) (eobp)))
-               (insert "\n")
-               (forward-line 1))))
+             (cond ((progn (end-of-line) (eobp))
+                    ;; This case for exception of forward-line
+                    (insert "\n")
+                    (forward-line 1))
+                   (t (when (> (forward-line 1) 0)
+                        (insert "\n")
+                        (forward-line 1))))))
           (t (forward-line down)))
     ;; Go to the same column
     (move-to-column start-column t)))
