@@ -1716,7 +1716,8 @@ Match group 1 will be replaced with devel/sage-branch")
 and remove sequences matched by sage-shell:-ansi-escape-regexp.
 Return value is not deifned."
   (let* ((case-fold-search nil)
-         (seqs (sage-shell:-decompose-ansi-escape-seq str)))
+         (seqs (sage-shell:-decompose-ansi-escape-seq str))
+         (inhibit-redisplay t))
     (cond ((stringp seqs)
            (sage-shell:-insert-and-handle-char seqs))
           (t (dolist (a seqs)
