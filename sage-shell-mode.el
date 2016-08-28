@@ -703,7 +703,10 @@ to a process buffer.")
   (add-to-list 'sage-shell:output-filter-finished-hook
                (lambda () (sage-shell:after-init-function
                        sage-shell:process-buffer)))
-  (sage-shell:pcomplete-setup))
+  (sage-shell:pcomplete-setup)
+  ;; ansi-color-process-output may cause an error.
+  (remove-hook 'comint-output-filter-functions
+               'ansi-color-process-output t))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
