@@ -1885,7 +1885,6 @@ return string for output."
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process)))
     (with-current-buffer (and string oprocbuf)
-      (setq inhibit-redisplay nil)
       (let ((win (get-buffer-window (process-buffer process))))
         (save-selected-window
           (when (and (windowp win) (window-live-p win))
@@ -1918,6 +1917,8 @@ return string for output."
       (widen)
 
       (goto-char (process-mark process))
+      (sage-shell:run-hook-and-remove
+       'sage-shell:-pre-output-filter-hook)
       (set-marker comint-last-output-start (point))
 
       ;; insert-before-markers is a bad thing. XXX
@@ -2292,6 +2293,9 @@ function does not highlight the input."
 (defvar sage-shell:clear-commands-regexp
   (rx bol "clear" (zero-or-more space) eol))
 
+(defvar sage-shell:-pre-output-filter-hook nil)
+(make-variable-buffer-local 'sage-shell:-pre-output-filter-hook)
+
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
 ;; * Set `sage-shell:output-finished-p'.
@@ -2370,10 +2374,10 @@ function does not highlight the input."
                (line-end (line-end-position)))
           (sage-shell:comint-send-input t)
           (process-send-string proc "")
-          (goto-char proc-pos)
           (when sage-shell:use-ipython5-prompt
-            (setq inhibit-redisplay t)
-            (delete-region proc-pos line-end)))))
+            (add-hook 'sage-shell:-pre-output-filter-hook
+                      (lambda () (let ((inhibit-redisplay t))
+                               (delete-region proc-pos line-end))))))))
       ;; If current line contains from ... import *, then update sage commands
       (when (sage-shell-update-sage-commands-p line)
         (sage-shell:update-sage-commands))
