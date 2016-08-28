@@ -1698,16 +1698,23 @@ This ring remebers the parts.")
                                 (nreverse res))))))
 
 (defvar sage-shell:-ansi-escape-drop-regexp
-  (rx (or
-       (and "["
-            (0+ (or num ";" "=" "?"))
-            (regexp "[nmhl]"))
-       "")))
+  (rx (and "["
+               (0+ (or num ";" "=" "?"))
+               (regexp "[nmhl]"))))
 
 (defun sage-shell:-ansi-escape-filter-out (str)
   (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
                             ""
                             str nil t))
+
+(defun sage-shell:-insert-str (str)
+  (let ((str (propertize str 'field 'output)))
+    (cond ((eobp)
+           (insert str))
+          (t (insert str)
+             (delete-region (point)
+                            (min (+ (point) (length str))
+                                 (line-end-position)))))))
 
 (defun sage-shell:-insert-and-handle-ansi-escape (proc str
                                                        &optional
@@ -1720,7 +1727,7 @@ Return the remaining string."
          (mk-start (make-marker)))
     (set-marker mk-start (point))
     (cond ((stringp seqs)
-           (insert (propertize seqs 'field 'output)))
+           (sage-shell:-insert-and-handle-char seqs))
           (t (dolist (a seqs)
                (cond ((listp a)
                       (let ((args (cadr a)))
@@ -1729,35 +1736,43 @@ Return the remaining string."
                                 sage-shell:-ansi-escpace-handler-alist)
                                proc args)))
                      (ignore-seqs
-                      (sage-shell:-down-and-insert a))
-                     (t (sage-shell:-down-and-insert a))))))
+                      (sage-shell:-insert-and-handle-char a))
+                     (t (sage-shell:-insert-and-handle-char a))))))
     (buffer-substring mk-start (point))))
 
-(defun sage-shell:-down-and-insert (str)
-  "Insert STR. But call `sage-shell:-down' if \n is seen."
-  (cl-loop for l on (split-string str "\n")
-           do
-           (insert (propertize (car l) 'field 'output))
-           (when (cdr l)
-             (sage-shell:-down 1))))
+(defvar sage-shell:-char-handler-alist
+  '((?\r . (lambda () (forward-line 0)))
+    (?\n . (lambda () (sage-shell:-down 1)))))
+
+(defvar sage-shell:-char-handler-regexp
+  (rx (or "\n" "")))
+
+(defun sage-shell:-insert-and-handle-char (str)
+  "Insert STR. But call the corresponding function if car of
+`sage-shell:-char-handler-alist' is seen."
+
+  (while (string-match sage-shell:-char-handler-regexp str)
+    (let ((beg (match-beginning 0))
+          (end (match-end 0))
+          (m-str (match-string 0 str)))
+      (when (> beg 0)
+        (sage-shell:-insert-str (substring str 0 beg)))
+      (funcall (assoc-default (string-to-char m-str) sage-shell:-char-handler-alist))
+      (setq str (substring str end))))
+  (sage-shell:-insert-str str))
 
 (defun sage-shell:-down (down)
   "Similar to term-down."
-  (let ((start-column (sage-shell:-current-column))
-        (col nil)
-        (pt nil))
+  (let ((start-column (current-column)))
     (cond ((>= down 0)
            (dotimes (_ down)
-             (when (equal (vertical-motion 1) 0)
+             (when (or (> (forward-line 1) 0)
+                       (save-excursion (end-of-line) (eobp)))
                (insert "\n")
-               (vertical-motion 1))))
-          (t (vertical-motion (- down))))
+               (forward-line 1))))
+          (t (forward-line down)))
     ;; Go to the same column
-    (setq col (sage-shell:-current-column)
-          pt (+ (point) (- start-column col)))
-    (when (and (<= pt (line-end-position))
-               (<= (sage-shell:line-beginning-position) pt))
-      (goto-char pt))))
+    (move-to-column start-column t)))
 
 (defun sage-shell:-bol ()
   (goto-char (sage-shell:line-beginning-position))
@@ -1786,7 +1801,7 @@ Return the remaining string."
 
 (defun sage-shell:-cursor-up (_proc &rest args)
   (let ((n (or (car args) 1)))
-    (forward-line (- n))))
+    (sage-shell:-down (- n))))
 
 (defun sage-shell:-cursor-back (_proc &rest args)
   (let* ((n (or (car args) 1))
