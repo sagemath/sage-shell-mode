@@ -1886,7 +1886,8 @@ return string for output."
 
 (defun sage-shell:output-filter (process string)
   (let ((oprocbuf (process-buffer process)))
-    (sage-shell:with-current-buffer-safe (and string oprocbuf)
+    (with-current-buffer (and string oprocbuf)
+      (setq inhibit-redisplay nil)
       (let ((win (get-buffer-window (process-buffer process))))
         (save-selected-window
           (when (and (windowp win) (window-live-p win))
@@ -2304,7 +2305,8 @@ function does not highlight the input."
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
-  (when sage-shell:init-finished-p
+  (when (and sage-shell:init-finished-p
+             (process-live-p (get-buffer-process (current-buffer))))
     (let ((line (buffer-substring (point-at-bol) (line-end-position)))
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
@@ -2366,11 +2368,14 @@ function does not highlight the input."
        ;; send current line to process normally
        (t
         (let* ((proc (get-buffer-process sage-shell:process-buffer))
-               (proc-pos (marker-position (process-mark proc))))
+               (proc-pos (marker-position (process-mark proc)))
+               (line-end (line-end-position)))
           (sage-shell:comint-send-input t)
           (process-send-string proc "")
           (goto-char proc-pos)
-          (delete-region proc-pos (line-end-position)))))
+          (when sage-shell:use-ipython5-prompt
+            (setq inhibit-redisplay t)
+            (delete-region proc-pos line-end)))))
       ;; If current line contains from ... import *, then update sage commands
       (when (sage-shell-update-sage-commands-p line)
         (sage-shell:update-sage-commands))
