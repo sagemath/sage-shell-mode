@@ -43,7 +43,6 @@
 
 ;;; TODO
 ;; 1. Highlight prompts
-;; 2. Set process-window-size even if buffer is not displayed.
 ;; 4. Backward compatiblity with IPython 4.*.
 ;; 5. Disabel auto indent.
 ;; 6. Improve sage-shell:-down.
