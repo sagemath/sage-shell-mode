@@ -985,9 +985,21 @@ When sync is nill this return a lambda function to get the result."
   "Sage command list evaluated after loading Sage.")
 
 (defun sage-shell:start-sage-process (cmd buffer)
-  (let ((cmdlist (split-string cmd)))
+  (let* ((cmdlist (split-string cmd))
+         (win (selected-window))
+         (win-size
+          (sage-shell:-window-size (if (equal (window-buffer win) buffer)
+                                       win
+                                     (save-window-excursion
+                                       (display-buffer buffer))))))
     (apply 'make-comint-in-buffer "Sage" buffer
-           (car cmdlist) nil (cdr cmdlist))))
+           "/bin/sh"
+           nil
+           "-c"
+           (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
+if [ $1 = .. ]; then shift; fi; exec \"$@\"" (cdr win-size) (car win-size))
+           ".."
+           (car cmdlist) (cdr cmdlist))))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
@@ -1078,6 +1090,11 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
                                     buffer-name
                                   (sage-shell:shell-buffer-name new))))
         (cur-buf (current-buffer)))
+
+    (cond ((eq switch-function 'no-switch)
+           (switch-to-buffer cur-buf))
+          (t (funcall switch-function buf)))
+
     (unless (get-buffer-process buf)
       (sage-shell:start-sage-process cmd buf)
       (with-current-buffer buf
@@ -1089,15 +1106,12 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
           (when sage-shell:use-ipython5-prompt
             (process-put proc 'adjust-window-size-function (lambda (_proc _win) nil)))
           (sage-shell-mode))))
-    (cond ((eq switch-function 'no-switch)
-           (switch-to-buffer cur-buf))
-          (t (funcall switch-function buf)))
     ;; Tell the process the window size for Ipython5's newprompt
     (when sage-shell:use-ipython5-prompt
       (sage-shell:-adjust-window-size)
       (with-current-buffer buf
         (add-hook 'window-configuration-change-hook
-                #'sage-shell:-adjust-window-size nil t)))
+                  #'sage-shell:-adjust-window-size nil t)))
     buf))
 
 ;;;###autoload
@@ -1598,25 +1612,27 @@ This ring remebers the parts.")
         (1- ncols)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun sage-shell:-window-size (process window)
+(defun sage-shell:-proc-window-size (process window)
   (cond ((and (boundp 'window-adjust-process-window-size-function)
               (functionp window-adjust-process-window-size-function))
          ;; Emacs 25.1 has window-adjust-process-window-size-function
          (funcall window-adjust-process-window-size-function
                   process (list window)))
-        (t (let ((width (cond ((fboundp 'window-max-chars-per-line)
-                               (window-max-chars-per-line window))
-                              (t (sage-shell:-window-max-chars-per-line
-                                  window)))))
-             (cons width
-                   (window-body-height window))))))
+        (t (sage-shell:-window-size window))))
+
+(defun sage-shell:-window-size (window)
+  (let ((width (cond ((fboundp 'window-max-chars-per-line)
+                      (window-max-chars-per-line window))
+                     (t (sage-shell:-window-max-chars-per-line
+                         window)))))
+    (cons width (window-body-height window))))
 
 (defun sage-shell:-adjust-window-size-each (proc win)
   (let ((buf (window-buffer win)))
     (with-current-buffer buf
       (when (and proc (process-live-p proc)
                  (eq major-mode 'sage-shell-mode))
-        (let ((sizes (sage-shell:-window-size proc win)))
+        (let ((sizes (sage-shell:-proc-window-size proc win)))
           (when sizes
             (set-process-window-size proc  (cdr sizes) (car sizes))))))))
 
