@@ -710,10 +710,12 @@ to a process buffer.")
 (defun sage-shell:interrupt-subjob ()
   "Interrupt the current subjob."
   (interactive)
-  (comint-interrupt-subjob)
-  ;; (setq comint-redirect-completed t
-  ;;       sage-shell:output-finished-p t)
-  )
+  (if sage-shell:use-ipython5-prompt
+      (process-send-string (get-buffer-process (current-buffer)) "")
+    (comint-interrupt-subjob))
+  (unless comint-redirect-completed
+    (sage-shell:redirect-cleanup)
+    (setq comint-redirect-completed t)))
 
 (sage-shell:define-keys sage-shell-mode-map
   "TAB" 'sage-shell-tab-command
