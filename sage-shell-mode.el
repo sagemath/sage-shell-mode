@@ -1883,22 +1883,22 @@ return string for output."
         (t string)))
 
 (defun sage-shell:output-filter (process string)
-  (let ((oprocbuf (process-buffer process)))
-    (with-current-buffer (and string oprocbuf)
-      (let ((win (get-buffer-window (process-buffer process))))
-        (save-selected-window
-          (when (and (windowp win) (window-live-p win))
-            (select-window win))
-          (setq string (sage-shell:-ansi-escape-filter-out string))
-          (setq string (sage-shell:-psh-to-pending-out string))
-          (unless (string= (sage-shell:-ansi-escape-filter-out string) "")
-            (sage-shell:output-filter-no-rdct process string)))
-        (when sage-shell:output-finished-p
-          (when sage-shell:scroll-to-the-bottom
-            (comint-postoutput-scroll-to-bottom string))
-          (setq buffer-undo-list nil)
-          (sage-shell:run-hook-once
-           'sage-shell:output-filter-finished-hook))))))
+  (setq string (sage-shell:-ansi-escape-filter-out string))
+  (unless (string= string "")
+    (let ((oprocbuf (process-buffer process)))
+      (with-current-buffer (and string oprocbuf)
+        (let ((win (get-buffer-window (process-buffer process))))
+          (save-selected-window
+            (when (and (windowp win) (window-live-p win))
+              (select-window win))
+            (setq string (sage-shell:-psh-to-pending-out string))
+            (sage-shell:output-filter-no-rdct process string))
+          (when sage-shell:output-finished-p
+            (when sage-shell:scroll-to-the-bottom
+              (comint-postoutput-scroll-to-bottom string))
+            (setq buffer-undo-list nil)
+            (sage-shell:run-hook-once
+             'sage-shell:output-filter-finished-hook)))))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
