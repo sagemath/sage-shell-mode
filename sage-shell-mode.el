@@ -42,7 +42,6 @@
 ;; infomation.
 
 ;;; TODO
-;; 1. Highlight prompts
 ;; 4. Backward compatiblity with IPython 4.*.
 ;; 5. Disabel auto indent.
 ;; 6. Improve sage-shell:-down.
@@ -1964,19 +1963,11 @@ return string for output."
           (sage-shell:make-error-links comint-last-input-end (point)))
         (sage-shell-pdb:comint-output-filter-function))
 
-      ;; Highlight the prompt
-      (save-excursion
-        (goto-char comint-last-output-start)
-        (forward-line 0)
-        (while (re-search-forward sage-shell:-prompt-regexp-no-eol nil t)
-          (sage-shell:highlight-prompt (match-beginning 0)
-                                       (match-end 0))))
-
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
         (goto-char (process-mark process))))))
 
-(defun sage-shell:highlight-prompt (prompt-start prompt-end)
+(defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
         (inhibit-modification-hooks t))
     (when comint-prompt-read-only
@@ -2092,6 +2083,14 @@ Does not delete the prompt."
     (rx symbol-start "class" (1+ space) (group (1+ (or word ?_))))
     lim t)))
 
+(defun sage-shell:font-lock-matcher-prompt (lim)
+  (when (re-search-forward
+         sage-shell:-prompt-regexp-no-eol
+         lim t)
+    (sage-shell:highlight-prompt1
+     (match-beginning 0)
+     (match-end 0))))
+
 (defvar sage-shell:font-lock-keywords
   ;; Keywords
   `((sage-shell:font-lock-matcher-keywords . font-lock-keyword-face)
@@ -2145,7 +2144,9 @@ Does not delete the prompt."
            "TabError")
           symbol-end) . font-lock-type-face)
     ;; Builtins
-    (sage-shell:font-lock-matcher-builtin . font-lock-builtin-face)))
+    (sage-shell:font-lock-matcher-builtin . font-lock-builtin-face)
+    ;; Prompts
+    (sage-shell:font-lock-matcher-prompt . font-lock-builtin-face)))
 
 (defvar sage-shell:redirect-last-point nil)
 
