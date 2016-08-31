@@ -1766,7 +1766,6 @@ Return value is not deifned."
 
 (defun sage-shell:-bol ()
   (goto-char (sage-shell:line-beginning-position))
-  (vertical-motion 0)
   (when (or (looking-at sage-shell:prompt-regexp)
             (looking-at (rx-to-string
                          `(and
