@@ -44,7 +44,6 @@
 ;;; TODO
 ;; 4. Backward compatiblity with IPython 4.*.
 ;; 5. Disabel auto indent.
-;; 6. Improve sage-shell:-down.
 ;; 7. Make redirection (sage-shell:-redirect-get-buffer-string) safer
 
 ;;; Code:
@@ -1735,16 +1734,21 @@ Return value is not deifned."
 (defun sage-shell:-insert-and-handle-char (str)
   "Insert STR. But call the corresponding function if car of
 `sage-shell:-char-handler-alist' is seen."
-
-  (while (string-match sage-shell:-char-handler-regexp str)
-    (let ((beg (match-beginning 0))
-          (end (match-end 0))
-          (m-str (match-string 0 str)))
-      (when (> beg 0)
-        (sage-shell:-insert-str (substring str 0 beg)))
-      (funcall (assoc-default (string-to-char m-str) sage-shell:-char-handler-alist))
-      (setq str (substring str end))))
-  (sage-shell:-insert-str str))
+  (setq str (replace-regexp-in-string (rx (1+ "")) "" str))
+  (let ((str-rpcd (replace-regexp-in-string (rx "\n") "\n" str)))
+    (cond ((and (eobp)
+                (null (string-match-p (rx "")  str-rpcd)))
+           (sage-shell:-insert-str str-rpcd))
+          (t (while (string-match sage-shell:-char-handler-regexp str)
+               (let ((beg (match-beginning 0))
+                     (end (match-end 0))
+                     (m-str (match-string 0 str)))
+                 (when (> beg 0)
+                   (sage-shell:-insert-str (substring str 0 beg)))
+                 (funcall (assoc-default (string-to-char m-str)
+                                         sage-shell:-char-handler-alist))
+                 (setq str (substring str end))))
+             (sage-shell:-insert-str str)))))
 
 (defun sage-shell:-down (down)
   "Similar to term-down."
