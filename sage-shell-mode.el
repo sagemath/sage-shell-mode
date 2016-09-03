@@ -44,7 +44,6 @@
 ;;; TODO
 ;; 1. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 ;; 5. Disabel auto indent.
-;; 7. Make redirection (sage-shell:-redirect-get-buffer-string) safer
 
 ;;; Code:
 
@@ -891,17 +890,11 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
     (when to-string
       (sage-shell:-redirect-get-buffer-string out-buf))))
 
+(defvar sage-shell:-redirection-msg-id nil)
+
 (defun sage-shell:-redirect-get-buffer-string (output-buffer)
   (with-current-buffer output-buffer
-    (cond ((buffer-local-value 'sage-shell:use-ipython5-prompt
-                               sage-shell:process-buffer)
-           (goto-char (point-min))
-           (while (looking-at-p sage-shell:-prompt-regexp-no-eol)
-             (forward-line 1))
-           (buffer-substring-no-properties
-            (point)
-            (point-max)))
-          (t (buffer-string)))))
+    (buffer-string)))
 
 
 (defun sage-shell:send-command
@@ -927,16 +920,24 @@ When sync is nill this return a lambda function to get the result."
      :raw raw)
     (unless sync res-func)))
 
-(defvar sage-shell:-redirection-msg-id nil)
+
+(defun sage-shell:-rdct-msg-id-start (msg-id)
+  (concat msg-id "start"))
+
+(defun sage-shell:-rdct-msg-id-end (msg-id)
+  (concat msg-id "end"))
 
 (defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
   (if raw (format "%s\n" raw-cmd)
     (let ((evaluator
            (or evaluator (sage-shell:py-mod-func "run_cell_and_print_msg_id"))))
-      (format "%s(\"%s\", '%s')\n"
+      (format "%s(\"%s\", '%s', '%s')\n"
               evaluator
               (sage-shell:escepe-string raw-cmd)
-              sage-shell:-redirection-msg-id))))
+              (sage-shell:-rdct-msg-id-start
+               sage-shell:-redirection-msg-id)
+              (sage-shell:-rdct-msg-id-end
+               sage-shell:-redirection-msg-id)))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
@@ -2166,14 +2167,16 @@ Does not delete the prompt."
          sage-shell:output-finished-regexp)
         (t (rx-to-string
             `(and bol
-                  ,sage-shell:-redirection-msg-id
+                  ,(sage-shell:-rdct-msg-id-end msg_id)
                   "\n"
                   ,sage-shell:output-finished-regexp-rx)))))
 
 (defun sage-shell:redirect-filter (process input-string)
   (when process
 
-    (let ((proc-buf (process-buffer process)))
+    (let* ((proc-buf (process-buffer process))
+           (msg-id (buffer-local-value 'sage-shell:-redirection-msg-id
+                                       proc-buf)))
       (with-current-buffer proc-buf
         (setq input-string (sage-shell:-psh-to-pending-out input-string))
         (let ((out-buf comint-redirect-output-buffer)
@@ -2197,6 +2200,15 @@ Does not delete the prompt."
                     (goto-char (point-min)))
                   (re-search-forward f-regexp nil t))
             (replace-match "")
+            (when (and msg-id
+                       (not (string= msg-id "")))
+              (let ((msg-id-start (sage-shell:-rdct-msg-id-start
+                                   msg-id)))
+                (save-excursion
+                  (goto-char (point-min))
+                  (when (re-search-forward
+                         (rx-to-string `(and bol ,msg-id-start "\n")) nil t)
+                    (delete-region (point-min) (match-end 0))))))
             (set-buffer proc-buf)
             (sage-shell:redirect-cleanup)
             (sage-shell:run-hook-once

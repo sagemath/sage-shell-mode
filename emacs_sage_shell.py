@@ -441,17 +441,19 @@ def print_short_doc_and_def(name, base_name=None):
         pass
 
 
-def run_cell_and_print_state(code, msg_id):
+def run_cell_and_print_state(code, msg_id_start, msg_id_end):
+    print(msg_id_start)
     res = ip.run_cell(code)
     if res.success:
         print(0)
     else:
         print(1)
-    print(msg_id)
+    print(msg_id_end)
 
 
-def run_cell_and_print_msg_id(code, msg_id):
+def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
+    print(msg_id_start)
     ip.run_cell(code)
     # If input is "foo.bar?", the next input may not be empty.
     ip.set_next_input("")
-    print(msg_id)
+    print(msg_id_end)
