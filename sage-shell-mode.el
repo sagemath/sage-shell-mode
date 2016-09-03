@@ -1741,8 +1741,8 @@ Return value is not deifned."
                       (unless sage-shell:use-prompt-toolkit
                         (message
                          (concat
-                          "It seems that your Sage uses IPython 5 or later.\n"
-                          "So you should set `sage-shell:use-prompt-toolkit' to t.")))
+                          "It seems that your Sage depends on IPython 5 or later.\n"
+                          "To use this package properly, you should set `sage-shell:use-prompt-toolkit' to t.")))
                       (let ((args (cadr a)))
                         (apply (assoc-default
                                 (car a)
