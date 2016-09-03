@@ -994,14 +994,17 @@ When sync is nill this return a lambda function to get the result."
                                        win
                                      (save-window-excursion
                                        (display-buffer buffer))))))
-    (apply 'make-comint-in-buffer "Sage" buffer
-           "/bin/sh"
-           nil
-           "-c"
-           (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
+    (if sage-shell:use-ipython5-prompt
+        (apply 'make-comint-in-buffer "Sage" buffer
+               "/bin/sh"
+               nil
+               "-c"
+               (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
 if [ $1 = .. ]; then shift; fi; exec \"$@\"" (cdr win-size) (car win-size))
-           ".."
-           (car cmdlist) (cdr cmdlist))))
+               ".."
+               (car cmdlist) (cdr cmdlist))
+      (apply 'make-comint-in-buffer "Sage" buffer
+           (car cmdlist) nil (cdr cmdlist)))))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
@@ -1125,8 +1128,14 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
 
 (defun sage-shell-tab-command ()
   (interactive)
-  (completion-at-point)
-  )
+  (cond
+   ((and
+     (null sage-shell:use-ipython5-prompt)
+     (null (sage-shell:at-top-level-p))
+     (looking-back (concat sage-shell:prompt-regexp " *")
+                   (sage-shell:line-beginning-position)))
+    (sage-shell-indent:indent-line))
+   (t (sage-shell:complete))))
 
 (defvar sage-shell:sage-version nil)
 (defun sage-shell:sage-version ()
@@ -1631,21 +1640,18 @@ Match group 1 will be replaced with devel/sage-branch")
        (sage-shell:-adjust-window-size-each
         proc win)))))
 
-(defun sage-shell:ansi-color-filter-apply (string)
-  (let* ((ansi-color-context nil)
-         (res (ansi-color-filter-apply string)))
-    (cond ((not (or sage-shell:init-finished-p
-                    sage-shell:use-unicode-banner))
-           (sage-shell:->> res
-                           (replace-regexp-in-string (rx (or "─" "━"
-                                                             "┌" "┐"
-                                                             "└" "┘"
-                                                             "┏" "┓"
-                                                             "┗" "┛"))
-                                                     "-")
-                           (replace-regexp-in-string (rx (or "│" "┃")) "|")))
-          (t res))))
-
+(defsubst sage-shell:-convert-to-ascii-banner (string)
+  (cond ((not (or sage-shell:init-finished-p
+                  sage-shell:use-unicode-banner))
+         (sage-shell:->> string
+                         (replace-regexp-in-string (rx (or "─" "━"
+                                                           "┌" "┐"
+                                                           "└" "┘"
+                                                           "┏" "┓"
+                                                           "┗" "┛"))
+                                                   "-")
+                         (replace-regexp-in-string (rx (or "│" "┃")) "|")))
+        (t string)))
 
 (defvar sage-shell:-ansi-escpace-handler-alist
   `((?n . ,#'ignore)
@@ -1886,6 +1892,7 @@ return string for output."
 
 (defun sage-shell:output-filter (process string)
   (setq string (sage-shell:-ansi-escape-filter-out string))
+  (setq string (sage-shell:-convert-to-ascii-banner string))
   (unless (string= string "")
     (let ((oprocbuf (process-buffer process)))
       (with-current-buffer (and string oprocbuf)
@@ -1911,7 +1918,8 @@ return string for output."
 
 (defun sage-shell:output-filter-no-rdct (process string)
   ;; Insert STRING
-  (let ((inhibit-read-only t))
+  (let ((inhibit-read-only t)
+        (saved-point (copy-marker (point) t)))
 
     ;; We temporarily remove any buffer narrowing, in case the
     ;; process mark is outside of the restriction
@@ -1934,6 +1942,10 @@ return string for output."
       (unless comint-inhibit-carriage-motion
         ;; Interpret any carriage motion characters (newline, backspace)
         (comint-carriage-motion comint-last-output-start (point)))
+
+      (goto-char saved-point)
+      (run-hook-with-args 'comint-output-filter-functions string)
+      (set-marker saved-point (point))
 
       (goto-char (process-mark process)) ; in case a filter moved it
 
@@ -1959,9 +1971,8 @@ return string for output."
       ;; python syntax.
       (sage-shell:comment-out-output)
 
-      (sage-shell-indent:insert-whitespace)
-
       (when sage-shell:output-finished-p
+        (sage-shell-indent:insert-whitespace)
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
@@ -1969,7 +1980,7 @@ return string for output."
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
-        (goto-char (process-mark process))))))
+        (goto-char saved-point)))))
 
 (defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
@@ -2373,15 +2384,22 @@ function does not highlight the input."
 
        ;; send current line to process normally
        (t
-        (let* ((proc (get-buffer-process sage-shell:process-buffer))
-               (proc-pos (marker-position (process-mark proc)))
-               (line-end (line-end-position)))
-          (sage-shell:comint-send-input t)
-          (process-send-string proc "")
-          (when sage-shell:use-ipython5-prompt
-            (add-hook 'sage-shell:-pre-output-filter-hook
-                      (lambda () (let ((inhibit-redisplay t))
-                               (delete-region proc-pos line-end))))))))
+        ;; FIXME: Run sage-shell:send-line-to-indenting-buffer-and-indent
+        ;; if sage-shell:use-ipython5-prompt is non-nil.
+        ;; To do it, disable auto-indent.
+        (unless sage-shell:use-ipython5-prompt
+          (sage-shell:send-line-to-indenting-buffer-and-indent line))
+        (cond (sage-shell:use-ipython5-prompt
+               (let* ((proc (get-buffer-process sage-shell:process-buffer))
+                      (proc-pos (marker-position (process-mark proc)))
+                      (line-end (line-end-position)))
+                 (sage-shell:comint-send-input t)
+                 (process-send-string proc "")
+                 (add-hook 'sage-shell:-pre-output-filter-hook
+                           (lambda () (let ((inhibit-redisplay t))
+                                    (delete-region proc-pos line-end))))))
+              (t (sage-shell:comint-send-input)))))
+
       ;; If current line contains from ... import *, then update sage commands
       (when (sage-shell-update-sage-commands-p line)
         (sage-shell:update-sage-commands))
@@ -2451,7 +2469,11 @@ function does not highlight the input."
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
-           (lambda (proc _str) (comint-simple-send proc "")))
+           (lambda (proc _str) (comint-simple-send
+                            proc
+                            (if sage-shell:use-ipython5-prompt
+                                ""
+                              ""))))
           (win (get-buffer-window sage-shell:process-buffer)))
       (let ((line (buffer-substring
                    (line-beginning-position)
@@ -2463,8 +2485,10 @@ function does not highlight the input."
         (if (and (windowp win)
                  (window-live-p win))
             (with-selected-window win
-              (sage-shell:comint-send-input t))
-          (sage-shell:comint-send-input t))
+              (sage-shell:comint-send-input
+               sage-shell:use-ipython5-prompt))
+          (sage-shell:comint-send-input
+           sage-shell:use-ipython5-prompt))
         (when sage-shell:use-ipython5-prompt
           (save-excursion
             (goto-char pt)
@@ -2508,8 +2532,8 @@ matches last process output."
       (with-current-buffer (sage-shell-indent:get-indenting-buffer)
         (setq indent-str (buffer-substring (point-at-bol) (point))))
       (when (get-buffer-process sage-shell:process-buffer)
-        (goto-char (process-mark (get-buffer-process (current-buffer)))))
-      (insert indent-str))))
+        (goto-char (process-mark (get-buffer-process (current-buffer))))
+        (insert indent-str)))))
 
 
 (defun sage-shell-indent:indent-line ()
