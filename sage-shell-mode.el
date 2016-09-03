@@ -4181,7 +4181,7 @@ inserted in the process buffer before executing the command."
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
           (display-function sage-shell-edit:display-function)
-          (insert-command-p nil) (before-sentence nil)
+          (insert-command-p t) (before-sentence nil)
           (gerund "Loading"))
   (sage-shell-edit:exec-command-base
    :command (or command (format "load('%s')" file-name))
