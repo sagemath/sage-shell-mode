@@ -1677,6 +1677,7 @@ Match group 1 will be replaced with devel/sage-branch")
     (?C . ,#'sage-shell:-cursor-forward)
     (?A . ,#'sage-shell:-cursor-up)
     (?B . ,#'sage-shell:-cursor-down)
+    (?K . ,#'sage-shell:-delete-line)
     ;; (?H . ,#'sage-shell:-move-cursor-pos)
     )
   "An alist for ansi escapse sequences consisting of
@@ -1872,6 +1873,30 @@ the point to end of the buffer"
                (end-of-line)
                (not (eobp)))
         (forward-line 1)))))
+
+(defun sage-shell:-delete-to-end-of-line (&optional pt)
+  (let ((inhibit-field-text-motion nil)
+        (inhibit-read-only t))
+    (save-excursion
+      (when pt
+        (goto-char pt))
+      (delete-region (point) (line-end-position)))))
+
+(defun sage-shell:-delete-line (_proc &rest args)
+  (when (sage-shell:-at-output-p (point))
+    (let ((n (car args))
+          (inhibit-read-only t)
+          (start-column (current-column)))
+      (cond ((or (null n) (equal n 0))
+             (sage-shell:-delete-to-end-of-line))
+            ((equal n 1)
+             (delete-region
+              (sage-shell:line-beginning-position)
+              (point)))
+            (t
+             (sage-shell:-delete-to-end-of-output
+              (sage-shell:line-beginning-position))))
+      (move-to-column start-column t))))
 
 (defun sage-shell:-at-output-p (pt)
   "Return non-nil if the pt is on output."
