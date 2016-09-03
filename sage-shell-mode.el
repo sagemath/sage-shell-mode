@@ -1732,9 +1732,7 @@ Match group 1 will be replaced with devel/sage-branch")
                             (min (+ (point) (length str))
                                  (line-end-position)))))))
 
-(defun sage-shell:-insert-and-handle-ansi-escape (proc str
-                                                       &optional
-                                                       ignore-seqs)
+(defun sage-shell:-insert-and-handle-ansi-escape (proc str)
   "Insert strings sended by the process and handle ANSI escape sequences,
 and remove sequences matched by sage-shell:-ansi-escape-regexp.
 Return value is not deifned."
@@ -1752,8 +1750,6 @@ Return value is not deifned."
                                 (car a)
                                 sage-shell:-ansi-escpace-handler-alist)
                                proc args)))
-                     (ignore-seqs
-                      (sage-shell:-insert-and-handle-char a))
                      (t (sage-shell:-insert-and-handle-char a))))))))
 
 (defvar sage-shell:-char-handler-alist
@@ -1984,7 +1980,7 @@ return string for output."
       ;; insert-before-markers is a bad thing. XXX
       ;; Luckily we don't have to use it any more, we use
       ;; window-point-insertion-type instead.
-      (sage-shell:-insert-and-handle-ansi-escape process string t)
+      (sage-shell:-insert-and-handle-ansi-escape process string)
 
       ;; Advance process-mark
       (set-marker (process-mark process) (point))
@@ -2253,7 +2249,7 @@ Does not delete the prompt."
           (let ((inhibit-read-only t)
                 (view-read-only nil))
             (sage-shell:-insert-and-handle-ansi-escape
-             process input-string t))
+             process input-string))
 
           ;; If we see the prompt, tidy up
           (when (save-excursion
