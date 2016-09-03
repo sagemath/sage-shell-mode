@@ -713,7 +713,13 @@ to a process buffer.")
   "Interrupt the current subjob."
   (interactive)
   (if sage-shell:use-prompt-toolkit
-      (process-send-string (get-buffer-process (current-buffer)) "")
+      (progn
+        (let ((line (buffer-substring-no-properties
+                     (line-beginning-position)
+                     (line-end-position)))
+              (proc (get-buffer-process (current-buffer))))
+          (process-send-string proc line)
+          (process-send-string proc "")))
     (comint-interrupt-subjob))
   (unless comint-redirect-completed
     (sage-shell:redirect-cleanup)
@@ -1978,7 +1984,6 @@ return string for output."
       (sage-shell:comment-out-output)
 
       (when sage-shell:output-finished-p
-        (sage-shell-indent:insert-whitespace)
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
@@ -1986,7 +1991,10 @@ return string for output."
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
-        (goto-char saved-point)))))
+        (goto-char (process-mark process))
+        (when (and sage-shell:output-finished-p
+                   (null sage-shell:use-prompt-toolkit))
+          (sage-shell-indent:insert-whitespace))))))
 
 (defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
