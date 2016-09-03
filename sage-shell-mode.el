@@ -3897,7 +3897,7 @@ whose key is in KEYS."
 
 (cl-defun sage-shell-edit:exec-command-base
     (&key command pre-message post-message switch-p
-          (display-function nil) (insert-command-p nil) (before-sentence nil))
+          (display-function nil) (insert-command-p t) (before-sentence nil))
   "If `insert-command-p' is non-nil, then it inserts `command' in
 the process buffer. If `before-sentence' is non-nil, it will be
 inserted in the process buffer before executing the command."
@@ -4527,8 +4527,7 @@ Returns the tracked buffer."
     (sage-shell-edit:load-file-base
      :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
                       dflt)
-     :file-name dflt
-     :before-sentence "# ")))
+     :file-name dflt)))
 
 ;;;###autoload
 (defun sage-shell-sagetex:load-current-file ()
