@@ -190,11 +190,13 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 
 
-(defcustom sage-shell:use-ipython5-prompt nil
-  "Non `nil' means the Sage process uses the new prompt of IPython 5 or later."
+(defcustom sage-shell:use-prompt-toolkit nil
+  "Non `nil' means the Sage process uses the new prompt of IPython 5."
   :type 'bool
   :group 'sage-shell)
-;; (make-variable-buffer-local 'sage-shell:use-ipython5-prompt)
+(defvaralias 'sage-shell:use-ipython5-prompt
+  'sage-shell:use-prompt-toolkit)
+;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
@@ -710,7 +712,7 @@ to a process buffer.")
 (defun sage-shell:interrupt-subjob ()
   "Interrupt the current subjob."
   (interactive)
-  (if sage-shell:use-ipython5-prompt
+  (if sage-shell:use-prompt-toolkit
       (process-send-string (get-buffer-process (current-buffer)) "")
     (comint-interrupt-subjob))
   (unless comint-redirect-completed
@@ -990,7 +992,7 @@ When sync is nill this return a lambda function to get the result."
                                        win
                                      (save-window-excursion
                                        (display-buffer buffer))))))
-    (if sage-shell:use-ipython5-prompt
+    (if sage-shell:use-prompt-toolkit
         (apply 'make-comint-in-buffer "Sage" buffer
                "/bin/sh"
                nil
@@ -1091,7 +1093,10 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
                                     buffer-name
                                   (sage-shell:shell-buffer-name new))))
         (cur-buf (current-buffer)))
-
+    (when (and sage-shell:use-prompt-toolkit
+               (version<= emacs-version
+                          "24.3"))
+      (error "Please use Emacs 24.4 or later."))
     (cond ((eq switch-function 'no-switch)
            (switch-to-buffer cur-buf))
           (t (funcall switch-function buf)))
@@ -1104,11 +1109,11 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
           (set-process-filter proc 'sage-shell:output-filter)
           ;; Don't call window--adjust-process-windows in windows.el
           ;; It calls the process-filter and modify the output buffer.
-          (when sage-shell:use-ipython5-prompt
+          (when sage-shell:use-prompt-toolkit
             (process-put proc 'adjust-window-size-function (lambda (_proc _win) nil)))
           (sage-shell-mode))))
     ;; Tell the process the window size for Ipython5's newprompt
-    (when sage-shell:use-ipython5-prompt
+    (when sage-shell:use-prompt-toolkit
       (sage-shell:-adjust-window-size))
     buf))
 
@@ -1126,7 +1131,7 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
   (interactive)
   (cond
    ((and
-     (null sage-shell:use-ipython5-prompt)
+     (null sage-shell:use-prompt-toolkit)
      (null (sage-shell:at-top-level-p))
      (looking-back (concat sage-shell:prompt-regexp " *")
                    (sage-shell:line-beginning-position)))
@@ -2392,11 +2397,11 @@ function does not highlight the input."
        ;; send current line to process normally
        (t
         ;; FIXME: Run sage-shell:send-line-to-indenting-buffer-and-indent
-        ;; if sage-shell:use-ipython5-prompt is non-nil.
+        ;; if sage-shell:use-prompt-toolkit is non-nil.
         ;; To do it, disable auto-indent.
-        (unless sage-shell:use-ipython5-prompt
+        (unless sage-shell:use-prompt-toolkit
           (sage-shell:send-line-to-indenting-buffer-and-indent line))
-        (cond (sage-shell:use-ipython5-prompt
+        (cond (sage-shell:use-prompt-toolkit
                (let* ((proc (get-buffer-process sage-shell:process-buffer))
                       (proc-pos (marker-position (process-mark proc)))
                       (line-end (line-end-position)))
@@ -2478,7 +2483,7 @@ function does not highlight the input."
     (let ((comint-input-sender
            (lambda (proc _str) (comint-simple-send
                             proc
-                            (if sage-shell:use-ipython5-prompt
+                            (if sage-shell:use-prompt-toolkit
                                 ""
                               ""))))
           (win (get-buffer-window sage-shell:process-buffer)))
@@ -2486,17 +2491,17 @@ function does not highlight the input."
                    (line-beginning-position)
                    (line-end-position)))
             (pt (point)))
-        (when sage-shell:use-ipython5-prompt
+        (when sage-shell:use-prompt-toolkit
           (delete-region (line-beginning-position)
                          (line-end-position)))
         (if (and (windowp win)
                  (window-live-p win))
             (with-selected-window win
               (sage-shell:comint-send-input
-               sage-shell:use-ipython5-prompt))
+               sage-shell:use-prompt-toolkit))
           (sage-shell:comint-send-input
-           sage-shell:use-ipython5-prompt))
-        (when sage-shell:use-ipython5-prompt
+           sage-shell:use-prompt-toolkit))
+        (when sage-shell:use-prompt-toolkit
           (save-excursion
             (goto-char pt)
             (insert line)))))))
