@@ -1744,7 +1744,7 @@ Return value is not deifned."
                (cond ((listp a)
                       (unless sage-shell:use-prompt-toolkit
                         (message
-                         "To use this package properly, please set `sage-shell:use-prompt-toolkit' to t."))
+                         "To use sage-shell-mode properly, please set `sage-shell:use-prompt-toolkit' to t."))
                       (let ((args (cadr a)))
                         (apply (assoc-default
                                 (car a)
