@@ -1740,9 +1740,7 @@ Return value is not deifned."
                (cond ((listp a)
                       (unless sage-shell:use-prompt-toolkit
                         (message
-                         (concat
-                          "It seems that your Sage depends on IPython 5 or later.\n"
-                          "To use this package properly, you should set `sage-shell:use-prompt-toolkit' to t.")))
+                         "To use this package properly, please set `sage-shell:use-prompt-toolkit' to t."))
                       (let ((args (cadr a)))
                         (apply (assoc-default
                                 (car a)
