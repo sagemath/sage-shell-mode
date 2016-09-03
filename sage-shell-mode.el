@@ -42,7 +42,7 @@
 ;; infomation.
 
 ;;; TODO
-;; 4. Backward compatiblity with IPython 4.*.
+;; 1. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 ;; 5. Disabel auto indent.
 ;; 7. Make redirection (sage-shell:-redirect-get-buffer-string) safer
 
@@ -858,7 +858,7 @@ evaluation completes. The output will be passed as its argument.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
-which is similar to emacs_sage_shell.run_cell_dummy_prompt."
+which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
   (unless (and (bufferp sage-shell:process-buffer)
                (buffer-live-p sage-shell:process-buffer)
                (get-buffer-process sage-shell:process-buffer))
@@ -931,7 +931,7 @@ When sync is nill this return a lambda function to get the result."
 (defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
   (if raw (format "%s\n" raw-cmd)
     (let ((evaluator
-           (or evaluator (sage-shell:py-mod-func "run_cell_dummy_prompt"))))
+           (or evaluator (sage-shell:py-mod-func "run_cell_and_print_msg_id"))))
       (format "%s(\"%s\", '%s')\n"
               evaluator
               (sage-shell:escepe-string raw-cmd)

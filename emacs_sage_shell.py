@@ -301,7 +301,7 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
     inputs = ip.ev("_ih")
     # TODO: Find a better way.
     regexp = re.compile(
-        r'_emacs_sage_shell\.run_cell_dummy_prompt\("_emacs_ob_sagemath\.run_cell_babel.+')
+        r'_emacs_sage_shell\.run_cell_and_print_msg_id\("_emacs_ob_sagemath\.run_cell_babel.+')
     for k, v in outputs:
         if regexp.match(inputs[k]) is None:
             print("In [{k}]: {i}".format(k=k, i=inputs[k]))
@@ -441,17 +441,17 @@ def print_short_doc_and_def(name, base_name=None):
         pass
 
 
-def run_cell_and_print_state(code, dummy):
+def run_cell_and_print_state(code, msg_id):
     res = ip.run_cell(code)
     if res.success:
         print(0)
     else:
         print(1)
-    print(dummy)
+    print(msg_id)
 
 
-def run_cell_dummy_prompt(code, dummy):
+def run_cell_and_print_msg_id(code, msg_id):
     ip.run_cell(code)
     # If input is "foo.bar?", the next input may not be empty.
     ip.set_next_input("")
-    print(dummy)
+    print(msg_id)
