@@ -825,18 +825,14 @@ succesive lines in history."
 (cl-defun sage-shell:run-cell (cell &key call-back
                                     output-buffer
                                     process-buffer
-                                    sync
-                                    call-back-rest-args)
+                                    sync)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
-        (call-back (lambda (output &rest args)
-                     (apply call-back
-                            (sage-shell:eval-state output)
-                            args))))
+        (call-back (lambda (output)
+                     (funcall call-back (sage-shell:eval-state output)))))
     (sage-shell:run-cell-raw-output cell
                                     :output-buffer output-buffer
                                     :process-buffer process-buffer
                                     :sync sync
-                                    :call-back-rest-args call-back-rest-args
                                     :evaluator evaluator
                                     :call-back call-back)))
 
@@ -855,12 +851,10 @@ succesive lines in history."
                                                sync
                                                raw
                                                evaluator
-                                               to-string
-                                               call-back-rest-args)
+                                               to-string)
   "CELL is a string which will be sent to the proces buffer,
 When non-nil, Call-BACK should be a function and will be called if the
-evaluation completes. The output will be passed as its first argument
-and CALL-BACK-REST-ARGS will be passed as the rest args.
+evaluation completes. The output will be passed as its argument.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
@@ -892,7 +886,7 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
       (sage-shell:after-redirect-finished
         (let ((raw-output
                (sage-shell:-redirect-get-buffer-string out-buf)))
-          (apply call-back raw-output call-back-rest-args))))
+          (funcall call-back raw-output))))
     (when to-string
       (sage-shell:-redirect-get-buffer-string out-buf))))
 
@@ -3540,9 +3534,9 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
            cmd
            :output-buffer output-buffer
            :sync sync
-           :call-back-rest-args (list compl-state)
-           :call-back #'sage-shell-cpl:-cpl-init-call-back)
-
+           :call-back
+           (lambda (s)
+             (sage-shell-cpl:-cpl-init-call-back s compl-state)))
           (if sync
               sage-shell-cpl:-last-sexp))))))
 
