@@ -1677,13 +1677,18 @@ Match group 1 will be replaced with devel/sage-branch")
     (?C . ,#'sage-shell:-cursor-forward)
     (?A . ,#'sage-shell:-cursor-up)
     (?B . ,#'sage-shell:-cursor-down)
-    (?H . ,#'sage-shell:-move-cursor-pos))
+    ;; (?H . ,#'sage-shell:-move-cursor-pos)
+    )
   "An alist for ansi escapse sequences consisting of
 (cons char function-symbol)).")
 
 (defvar sage-shell:-ansi-escape-regexp
-  (rx "[" (group (0+ (or num ";")))
-      (group (or "n" "A" "B" "C" "D" "J"))))
+  (rx-to-string
+   `(and
+     "[" (group (0+ (or num ";")))
+     (group
+      (or ,@(cl-loop for (c . _) in sage-shell:-ansi-escpace-handler-alist
+                     collect (char-to-string c)))))))
 
 (defun sage-shell:-decompose-ansi-escape-seq (str)
   (setq str (sage-shell:-ansi-escape-filter-out str))
