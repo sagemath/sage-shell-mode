@@ -1977,10 +1977,13 @@ return string for output."
               (forward-line 0)
               (looking-at-p sage-shell:output-finished-regexp))
         (setq sage-shell:output-finished-p t))
-      (when (string-match-p
-             sage-shell:attach-file-reloading-regexp
-             (buffer-substring (sage-shell:line-beginning-position)
-                               (line-end-position)))
+
+      (when (and (bolp)
+                 (string-match-p
+                  sage-shell:attach-file-reloading-regexp
+                  (buffer-substring
+                   comint-last-output-start
+                   (point))))
         (sage-shell:clear-command-cache)
         (sage-shell:output-filter process "sage: "))
 
