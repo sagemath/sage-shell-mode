@@ -49,6 +49,7 @@
 ;;; Code:
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
+(require 'md5)
 (eval-and-compile (require 'cl-lib))
 (require 'deferred)
 (require 'pcomplete)
@@ -926,7 +927,7 @@ When sync is nill this return a lambda function to get the result."
      :raw raw)
     (unless sync res-func)))
 
-(defvar sage-shell:-dummy-promt-prefix nil)
+(defvar sage-shell:-redirection-msg-id nil)
 
 (defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
   (if raw (format "%s\n" raw-cmd)
@@ -935,7 +936,7 @@ When sync is nill this return a lambda function to get the result."
       (format "%s(\"%s\", '%s')\n"
               evaluator
               (sage-shell:escepe-string raw-cmd)
-              sage-shell:-dummy-promt-prefix))))
+              sage-shell:-redirection-msg-id))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
@@ -2160,12 +2161,12 @@ Does not delete the prompt."
 (defvar sage-shell:redirect-last-point nil)
 
 
-(defsubst sage-shell:-redirect-finished-regexp (dummy-pfx)
-  (cond ((string= dummy-pfx "")
+(defsubst sage-shell:-redirect-finished-regexp (msg_id)
+  (cond ((string= msg_id "")
          sage-shell:output-finished-regexp)
         (t (rx-to-string
             `(and bol
-                  ,sage-shell:-dummy-promt-prefix
+                  ,sage-shell:-redirection-msg-id
                   "\n"
                   ,sage-shell:output-finished-regexp-rx)))))
 
@@ -2177,7 +2178,7 @@ Does not delete the prompt."
         (setq input-string (sage-shell:-psh-to-pending-out input-string))
         (let ((out-buf comint-redirect-output-buffer)
               (f-regexp (sage-shell:-redirect-finished-regexp
-                         sage-shell:-dummy-promt-prefix)))
+                         sage-shell:-redirection-msg-id)))
           (set-buffer out-buf)
           ;; Send output to all registered buffers
           ;; Go to the end of the buffer
@@ -2213,10 +2214,10 @@ Does not delete the prompt."
   ;; Set the completed flag
   (setq comint-redirect-completed t))
 
-(defun sage-shell:-new-dummy-prompt-pfx ()
-  (format "emacsprompt%s"
-          (cl-loop for i in (current-time)
-                   concat (format "%d" i))))
+(defun sage-shell:-new-rdct-msg-id ()
+  (format "emacs_sage_shell_msg_id%s"
+          (md5 (cl-loop for i in (current-time)
+                        concat (format "%d" i)))))
 
 (defun sage-shell:escepe-string (s)
   (setq s (replace-regexp-in-string (rx "\\") "\\\\" s t t))
@@ -2237,10 +2238,10 @@ Does not delete the prompt."
       ;; Set up for redirection
       (setq sage-shell:redirect-last-point nil)
       (setq sage-shell:-pending-outputs nil)
-      (setq-local sage-shell:-dummy-promt-prefix
+      (setq-local sage-shell:-redirection-msg-id
                   (if raw
                       ""
-                    (sage-shell:-new-dummy-prompt-pfx)))
+                    (sage-shell:-new-rdct-msg-id)))
       (let ((mode-line-process mode-line-process))
         (comint-redirect-setup
          output-buffer
