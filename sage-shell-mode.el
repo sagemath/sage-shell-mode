@@ -44,6 +44,8 @@
 ;;; TODO
 ;; 1. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 ;; 5. Disabel auto indent (cf. IPython's issue #9888).
+;; Should sage-shell:-adjust-window-size be added to
+;; window-configuration-change-hook?
 
 ;;; Code:
 
