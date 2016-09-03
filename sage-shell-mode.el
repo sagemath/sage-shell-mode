@@ -1678,8 +1678,7 @@ Match group 1 will be replaced with devel/sage-branch")
     (?A . ,#'sage-shell:-cursor-up)
     (?B . ,#'sage-shell:-cursor-down)
     (?K . ,#'sage-shell:-delete-line)
-    ;; (?H . ,#'sage-shell:-move-cursor-pos)
-    )
+    (?H . ,#'sage-shell:-move-cursor-pos))
   "An alist for ansi escapse sequences consisting of
 (cons char function-symbol)).")
 
@@ -1811,7 +1810,7 @@ Return value is not deifned."
                       (goto-char (window-start))
                       (line-number-at-pos))))
     (goto-char (point-min))
-    (forward-line (- 2 (+ r start-line)))
+    (forward-line (- (+ r start-line) 2))
     (sage-shell:-bol)
     (forward-char (1- c))))
 
