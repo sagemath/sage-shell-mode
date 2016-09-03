@@ -2002,7 +2002,9 @@ return string for output."
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
-        (sage-shell-pdb:comint-output-filter-function))
+        (sage-shell-pdb:comint-output-filter-function)
+        (font-lock-fontify-region comint-last-output-start
+                                  (point)))
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
