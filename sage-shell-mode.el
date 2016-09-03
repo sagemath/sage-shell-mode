@@ -713,7 +713,22 @@ to a process buffer.")
   "Interrupt the current subjob."
   (interactive)
   (if sage-shell:use-prompt-toolkit
-      (process-send-string (get-buffer-process (current-buffer)) "")
+      (progn
+        (let* ((bol (line-beginning-position))
+               (eol (line-end-position))
+               (line (buffer-substring-no-properties bol eol))
+               (proc (get-buffer-process (current-buffer))))
+          (add-hook 'sage-shell:-pre-output-filter-hook
+                    (lambda () (let ((inhibit-redisplay t))
+                             (delete-region bol eol))))
+          (process-send-string proc (concat line ""))
+          ;; Delete whitespaces
+          (add-hook 'sage-shell:-post-output-filter-hook
+                    (lambda ()
+                      (let ((str (buffer-substring-no-properties
+                                  (point) (point-max))))
+                        (when (string= "" (sage-shell:trim-right str))
+                          (delete-region (point) (point-max))))))))
     (comint-interrupt-subjob))
   (unless comint-redirect-completed
     (sage-shell:redirect-cleanup)
@@ -1945,6 +1960,8 @@ return string for output."
       ;; Advance process-mark
       (set-marker (process-mark process) (point))
 
+      (sage-shell:run-hook-once 'sage-shell:-post-output-filter-hook)
+
       (unless comint-inhibit-carriage-motion
         ;; Interpret any carriage motion characters (newline, backspace)
         (comint-carriage-motion comint-last-output-start (point)))
@@ -2329,6 +2346,10 @@ function does not highlight the input."
 
 (defvar sage-shell:-pre-output-filter-hook nil)
 (make-variable-buffer-local 'sage-shell:-pre-output-filter-hook)
+(defvar sage-shell:-post-output-filter-hook nil
+  "Unlike `sage-shell:output-filter-finished-hook', the filter function runs
+this hook after inserting string.")
+(make-variable-buffer-local 'sage-shell:-post-output-filter-hook)
 
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
