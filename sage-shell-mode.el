@@ -41,9 +41,14 @@
 ;; Please visit https://github.com/stakemori/sage-shell-mode for more
 ;; infomation.
 
+;;; TODO
+;; 1. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
+;; 5. Disabel auto indent (cf. IPython's issue #9888).
+
 ;;; Code:
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
+(require 'md5)
 (eval-and-compile (require 'cl-lib))
 (require 'deferred)
 (require 'pcomplete)
@@ -183,6 +188,15 @@ If the value is equal to '(\"\"), then it does not ignore anything."
 This string will be inserted to the temporary file before evaluating code."
   :type 'string
   :group 'sage-shell)
+
+
+(defcustom sage-shell:use-prompt-toolkit nil
+  "Non `nil' means the Sage process uses the new prompt of IPython 5."
+  :type 'bool
+  :group 'sage-shell)
+(defvaralias 'sage-shell:use-ipython5-prompt
+  'sage-shell:use-prompt-toolkit)
+;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
@@ -527,6 +541,15 @@ returned from the function, otherwise, this returns it self. "
                    "(Pdb)" "ipdb>" "(gdb)") " ")))
   "Regular expression matching the Sage prompt.")
 
+(defvar sage-shell:-prompt-regexp-no-eol
+  (rx-to-string
+   `(and line-start
+         (or
+          (1+ (and (or "sage:" "sage0:" ">>>" "....:"
+                       "(Pdb)" "ipdb>" "(gdb)") " "))
+          (and (or ,@sage-shell-interfaces:other-interfaces)
+               ": ")))))
+
 ;; cache buffers
 (defvar sage-shell-indent:indenting-buffer-name " *sage-indent*")
 (defvar sage-shell:output--buffer nil "The output buffer associated
@@ -679,17 +702,37 @@ to a process buffer.")
   (add-to-list 'sage-shell:output-filter-finished-hook
                (lambda () (sage-shell:after-init-function
                        sage-shell:process-buffer)))
-  (sage-shell:pcomplete-setup))
+  (sage-shell:pcomplete-setup)
+  ;; ansi-color-process-output may cause an error.
+  (remove-hook 'comint-output-filter-functions
+               'ansi-color-process-output t))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
 (defun sage-shell:interrupt-subjob ()
   "Interrupt the current subjob."
   (interactive)
-  (comint-interrupt-subjob)
-  ;; (setq comint-redirect-completed t
-  ;;       sage-shell:output-finished-p t)
-  )
+  (if sage-shell:use-prompt-toolkit
+      (progn
+        (let* ((bol (line-beginning-position))
+               (eol (line-end-position))
+               (line (buffer-substring-no-properties bol eol))
+               (proc (get-buffer-process (current-buffer))))
+          (add-hook 'sage-shell:-pre-output-filter-hook
+                    (lambda () (let ((inhibit-redisplay t))
+                             (delete-region bol eol))))
+          (process-send-string proc (concat line ""))
+          ;; Delete whitespaces
+          (add-hook 'sage-shell:-post-output-filter-hook
+                    (lambda ()
+                      (let ((str (buffer-substring-no-properties
+                                  (point) (point-max))))
+                        (when (string= "" (sage-shell:trim-right str))
+                          (delete-region (point) (point-max))))))))
+    (comint-interrupt-subjob))
+  (unless comint-redirect-completed
+    (sage-shell:redirect-cleanup)
+    (setq comint-redirect-completed t)))
 
 (sage-shell:define-keys sage-shell-mode-map
   "TAB" 'sage-shell-tab-command
@@ -799,18 +842,14 @@ succesive lines in history."
 (cl-defun sage-shell:run-cell (cell &key call-back
                                     output-buffer
                                     process-buffer
-                                    sync
-                                    call-back-rest-args)
+                                    sync)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
-        (call-back (lambda (output &rest args)
-                     (apply call-back
-                            (sage-shell:eval-state output)
-                            args))))
+        (call-back (lambda (output)
+                     (funcall call-back (sage-shell:eval-state output)))))
     (sage-shell:run-cell-raw-output cell
                                     :output-buffer output-buffer
                                     :process-buffer process-buffer
                                     :sync sync
-                                    :call-back-rest-args call-back-rest-args
                                     :evaluator evaluator
                                     :call-back call-back)))
 
@@ -829,16 +868,14 @@ succesive lines in history."
                                                sync
                                                raw
                                                evaluator
-                                               to-string
-                                               call-back-rest-args)
+                                               to-string)
   "CELL is a string which will be sent to the proces buffer,
 When non-nil, Call-BACK should be a function and will be called if the
-evaluation completes. The output will be passed as its first argument
-and CALL-BACK-REST-ARGS will be passed as the rest args.
+evaluation completes. The output will be passed as its argument.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
-which is similar to emacs_sage_shell.run_cell_dummy_prompt."
+which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
   (unless (and (bufferp sage-shell:process-buffer)
                (buffer-live-p sage-shell:process-buffer)
                (get-buffer-process sage-shell:process-buffer))
@@ -864,13 +901,18 @@ which is similar to emacs_sage_shell.run_cell_dummy_prompt."
 
     (when (functionp call-back)
       (sage-shell:after-redirect-finished
-        (let ((raw-output (sage-shell:with-current-buffer-safe out-buf
-                            (buffer-string))))
-          (apply call-back raw-output
-                 call-back-rest-args))))
+        (let ((raw-output
+               (sage-shell:-redirect-get-buffer-string out-buf)))
+          (funcall call-back raw-output))))
     (when to-string
-      (sage-shell:with-current-buffer-safe out-buf
-        (buffer-string)))))
+      (sage-shell:-redirect-get-buffer-string out-buf))))
+
+(defvar sage-shell:-redirection-msg-id nil)
+
+(defun sage-shell:-redirect-get-buffer-string (output-buffer)
+  (with-current-buffer output-buffer
+    (buffer-string)))
+
 
 (defun sage-shell:send-command
     (command &optional process-buffer output-buffer sync raw)
@@ -895,16 +937,24 @@ When sync is nill this return a lambda function to get the result."
      :raw raw)
     (unless sync res-func)))
 
-(defvar sage-shell:-dummy-promt-prefix nil)
+
+(defun sage-shell:-rdct-msg-id-start (msg-id)
+  (concat msg-id "start"))
+
+(defun sage-shell:-rdct-msg-id-end (msg-id)
+  (concat msg-id "end"))
 
 (defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
   (if raw (format "%s\n" raw-cmd)
     (let ((evaluator
-           (or evaluator (sage-shell:py-mod-func "run_cell_dummy_prompt"))))
-      (format "%s(\"%s\", '%s')\n"
+           (or evaluator (sage-shell:py-mod-func "run_cell_and_print_msg_id"))))
+      (format "%s(\"%s\", '%s', '%s')\n"
               evaluator
               (sage-shell:escepe-string raw-cmd)
-              sage-shell:-dummy-promt-prefix))))
+              (sage-shell:-rdct-msg-id-start
+               sage-shell:-redirection-msg-id)
+              (sage-shell:-rdct-msg-id-end
+               sage-shell:-redirection-msg-id)))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
@@ -950,9 +1000,24 @@ When sync is nill this return a lambda function to get the result."
   "Sage command list evaluated after loading Sage.")
 
 (defun sage-shell:start-sage-process (cmd buffer)
-  (let ((cmdlist (split-string cmd)))
-    (apply 'make-comint-in-buffer "Sage" buffer
-           (car cmdlist) nil (cdr cmdlist))))
+  (let* ((cmdlist (split-string cmd))
+         (win (selected-window))
+         (win-size
+          (sage-shell:-window-size (if (equal (window-buffer win) buffer)
+                                       win
+                                     (save-window-excursion
+                                       (display-buffer buffer))))))
+    (if sage-shell:use-prompt-toolkit
+        (apply 'make-comint-in-buffer "Sage" buffer
+               "/bin/sh"
+               nil
+               "-c"
+               (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
+if [ $1 = .. ]; then shift; fi; exec \"$@\"" (cdr win-size) (car win-size))
+               ".."
+               (car cmdlist) (cdr cmdlist))
+      (apply 'make-comint-in-buffer "Sage" buffer
+           (car cmdlist) nil (cdr cmdlist)))))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
@@ -1043,14 +1108,28 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
                                     buffer-name
                                   (sage-shell:shell-buffer-name new))))
         (cur-buf (current-buffer)))
-    (unless (get-buffer-process buf)
-      (sage-shell:start-sage-process cmd buf)
-      (with-current-buffer buf
-        (set-process-filter (get-buffer-process buf) 'sage-shell:output-filter)
-        (sage-shell-mode)))
+    (when (and sage-shell:use-prompt-toolkit
+               (version<= emacs-version
+                          "24.3"))
+      (error "Please use Emacs 24.4 or later."))
     (cond ((eq switch-function 'no-switch)
            (switch-to-buffer cur-buf))
           (t (funcall switch-function buf)))
+
+    (unless (get-buffer-process buf)
+      (sage-shell:start-sage-process cmd buf)
+      (with-current-buffer buf
+
+        (let ((proc (get-buffer-process buf)))
+          (set-process-filter proc 'sage-shell:output-filter)
+          ;; Don't call window--adjust-process-windows in windows.el
+          ;; It calls the process-filter and modify the output buffer.
+          (when sage-shell:use-prompt-toolkit
+            (process-put proc 'adjust-window-size-function (lambda (_proc _win) nil)))
+          (sage-shell-mode))))
+    ;; Tell the process the window size for Ipython5's newprompt
+    (when sage-shell:use-prompt-toolkit
+      (sage-shell:-adjust-window-size))
     buf))
 
 ;;;###autoload
@@ -1066,9 +1145,11 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
 (defun sage-shell-tab-command ()
   (interactive)
   (cond
-   ((and (not (sage-shell:at-top-level-p))
-         (looking-back (concat sage-shell:prompt-regexp " *")
-                       (sage-shell:line-beginning-position)))
+   ((and
+     (null sage-shell:use-prompt-toolkit)
+     (null (sage-shell:at-top-level-p))
+     (looking-back (concat sage-shell:prompt-regexp " *")
+                   (sage-shell:line-beginning-position)))
     (sage-shell-indent:indent-line))
    (t (sage-shell:complete))))
 
@@ -1459,18 +1540,6 @@ Match group 1 will be replaced with devel/sage-branch")
                             (if (cdr a) 2 0))))))
 
 
-;; comint functions
-(defun sage-shell:nullify-ring (ring)
-  (cl-loop repeat (ring-size ring)
-           do (ring-insert ring nil))
-  ring)
-
-(defvar sage-shell:output-ring
-  (sage-shell:nullify-ring (make-ring 2))
-  "An output from a Sage process is decomposed into parts.
-This ring remebers the parts.")
-(make-variable-buffer-local 'sage-shell:output-ring)
-
 (defun sage-shell:python-syntax-output-p (line)
   "Return non nil if LINE contains a sentence with the python
   syntax. If returned value is non-nil and non-number, then whole
@@ -1525,45 +1594,342 @@ This ring remebers the parts.")
 
 
 
-(defun sage-shell:run-hook-and-remove (hook)
+(defun sage-shell:run-hook-once (hook)
   (let ((hook-saved (symbol-value hook)))
     (set hook nil)
     (cl-loop for f in (nreverse hook-saved) do (funcall f))))
 
-(defun sage-shell:ansi-color-filter-apply (string)
-  (let* ((ansi-color-context nil)
-         (res (ansi-color-filter-apply string)))
-    (cond ((not (or sage-shell:init-finished-p
-                    sage-shell:use-unicode-banner))
-           (sage-shell:->> res
-                           (replace-regexp-in-string (rx (or "─" "━"
-                                                             "┌" "┐"
-                                                             "└" "┘"
-                                                             "┏" "┓"
-                                                             "┗" "┛"))
-                                                     "-")
-                           (replace-regexp-in-string (rx (or "│" "┃")) "|")))
-          (t res))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Copied from windows.el of Emacs 25.0.
+(defun sage-shell:-window-max-chars-per-line (&optional window _face)
+  (with-selected-window (window-normalize-window window t)
+    (let* ((window-width (with-no-warnings
+                           (window-body-width window t)))
+           (font-width (frame-char-width))
+           (ncols (/ window-width font-width)))
+      (if (and (display-graphic-p)
+               (bound-and-true-p overflow-newline-into-fringe)
+               (not
+                (or (eq left-fringe-width 0)
+                    (and (null left-fringe-width)
+                         (= (frame-parameter nil 'left-fringe) 0))))
+               (not
+                (or (eq right-fringe-width 0)
+                    (and (null right-fringe-width)
+                         (= (frame-parameter nil 'right-fringe) 0)))))
+          ncols
+        ;; FIXME: This should remove 1 more column when there are no
+        ;; fringes, lines are truncated, and the window is hscrolled,
+        ;; but EOL is not in the view, because then there are 2
+        ;; truncation glyphs, not one.
+        (1- ncols)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun sage-shell:-proc-window-size (process window)
+  (cond ((and (boundp 'window-adjust-process-window-size-function)
+              (functionp window-adjust-process-window-size-function))
+         ;; Emacs 25.1 has window-adjust-process-window-size-function
+         (funcall window-adjust-process-window-size-function
+                  process (list window)))
+        (t (sage-shell:-window-size window))))
+
+(defun sage-shell:-window-size (window)
+  (let ((width (cond ((fboundp 'window-max-chars-per-line)
+                      (window-max-chars-per-line window))
+                     (t (sage-shell:-window-max-chars-per-line
+                         window)))))
+    (cons width (window-body-height window))))
+
+(defun sage-shell:-adjust-window-size-each (proc win)
+  (let ((buf (window-buffer win)))
+    (with-current-buffer buf
+      (when (and proc (process-live-p proc)
+                 (eq major-mode 'sage-shell-mode))
+        (let ((sizes (sage-shell:-proc-window-size proc win)))
+          (when sizes
+            (set-process-window-size proc  (cdr sizes) (car sizes))))))))
+
+(defun sage-shell:-adjust-window-size ()
+  (walk-windows
+   (lambda (win)
+     (let* ((buf (window-buffer win))
+            (proc (get-buffer-process buf)))
+       (sage-shell:-adjust-window-size-each
+        proc win)))))
+
+(defsubst sage-shell:-convert-to-ascii-banner (string)
+  (cond ((not (or sage-shell:init-finished-p
+                  sage-shell:use-unicode-banner))
+         (sage-shell:->> string
+                         (replace-regexp-in-string (rx (or "─" "━"
+                                                           "┌" "┐"
+                                                           "└" "┘"
+                                                           "┏" "┓"
+                                                           "┗" "┛"))
+                                                   "-")
+                         (replace-regexp-in-string (rx (or "│" "┃")) "|")))
+        (t string)))
+
+(defvar sage-shell:-ansi-escpace-handler-alist
+  `((?n . ,#'ignore)
+    (?J . ,#'sage-shell:-delete-display)
+    (?D . ,#'sage-shell:-cursor-back)
+    (?C . ,#'sage-shell:-cursor-forward)
+    (?A . ,#'sage-shell:-cursor-up)
+    (?B . ,#'sage-shell:-cursor-down)
+    (?H . ,#'sage-shell:-move-cursor-pos))
+  "An alist for ansi escapse sequences consisting of
+(cons char function-symbol)).")
+
+(defvar sage-shell:-ansi-escape-regexp
+  (rx "[" (group (0+ (or num ";")))
+      (group (or "n" "A" "B" "C" "D" "J"))))
+
+(defun sage-shell:-decompose-ansi-escape-seq (str)
+  (setq str (sage-shell:-ansi-escape-filter-out str))
+  (let ((case-fold-search nil)
+        (str-saved str)
+        (res nil))
+    (cl-loop while (string-match sage-shell:-ansi-escape-regexp str)
+             for chr = (string-to-char (match-string 2 str))
+             for args = (unless (string= (match-string 1 str) "")
+                          (mapcar #'string-to-number
+                                  (split-string (match-string 1 str) ";")))
+             do
+             (unless (string= (substring str 0 (match-beginning 0)) "")
+               (push (substring str 0 (match-beginning 0)) res))
+             (push (list chr args) res)
+             (setq str (substring str (match-end 0)))
+             finally return (if (null res)
+                                str-saved
+                              (progn
+                                (unless (string= str "")
+                                  (push str res))
+                                (nreverse res))))))
+
+(defvar sage-shell:-ansi-escape-drop-regexp
+  (rx (and "["
+               (0+ (or num ";" "=" "?"))
+               (regexp "[nmhl]"))))
+
+(defun sage-shell:-ansi-escape-filter-out (str)
+  (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
+                            ""
+                            str nil t))
+
+(defun sage-shell:-insert-str (str)
+  (let ((str (propertize str 'field 'output)))
+    (cond ((eobp)
+           (insert str))
+          (t (insert str)
+             (delete-region (point)
+                            (min (+ (point) (length str))
+                                 (line-end-position)))))))
+
+(defun sage-shell:-insert-and-handle-ansi-escape (proc str
+                                                       &optional
+                                                       ignore-seqs)
+  "Insert strings sended by the process and handle ANSI escape sequences,
+and remove sequences matched by sage-shell:-ansi-escape-regexp.
+Return value is not deifned."
+  (let* ((case-fold-search nil)
+         (seqs (sage-shell:-decompose-ansi-escape-seq str)))
+    (cond ((stringp seqs)
+           (sage-shell:-insert-and-handle-char seqs))
+          (t (dolist (a seqs)
+               (cond ((listp a)
+                      (unless sage-shell:use-prompt-toolkit
+                        (message
+                         (concat
+                          "It seems that your Sage depends on IPython 5 or later.\n"
+                          "To use this package properly, you should set `sage-shell:use-prompt-toolkit' to t.")))
+                      (let ((args (cadr a)))
+                        (apply (assoc-default
+                                (car a)
+                                sage-shell:-ansi-escpace-handler-alist)
+                               proc args)))
+                     (ignore-seqs
+                      (sage-shell:-insert-and-handle-char a))
+                     (t (sage-shell:-insert-and-handle-char a))))))))
+
+(defvar sage-shell:-char-handler-alist
+  '((?\r . (lambda () (forward-line 0)))
+    (?\n . (lambda () (sage-shell:-down 1)))))
+
+(defvar sage-shell:-char-handler-regexp
+  (rx (or "\n" "")))
+
+(defun sage-shell:-insert-and-handle-char (str)
+  "Insert STR. But call the corresponding function if car of
+`sage-shell:-char-handler-alist' is seen."
+  (setq str (replace-regexp-in-string (rx (1+ "")) "" str))
+  (let ((str-rpcd (replace-regexp-in-string (rx "\n") "\n" str)))
+    (cond ((and (eobp)
+                (null (string-match-p (rx "")  str-rpcd)))
+           (sage-shell:-insert-str str-rpcd))
+          (t (while (string-match sage-shell:-char-handler-regexp str)
+               (let ((beg (match-beginning 0))
+                     (end (match-end 0))
+                     (m-str (match-string 0 str)))
+                 (when (> beg 0)
+                   (sage-shell:-insert-str (substring str 0 beg)))
+                 (funcall (assoc-default (string-to-char m-str)
+                                         sage-shell:-char-handler-alist))
+                 (setq str (substring str end))))
+             (sage-shell:-insert-str str)))))
+
+(defun sage-shell:-down (down)
+  "Similar to term-down."
+  (let ((start-column (current-column))
+        (inhibit-field-text-motion t))
+    (cond ((>= down 0)
+           (dotimes (_ down)
+             (cond ((progn (end-of-line) (eobp))
+                    ;; This case for exception of forward-line
+                    (insert "\n")
+                    (forward-line 1))
+                   (t (when (> (forward-line 1) 0)
+                        (insert "\n")
+                        (forward-line 1))))))
+          (t (forward-line down)))
+    ;; Go to the same column
+    (move-to-column start-column t)))
+
+(defun sage-shell:-bol ()
+  (goto-char (sage-shell:line-beginning-position))
+  (when (or (looking-at sage-shell:prompt-regexp)
+            (looking-at (rx-to-string
+                         `(and
+                           (or ,@sage-shell-interfaces:other-interfaces)
+                           ": "))))
+    (goto-char (match-end 0))))
+
+(defun sage-shell:-move-cursor-pos (_proc &rest args)
+  (let ((c (or (car args) 1))
+        (r (or (cadr args) 1))
+        (start-line (save-excursion
+                      (goto-char (window-start))
+                      (line-number-at-pos))))
+    (goto-char (point-min))
+    (forward-line (- 2 (+ r start-line)))
+    (sage-shell:-bol)
+    (forward-char (1- c))))
+
+(defun sage-shell:-cursor-down (_proc &rest args)
+  (let ((n (or (car args) 1)))
+    (forward-line n)))
+
+(defun sage-shell:-cursor-up (_proc &rest args)
+  (let ((n (or (car args) 1)))
+    (sage-shell:-down (- n))))
+
+(defun sage-shell:-cursor-back (_proc &rest args)
+  (let* ((n (or (car args) 1))
+         (bol (sage-shell:line-beginning-position))
+         (to (max bol (- (point) n))))
+    (goto-char to)))
+
+(defun sage-shell:-cursor-forward (_proc &rest args)
+  (let* ((inhibit-field-text-motion t)
+         (n (or (car args) 1))
+         (le (line-end-position))
+         (to (min le (+ (point) n))))
+    (goto-char to)))
+
+(defun sage-shell:-current-column ()
+  "Return the current column."
+  (1+ (- (current-column)
+         (save-excursion
+           (sage-shell:-bol)
+           (current-column)))))
+
+(defun sage-shell:-current-row ()
+  "Return the current row."
+  (let ((start-line (save-excursion
+                      (goto-char (window-start))
+                      (line-number-at-pos))))
+    (1+ (- (line-number-at-pos) start-line))))
+
+(defun sage-shell:-report-cursor-pos (proc &rest _args)
+  (process-send-string proc
+                       (format "\e[%s;%sR"
+                               (sage-shell:-current-row)
+                               (sage-shell:-current-column))))
+
+(defun sage-shell:-delete-to-end-of-output (&optional pt)
+  "Assuming current point is at output, delete output text from
+the point to end of the buffer"
+  (let ((inhibit-field-text-motion nil)
+        (inhibit-read-only t))
+    (save-excursion
+      (when pt
+        (goto-char pt))
+      (while (progn
+               (delete-region (line-end-position) (line-beginning-position))
+               (end-of-line)
+               (not (eobp)))
+        (forward-line 1)))))
+
+(defun sage-shell:-at-output-p (pt)
+  "Return non-nil if the pt is on output."
+  (eq (plist-get (text-properties-at pt) 'field) 'output))
+
+(defun sage-shell:-delete-display (_proc &rest args)
+  ;; Don't delete user's input.
+  (when (sage-shell:-at-output-p (point))
+    (let ((n (car args))
+          (inhibit-read-only t))
+      (cond ((or (null n) (equal n 0))
+             (sage-shell:-delete-to-end-of-output))
+            ((equal n 1)
+             (delete-region (point-min) (point)))
+            (t
+             (sage-shell:-delete-to-end-of-output (point-min)))))))
 
 ;; In recent version comint.el,
 ;; `comint-redirect-original-filter-function` is removed.
 (defvar sage-shell:comint-redirect-original-filter-function nil)
 
+;; Ansi escapse sequences may be divived by Emacs
+(defvar sage-shell:-pending-outputs nil)
+(make-variable-buffer-local 'sage-shell:-pending-outputs)
+
+
+(defun sage-shell:-psh-to-pending-out (string)
+  "Push string to sage-shell:-pending-outputs if necessary and
+return string for output."
+  (cond (sage-shell:-pending-outputs
+         (prog1
+             (mapconcat #'identity sage-shell:-pending-outputs "")
+           (setq sage-shell:-pending-outputs nil)))
+        ((string-match-p
+          (rx (or (and "[" (0+ (or num ";" "?")))
+                  "")
+              eol)
+          string)
+         (push string sage-shell:-pending-outputs)
+         ;; Return the empty and wait for next output
+         "")
+        (t string)))
+
 (defun sage-shell:output-filter (process string)
-  (let ((oprocbuf (process-buffer process)))
-    (sage-shell:with-current-buffer-safe (and string oprocbuf)
-      (let ((string (sage-shell:ansi-color-filter-apply string))
-            (win (get-buffer-window (process-buffer process))))
-        (save-selected-window
-          (when (and (windowp win) (window-live-p win))
-            (select-window win))
-          (sage-shell:output-filter-no-rdct process string))
-        (when sage-shell:output-finished-p
-          (when sage-shell:scroll-to-the-bottom
-            (comint-postoutput-scroll-to-bottom string))
-          (setq buffer-undo-list nil)
-          (sage-shell:run-hook-and-remove
-           'sage-shell:output-filter-finished-hook))))))
+  (setq string (sage-shell:-ansi-escape-filter-out string))
+  (setq string (sage-shell:-convert-to-ascii-banner string))
+  (unless (string= string "")
+    (let ((oprocbuf (process-buffer process)))
+      (with-current-buffer (and string oprocbuf)
+        (let ((win (get-buffer-window (process-buffer process))))
+          (save-selected-window
+            (when (and (windowp win) (window-live-p win))
+              (select-window win))
+            (setq string (sage-shell:-psh-to-pending-out string))
+            (sage-shell:output-filter-no-rdct process string))
+          (when sage-shell:output-finished-p
+            (when sage-shell:scroll-to-the-bottom
+              (comint-postoutput-scroll-to-bottom string))
+            (setq buffer-undo-list nil)
+            (sage-shell:run-hook-once
+             'sage-shell:output-filter-finished-hook)))))))
 
 (defvar sage-shell:redirect-restore-filter-p t)
 (make-variable-buffer-local 'sage-shell:redirect-restore-filter-p)
@@ -1575,7 +1941,6 @@ This ring remebers the parts.")
 (defun sage-shell:output-filter-no-rdct (process string)
   ;; Insert STRING
   (let ((inhibit-read-only t)
-        ;; The point should float after any insertion we do.
         (saved-point (copy-marker (point) t)))
 
     ;; We temporarily remove any buffer narrowing, in case the
@@ -1584,67 +1949,66 @@ This ring remebers the parts.")
       (widen)
 
       (goto-char (process-mark process))
+      (sage-shell:run-hook-once
+       'sage-shell:-pre-output-filter-hook)
       (set-marker comint-last-output-start (point))
+
       ;; insert-before-markers is a bad thing. XXX
       ;; Luckily we don't have to use it any more, we use
       ;; window-point-insertion-type instead.
-      (insert string)
+      (sage-shell:-insert-and-handle-ansi-escape process string t)
 
       ;; Advance process-mark
       (set-marker (process-mark process) (point))
+
+      (sage-shell:run-hook-once 'sage-shell:-post-output-filter-hook)
 
       (unless comint-inhibit-carriage-motion
         ;; Interpret any carriage motion characters (newline, backspace)
         (comint-carriage-motion comint-last-output-start (point)))
 
-      ;; Run these hooks with point where the user had it.
       (goto-char saved-point)
-      (unless (string= string "")
-        ;; push output to `sage-shell:output-ring'
-        (ring-insert sage-shell:output-ring string)
-
-        (let ((output (concat (ring-ref sage-shell:output-ring 1)
-                              (ring-ref sage-shell:output-ring 0))))
-          (when (string-match sage-shell:output-finished-regexp output)
-            (setq sage-shell:output-finished-p t))
-          (when (string-match sage-shell:attach-file-reloading-regexp string)
-            (sage-shell:clear-command-cache)
-            (sage-shell:output-filter process "sage: ")))
-
-        (add-text-properties comint-last-output-start
-                             (process-mark process)
-                             '(front-sticky
-                               (field inhibit-line-move-field-capture)
-                               rear-nonsticky t
-                               field output
-                               inhibit-line-move-field-capture t))
-        ;; Comment out output if the syntax of a line does not looks like
-        ;; python syntax.
-        (sage-shell:comment-out-output)
-
-        (sage-shell-indent:insert-whitespace))
       (run-hook-with-args 'comint-output-filter-functions string)
       (set-marker saved-point (point))
 
       (goto-char (process-mark process)) ; in case a filter moved it
 
-      (when sage-shell:output-finished-p
-        (let ((lbp (sage-shell:line-beginning-position)))
-          ;; Delete duplicate propmpt
-          (when (get-text-property lbp 'read-only)
-            (delete-region lbp comint-last-output-start))
-          ;; Highlight the prompt
-          (sage-shell:highlight-prompt lbp)
+      (when (save-excursion
+              (forward-line 0)
+              (looking-at-p sage-shell:output-finished-regexp))
+        (setq sage-shell:output-finished-p t))
+      (when (string-match-p
+             sage-shell:attach-file-reloading-regexp
+             (buffer-substring (sage-shell:line-beginning-position)
+                               (line-end-position)))
+        (sage-shell:clear-command-cache)
+        (sage-shell:output-filter process "sage: "))
 
-          ;; create links in the output buffer.
-          (when sage-shell:make-error-link-p
-            (sage-shell:make-error-links comint-last-input-end (point)))
-          (sage-shell-pdb:comint-output-filter-function string)))
+      (add-text-properties comint-last-output-start
+                           (process-mark process)
+                           '(front-sticky
+                             (field inhibit-line-move-field-capture)
+                             rear-nonsticky t
+                             field output
+                             inhibit-line-move-field-capture t))
+      ;; Comment out output if the syntax of a line does not looks like
+      ;; python syntax.
+      (sage-shell:comment-out-output)
+
+      (when sage-shell:output-finished-p
+        ;; create links in the output buffer.
+        (when sage-shell:make-error-link-p
+          (sage-shell:make-error-links comint-last-input-end (point)))
+        (sage-shell-pdb:comint-output-filter-function))
+
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
-        (goto-char saved-point)))))
+        (goto-char (process-mark process))
+        (when (and sage-shell:output-finished-p
+                   (null sage-shell:use-prompt-toolkit))
+          (sage-shell-indent:insert-whitespace))))))
 
-(defun sage-shell:highlight-prompt (prompt-start)
+(defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
         (inhibit-modification-hooks t))
     (when comint-prompt-read-only
@@ -1653,12 +2017,13 @@ This ring remebers the parts.")
           (put-text-property
            (1- prompt-start) prompt-start 'read-only 'fence))
       (add-text-properties
-       prompt-start (point)
+       prompt-start prompt-end
        '(read-only t rear-nonsticky t front-sticky (read-only) field output)))
-    (unless (bolp)
-      (let ((ov (make-overlay prompt-start (point))))
-        (overlay-put ov
-                     'font-lock-face 'comint-highlight-prompt)))))
+    (when (not (cl-loop for ov in (overlays-at prompt-start)
+                        thereis (overlay-get ov 'sage)))
+      (let ((ov (make-overlay prompt-start prompt-end)))
+        (overlay-put ov 'font-lock-face 'comint-highlight-prompt)
+        (overlay-put ov 'sage t)))))
 
 (defun sage-shell:-delete-output (pt)
   "Delete region between pt and process-mark"
@@ -1759,6 +2124,14 @@ Does not delete the prompt."
     (rx symbol-start "class" (1+ space) (group (1+ (or word ?_))))
     lim t)))
 
+(defun sage-shell:font-lock-matcher-prompt (lim)
+  (when (re-search-forward
+         sage-shell:-prompt-regexp-no-eol
+         lim t)
+    (sage-shell:highlight-prompt1
+     (match-beginning 0)
+     (match-end 0))))
+
 (defvar sage-shell:font-lock-keywords
   ;; Keywords
   `((sage-shell:font-lock-matcher-keywords . font-lock-keyword-face)
@@ -1812,28 +2185,33 @@ Does not delete the prompt."
            "TabError")
           symbol-end) . font-lock-type-face)
     ;; Builtins
-    (sage-shell:font-lock-matcher-builtin . font-lock-builtin-face)))
+    (sage-shell:font-lock-matcher-builtin . font-lock-builtin-face)
+    ;; Prompts
+    (sage-shell:font-lock-matcher-prompt . font-lock-builtin-face)))
 
 (defvar sage-shell:redirect-last-point nil)
 
 
-(defsubst sage-shell:-redirect-finished-regexp (dummy-pfx)
-  (cond ((string= dummy-pfx "")
+(defsubst sage-shell:-redirect-finished-regexp (msg_id)
+  (cond ((string= msg_id "")
          sage-shell:output-finished-regexp)
         (t (rx-to-string
             `(and bol
-                  ,sage-shell:-dummy-promt-prefix
+                  ,(sage-shell:-rdct-msg-id-end msg_id)
                   "\n"
                   ,sage-shell:output-finished-regexp-rx)))))
 
 (defun sage-shell:redirect-filter (process input-string)
   (when process
-    (let ((proc-buf (process-buffer process))
-          (input-string (sage-shell:ansi-color-filter-apply input-string)))
+
+    (let* ((proc-buf (process-buffer process))
+           (msg-id (buffer-local-value 'sage-shell:-redirection-msg-id
+                                       proc-buf)))
       (with-current-buffer proc-buf
+        (setq input-string (sage-shell:-psh-to-pending-out input-string))
         (let ((out-buf comint-redirect-output-buffer)
               (f-regexp (sage-shell:-redirect-finished-regexp
-                         sage-shell:-dummy-promt-prefix)))
+                         sage-shell:-redirection-msg-id)))
           (set-buffer out-buf)
           ;; Send output to all registered buffers
           ;; Go to the end of the buffer
@@ -1841,7 +2219,8 @@ Does not delete the prompt."
           ;; Insert the output
           (let ((inhibit-read-only t)
                 (view-read-only nil))
-            (insert input-string))
+            (sage-shell:-insert-and-handle-ansi-escape
+             process input-string t))
 
           ;; If we see the prompt, tidy up
           (when (save-excursion
@@ -1851,9 +2230,18 @@ Does not delete the prompt."
                     (goto-char (point-min)))
                   (re-search-forward f-regexp nil t))
             (replace-match "")
+            (when (and msg-id
+                       (not (string= msg-id "")))
+              (let ((msg-id-start (sage-shell:-rdct-msg-id-start
+                                   msg-id)))
+                (save-excursion
+                  (goto-char (point-min))
+                  (when (re-search-forward
+                         (rx-to-string `(and bol ,msg-id-start "\n")) nil t)
+                    (delete-region (point-min) (match-end 0))))))
             (set-buffer proc-buf)
             (sage-shell:redirect-cleanup)
-            (sage-shell:run-hook-and-remove
+            (sage-shell:run-hook-once
              'sage-shell:redirect-filter-finished-hook))
           ;; sage-shell:redirect-filter-finished-hook may change the current
           ;; buffer
@@ -1868,10 +2256,10 @@ Does not delete the prompt."
   ;; Set the completed flag
   (setq comint-redirect-completed t))
 
-(defun sage-shell:-new-dummy-prompt-pfx ()
-  (format "emacsprompt%s"
-          (cl-loop for i in (current-time)
-                   concat (format "%d" i))))
+(defun sage-shell:-new-rdct-msg-id ()
+  (format "emacs_sage_shell_msg_id%s"
+          (md5 (cl-loop for i in (current-time)
+                        concat (format "%d" i)))))
 
 (defun sage-shell:escepe-string (s)
   (setq s (replace-regexp-in-string (rx "\\") "\\\\" s t t))
@@ -1886,20 +2274,16 @@ Does not delete the prompt."
                            process))
          (proc (get-buffer-process process-buffer)))
     ;; Change to the process buffer
+    (with-current-buffer output-buffer
+      (setq sage-shell:process-buffer process-buffer))
     (with-current-buffer process-buffer
-      ;; Make sure there's a prompt in the current process buffer
-      (and comint-redirect-perform-sanity-check
-           (save-excursion
-             (goto-char (point-max))
-             (or (re-search-backward comint-prompt-regexp nil t)
-                 (error "No prompt found."))))
-
       ;; Set up for redirection
       (setq sage-shell:redirect-last-point nil)
-      (setq-local sage-shell:-dummy-promt-prefix
+      (setq sage-shell:-pending-outputs nil)
+      (setq-local sage-shell:-redirection-msg-id
                   (if raw
                       ""
-                    (sage-shell:-new-dummy-prompt-pfx)))
+                    (sage-shell:-new-rdct-msg-id)))
       (let ((mode-line-process mode-line-process))
         (comint-redirect-setup
          output-buffer
@@ -1952,8 +2336,6 @@ function does not highlight the input."
 
 (defun sage-shell:prepare-for-send ()
   (sage-shell:wait-for-redirection-to-complete)
-
-  (sage-shell:nullify-ring sage-shell:output-ring)
   (setq sage-shell:output-finished-p nil))
 
 (defun sage-shell-update-sage-commands-p (line)
@@ -1963,10 +2345,16 @@ function does not highlight the input."
 (defvar sage-shell:clear-commands-regexp
   (rx bol "clear" (zero-or-more space) eol))
 
+(defvar sage-shell:-pre-output-filter-hook nil)
+(make-variable-buffer-local 'sage-shell:-pre-output-filter-hook)
+(defvar sage-shell:-post-output-filter-hook nil
+  "Unlike `sage-shell:output-filter-finished-hook', the filter function runs
+this hook after inserting string.")
+(make-variable-buffer-local 'sage-shell:-post-output-filter-hook)
+
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
 ;; * Set `sage-shell:output-finished-p'.
-;; * Fill sage-shell:output-ring with nil.
 ;; * If current line is like '****?' then pop to the help buffer.
 ;; * Send current line to indenting buffer.
 ;; * (comint-send-input)
@@ -1975,7 +2363,8 @@ function does not highlight the input."
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
-  (when sage-shell:init-finished-p
+  (when (and sage-shell:init-finished-p
+             (process-live-p (get-buffer-process (current-buffer))))
     (let ((line (buffer-substring (point-at-bol) (line-end-position)))
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
@@ -2034,9 +2423,24 @@ function does not highlight the input."
          (match-string-no-properties 1 line) "help(%s)")
         (sage-shell:send-blank-line))
 
-       ;; send current line to indenting buffer and to process normally
-       (t (sage-shell:send-line-to-indenting-buffer-and-indent line)
-          (sage-shell:comint-send-input)))
+       ;; send current line to process normally
+       (t
+        ;; FIXME: Run sage-shell:send-line-to-indenting-buffer-and-indent
+        ;; if sage-shell:use-prompt-toolkit is non-nil.
+        ;; To do it, disable auto-indent.
+        (unless sage-shell:use-prompt-toolkit
+          (sage-shell:send-line-to-indenting-buffer-and-indent line))
+        (cond (sage-shell:use-prompt-toolkit
+               (let* ((proc (get-buffer-process sage-shell:process-buffer))
+                      (proc-pos (marker-position (process-mark proc)))
+                      (line-end (line-end-position)))
+                 (sage-shell:comint-send-input t)
+                 (process-send-string proc "")
+                 (add-hook 'sage-shell:-pre-output-filter-hook
+                           (lambda () (let ((inhibit-redisplay t))
+                                    (delete-region proc-pos line-end))))))
+              (t (sage-shell:comint-send-input)))))
+
       ;; If current line contains from ... import *, then update sage commands
       (when (sage-shell-update-sage-commands-p line)
         (sage-shell:update-sage-commands))
@@ -2057,7 +2461,8 @@ function does not highlight the input."
               ((string-match (rx bol (zero-or-more blank)
                                  (zero-or-one "%")
                                  "cd" (zero-or-more blank)
-                                 eol) line)
+                                 eol)
+                             line)
                (cd "~")))
 
         (sage-shell-cpl:-add-to-cands-in-cur-session line)
@@ -2105,13 +2510,30 @@ function does not highlight the input."
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
-           (lambda (proc _str) (comint-simple-send proc "")))
+           (lambda (proc _str) (comint-simple-send
+                            proc
+                            (if sage-shell:use-prompt-toolkit
+                                ""
+                              ""))))
           (win (get-buffer-window sage-shell:process-buffer)))
-      (if (and (windowp win)
-               (window-live-p win))
-          (with-selected-window win
-            (sage-shell:comint-send-input))
-        (sage-shell:comint-send-input)))))
+      (let ((line (buffer-substring
+                   (line-beginning-position)
+                   (line-end-position)))
+            (pt (point)))
+        (when sage-shell:use-prompt-toolkit
+          (delete-region (line-beginning-position)
+                         (line-end-position)))
+        (if (and (windowp win)
+                 (window-live-p win))
+            (with-selected-window win
+              (sage-shell:comint-send-input
+               sage-shell:use-prompt-toolkit))
+          (sage-shell:comint-send-input
+           sage-shell:use-prompt-toolkit))
+        (when sage-shell:use-prompt-toolkit
+          (save-excursion
+            (goto-char pt)
+            (insert line)))))))
 
 (defun sage-shell:at-top-level-p ()
   (save-excursion
@@ -2151,8 +2573,8 @@ matches last process output."
       (with-current-buffer (sage-shell-indent:get-indenting-buffer)
         (setq indent-str (buffer-substring (point-at-bol) (point))))
       (when (get-buffer-process sage-shell:process-buffer)
-        (goto-char (process-mark (get-buffer-process (current-buffer)))))
-      (insert indent-str))))
+        (goto-char (process-mark (get-buffer-process (current-buffer))))
+        (insert indent-str)))))
 
 
 (defun sage-shell-indent:indent-line ()
@@ -3159,9 +3581,9 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
            cmd
            :output-buffer output-buffer
            :sync sync
-           :call-back-rest-args (list compl-state)
-           :call-back #'sage-shell-cpl:-cpl-init-call-back)
-
+           :call-back
+           (lambda (s)
+             (sage-shell-cpl:-cpl-init-call-back s compl-state)))
           (if sync
               sage-shell-cpl:-last-sexp))))))
 
@@ -3522,7 +3944,7 @@ whose key is in KEYS."
 
 (cl-defun sage-shell-edit:exec-command-base
     (&key command pre-message post-message switch-p
-          (display-function nil) (insert-command-p nil) (before-sentence nil))
+          (display-function nil) (insert-command-p t) (before-sentence nil))
   "If `insert-command-p' is non-nil, then it inserts `command' in
 the process buffer. If `before-sentence' is non-nil, it will be
 inserted in the process buffer before executing the command."
@@ -4065,10 +4487,9 @@ Returns the tracked buffer."
         (add-to-list 'sage-shell-pdb:buffers-to-kill file-buffer)))
     file-buffer))
 
-(defun sage-shell-pdb:comint-output-filter-function (output)
-  "Move overlay arrow to current pdb line in tracked buffer.
-Argument OUTPUT is a string with the output from the comint process."
-  (when (and sage-shell-pdb:activate (not (string= output "")))
+(defun sage-shell-pdb:comint-output-filter-function ()
+  "Move overlay arrow to current pdb line in tracked buffer. "
+  (when sage-shell-pdb:activate
     (let* ((full-output (ansi-color-filter-apply
                          (buffer-substring comint-last-input-end (point-max))))
            (line-number)
@@ -4116,8 +4537,7 @@ Argument OUTPUT is a string with the output from the comint process."
                       (ignore-errors (kill-buffer buffer)))
                   sage-shell-pdb:buffers-to-kill))
           (setq sage-shell-pdb:tracked-buffer nil
-                sage-shell-pdb:buffers-to-kill nil)))))
-  output)
+                sage-shell-pdb:buffers-to-kill nil))))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; sagetex
@@ -4125,13 +4545,18 @@ Argument OUTPUT is a string with the output from the comint process."
   "Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
   (sage-shell:awhen (sage-shell:sage-root)
     (let ((texinputs (getenv "TEXINPUTS"))
-          (sagetexdir (expand-file-name
-                       "local/share/texmf/tex/generic/sagetex:"
-                       it)))
-      (unless (and texinputs
-                   (sage-shell:in (substring sagetexdir 0 -1)
-                                  (split-string texinputs ":")))
-        (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
+          (sagetexdir (let ((dir1 (expand-file-name
+                                   "local/share/texmf/tex/generic/sagetex"
+                                   it))
+                            (dir2 (expand-file-name
+                                   "local/share/texmf/tex/latex/sagetex"
+                                   it)))
+                        (if (file-exists-p dir1) dir1 dir2))))
+      (when (and (not (and texinputs
+                           (sage-shell:in sagetexdir
+                                          (split-string texinputs ":"))))
+                 (file-exists-p sagetexdir))
+        (setenv "TEXINPUTS" (concat texinputs sagetexdir ":"))))))
 
 (defun sage-shell-sagetex:tex-to-sagetex-file (f)
   (concat (file-name-sans-extension
@@ -4149,8 +4574,7 @@ Argument OUTPUT is a string with the output from the comint process."
     (sage-shell-edit:load-file-base
      :command (format "%s('%s')" (sage-shell:py-mod-func "sage_tex_load")
                       dflt)
-     :file-name dflt
-     :before-sentence "# ")))
+     :file-name dflt)))
 
 ;;;###autoload
 (defun sage-shell-sagetex:load-current-file ()

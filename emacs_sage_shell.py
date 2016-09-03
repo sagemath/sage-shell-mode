@@ -6,6 +6,7 @@ import os
 from contextlib import contextmanager
 import inspect
 
+import IPython
 from IPython.core.completerlib import module_completion
 
 import sage
@@ -20,6 +21,13 @@ except:                         # Older versions
     import IPython.ipapi
     ip = IPython.ipapi.get()
     ip.IP.shell.autoindent = False
+
+# Disable highlighting matching parentheses.
+try:
+    if IPython.version_info[0] >= 5:
+        sage.repl.interpreter.SageTerminalInteractiveShell.highlight_matching_brackets = False
+except:
+    pass
 
 # Disable color.
 ip.run_line_magic('colors', 'NoColor')
@@ -293,7 +301,7 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
     inputs = ip.ev("_ih")
     # TODO: Find a better way.
     regexp = re.compile(
-        r'_emacs_sage_shell\.run_cell_dummy_prompt\("_emacs_ob_sagemath\.run_cell_babel.+')
+        r'_emacs_sage_shell\.run_cell_and_print_msg_id\("_emacs_ob_sagemath\.run_cell_babel.+')
     for k, v in outputs:
         if regexp.match(inputs[k]) is None:
             print("In [{k}]: {i}".format(k=k, i=inputs[k]))
@@ -312,8 +320,6 @@ def _is_safe_str(s):
 
 def print_info(name):
     ip.run_cell("%s?" % (name,))
-    # In some cases, the next line is not blank.
-    ip.set_next_input("")
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
@@ -435,15 +441,19 @@ def print_short_doc_and_def(name, base_name=None):
         pass
 
 
-def run_cell_and_print_state(code, dummy):
+def run_cell_and_print_state(code, msg_id_start, msg_id_end):
+    print(msg_id_start)
     res = ip.run_cell(code)
     if res.success:
         print(0)
     else:
         print(1)
-    print(dummy)
+    print(msg_id_end)
 
 
-def run_cell_dummy_prompt(code, dummy):
+def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
+    print(msg_id_start)
     ip.run_cell(code)
-    print(dummy)
+    # If input is "foo.bar?", the next input may not be empty.
+    ip.set_next_input("")
+    print(msg_id_end)
