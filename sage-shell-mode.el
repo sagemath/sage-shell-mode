@@ -1722,6 +1722,11 @@ Return value is not deifned."
            (sage-shell:-insert-and-handle-char seqs))
           (t (dolist (a seqs)
                (cond ((listp a)
+                      (unless sage-shell:use-prompt-toolkit
+                        (message
+                         (concat
+                          "It seems that your Sage uses IPython 5 or later.\n"
+                          "So you should set `sage-shell:use-prompt-toolkit' to t.")))
                       (let ((args (cadr a)))
                         (apply (assoc-default
                                 (car a)
