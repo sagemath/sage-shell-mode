@@ -1603,7 +1603,8 @@ Match group 1 will be replaced with devel/sage-branch")
 ;; Copied from windows.el of Emacs 25.0.
 (defun sage-shell:-window-max-chars-per-line (&optional window _face)
   (with-selected-window (window-normalize-window window t)
-    (let* ((window-width (window-body-width window t))
+    (let* ((window-width (with-no-warnings
+                           (window-body-width window t)))
            (font-width (frame-char-width))
            (ncols (/ window-width font-width)))
       (if (and (display-graphic-p)
