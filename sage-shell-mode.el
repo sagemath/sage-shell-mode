@@ -1978,7 +1978,6 @@ return string for output."
       (sage-shell:comment-out-output)
 
       (when sage-shell:output-finished-p
-        (sage-shell-indent:insert-whitespace)
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
@@ -1986,7 +1985,10 @@ return string for output."
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
-        (goto-char saved-point)))))
+        (goto-char (process-mark process))
+        (when (and sage-shell:output-finished-p
+                   (null sage-shell:use-prompt-toolkit))
+          (sage-shell-indent:insert-whitespace))))))
 
 (defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
