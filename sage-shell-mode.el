@@ -4498,13 +4498,18 @@ Returns the tracked buffer."
   "Add $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
   (sage-shell:awhen (sage-shell:sage-root)
     (let ((texinputs (getenv "TEXINPUTS"))
-          (sagetexdir (expand-file-name
-                       "local/share/texmf/tex/generic/sagetex:"
-                       it)))
-      (unless (and texinputs
-                   (sage-shell:in (substring sagetexdir 0 -1)
-                                  (split-string texinputs ":")))
-        (setenv "TEXINPUTS" (concat texinputs sagetexdir))))))
+          (sagetexdir (let ((dir1 (expand-file-name
+                                   "local/share/texmf/tex/generic/sagetex"
+                                   it))
+                            (dir2 (expand-file-name
+                                   "local/share/texmf/tex/latex/sagetex"
+                                   it)))
+                        (if (file-exists-p dir1) dir1 dir2))))
+      (when (and (not (and texinputs
+                           (sage-shell:in sagetexdir
+                                          (split-string texinputs ":"))))
+                 (file-exists-p sagetexdir))
+        (setenv "TEXINPUTS" (concat texinputs sagetexdir ":"))))))
 
 (defun sage-shell-sagetex:tex-to-sagetex-file (f)
   (concat (file-name-sans-extension
