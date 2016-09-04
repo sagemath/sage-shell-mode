@@ -525,7 +525,7 @@ returned from the function, otherwise, this returns it self. "
 
 (defvar sage-shell:output-finished-regexp-rx
   `(or (and (1+ (and (or "sage:" "sage0:" ">>>" "....:"
-                         "(Pdb)" "ipdb>" "(gdb)") " "))
+                         "(Pdb)" "ipdb>" "(gdb)") (1+ " ")))
             line-end)
        (and (or ,@sage-shell-interfaces:other-interfaces)
             ": " line-end)))
