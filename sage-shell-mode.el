@@ -2464,11 +2464,9 @@ this hook after inserting string.")
                       (line-end (line-end-position)))
                  (sage-shell:comint-send-input t)
                  (process-send-string proc "")
-                 (unless (string-match-p sage-shell:clear-commands-regexp
-                                         line)
-                   (add-hook 'sage-shell:-pre-output-filter-hook
+                 (add-hook 'sage-shell:-pre-output-filter-hook
                              (lambda () (let ((inhibit-redisplay t))
-                                      (delete-region proc-pos line-end)))))))
+                                      (delete-region proc-pos line-end))))))
               (t (sage-shell:comint-send-input)))))
 
       ;; If current line contains from ... import *, then update sage commands
@@ -2497,7 +2495,8 @@ this hook after inserting string.")
 
         (sage-shell-cpl:-add-to-cands-in-cur-session line)
         (when (string-match sage-shell:clear-commands-regexp line)
-          (sage-shell:clear-current-buffer))))
+          (add-hook 'sage-shell:output-filter-finished-hook
+                    #'sage-shell:clear-current-buffer))))
     (sage-shell:-clear-cache-in-send-input)))
 
 (defun sage-shell:-clear-cache-in-send-input ()
