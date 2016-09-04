@@ -34,7 +34,7 @@
    1. GNU Emacs 24.1 (or 24.4) or later
 
       If your Sage depends on IPython 5 (i.e. it uses python-prompt-toolkit instead of GNU readline),
-      then this package requires requires Emacs 24.4 or later.
+      then this package requires Emacs 24.4 or later.
       In that case, you should set =sage-shell:use-prompt-toolkit= to a non-nil value.
       Otherwise it requires Emacs 24.1 or later.
 
