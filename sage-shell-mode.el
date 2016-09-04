@@ -1816,7 +1816,7 @@ Return value is not deifned."
 
 (defun sage-shell:-cursor-down (_proc &rest args)
   (let ((n (or (car args) 1)))
-    (forward-line n)))
+    (sage-shell:-down n)))
 
 (defun sage-shell:-cursor-up (_proc &rest args)
   (let ((n (or (car args) 1)))
