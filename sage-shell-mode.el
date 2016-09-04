@@ -1859,15 +1859,14 @@ Return value is not deifned."
   "Assuming current point is at output, delete output text from
 the point to end of the buffer"
   (let ((inhibit-field-text-motion nil)
-        (inhibit-read-only t))
+        (inhibit-read-only t)
+        (pt (or pt (point))))
     (save-excursion
-      (when pt
-        (goto-char pt))
-      (while (progn
-               (delete-region (line-end-position) (line-beginning-position))
-               (end-of-line)
-               (not (eobp)))
-        (forward-line 1)))))
+      (goto-char pt)
+      (delete-region pt (line-end-position))
+      (while (progn (forward-line 1)
+                    (not (eobp)))
+        (delete-region (line-beginning-position) (line-end-position))))))
 
 (defun sage-shell:-delete-to-end-of-line (&optional pt)
   (let ((inhibit-field-text-motion nil)
