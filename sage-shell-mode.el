@@ -1887,8 +1887,8 @@ the point to end of the buffer"
              (delete-region
               (sage-shell:line-beginning-position)
               (point)))
-            (t
-             (sage-shell:-delete-to-end-of-output
+            ((equal n 2)
+             (sage-shell:-delete-to-end-of-line
               (sage-shell:line-beginning-position))))
       (move-to-column start-column t))))
 
