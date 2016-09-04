@@ -1018,7 +1018,7 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\"" (cdr win-size) (car win-size))
                ".."
                (car cmdlist) (cdr cmdlist))
       (apply 'make-comint-in-buffer "Sage" buffer
-           (car cmdlist) nil (cdr cmdlist)))))
+             (car cmdlist) nil (cdr cmdlist)))))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
