@@ -2027,9 +2027,7 @@ return string for output."
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
-        (sage-shell-pdb:comint-output-filter-function)
-        (font-lock-fontify-region comint-last-output-start
-                                  (point)))
+        (sage-shell-pdb:comint-output-filter-function))
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
@@ -2048,12 +2046,8 @@ return string for output."
            (1- prompt-start) prompt-start 'read-only 'fence))
       (add-text-properties
        prompt-start prompt-end
-       '(read-only t rear-nonsticky t front-sticky (read-only) field output)))
-    (when (not (cl-loop for ov in (overlays-at prompt-start)
-                        thereis (overlay-get ov 'sage)))
-      (let ((ov (make-overlay prompt-start prompt-end)))
-        (overlay-put ov 'font-lock-face 'comint-highlight-prompt)
-        (overlay-put ov 'sage t)))))
+       '(read-only t rear-nonsticky t front-sticky (read-only) field output
+                   face comint-highlight-prompt)))))
 
 (defun sage-shell:-delete-output (pt)
   "Delete region between pt and process-mark"
@@ -2217,7 +2211,7 @@ Does not delete the prompt."
     ;; Builtins
     (sage-shell:font-lock-matcher-builtin . font-lock-builtin-face)
     ;; Prompts
-    (sage-shell:font-lock-matcher-prompt . font-lock-builtin-face)))
+    (sage-shell:font-lock-matcher-prompt . 'comint-highlight-prompt)))
 
 (defvar sage-shell:redirect-last-point nil)
 
