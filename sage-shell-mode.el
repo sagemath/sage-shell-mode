@@ -41,7 +41,8 @@
 ;; Please visit https://github.com/stakemori/sage-shell-mode for more
 ;; infomation.
 
-;;; TODO
+;;; Code:
+;; TODO
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
 ;; 2. Add support for simple prompt.
 ;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
@@ -49,7 +50,6 @@
 ;; Should sage-shell:-adjust-window-size be added to
 ;; window-configuration-change-hook?
 
-;;; Code:
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
