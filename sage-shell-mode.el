@@ -1004,10 +1004,11 @@ When sync is nill this return a lambda function to get the result."
   (let* ((cmdlist (split-string cmd))
          (win (selected-window))
          (win-size
-          (sage-shell:-window-size (if (equal (window-buffer win) buffer)
-                                       win
-                                     (save-window-excursion
-                                       (display-buffer buffer))))))
+          (if (equal (window-buffer win) buffer)
+              (sage-shell:-window-size win)
+            (save-window-excursion
+              (let ((win (display-buffer buffer)))
+                (sage-shell:-window-size win))))))
     (if sage-shell:use-prompt-toolkit
         (apply 'make-comint-in-buffer "Sage" buffer
                "/bin/sh"
