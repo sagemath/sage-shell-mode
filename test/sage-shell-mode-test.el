@@ -287,3 +287,193 @@ foo=bar(1, 2), baz=(1, 2")))
                        :regexp (sage-shell-interfaces:get "singular" 'cmd-rxp))))
           (should (member "zerodec" cands))
           (should (member "groebner" cands)))))))
+
+(defun sage-shell-test:-insert-test-str1 ()
+  (sage-shell:-insert-str (cl-loop for c from ?a to (+ ?a 10)
+                                   concat (char-to-string c)))
+  (insert (cl-loop for c from ?A to (+ ?A 10)
+                   concat (char-to-string c)))
+  (newline)
+  (insert (cl-loop for c from ?1 to (+ ?1 10)
+                   concat (char-to-string c)))
+  (newline)
+  (insert "aaaaa"))
+
+(ert-deftest sage-shell:delete-display-test ()
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 4)
+    (sage-shell:-delete-display nil)
+    (should (string= (buffer-string)
+                     "abcABCDEFGHIJK
+
+")))
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 4)
+    (sage-shell:-delete-display nil 1)
+    (should (string= (buffer-string) "defghijkABCDEFGHIJK
+123456789:;
+aaaaa")))
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 4)
+    (sage-shell:-delete-display nil 2)
+    (should (string= (buffer-string) "ABCDEFGHIJK
+
+"))))
+
+(ert-deftest sage-shell:delete-line-test ()
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 3)
+    (sage-shell:-delete-line nil)
+    (should (= (point) 3))
+    (should (string= (buffer-string)
+                     "abABCDEFGHIJK
+123456789:;
+aaaaa")))
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 3)
+    (sage-shell:-delete-line nil 1)
+    (should (= (point) 3))
+    (should (string= (buffer-string)
+                     "cdefghijkABCDEFGHIJK
+123456789:;
+aaaaa")))
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 3)
+    (sage-shell:-delete-line nil 2)
+    (should (= (point) 3))
+    (should (string= (buffer-string)
+                     "ABCDEFGHIJK
+123456789:;
+aaaaa"))))
+
+(ert-deftest sage-shell:up-down-test ()
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 27)
+    (sage-shell:-cursor-down nil 1)
+    (should (= (point) 39)))
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+    (goto-char 27)
+    (sage-shell:-cursor-up nil 1)
+    (should (= (point) 4))))
+
+(ert-deftest sage-shell:forward-back-test ()
+  (with-temp-buffer
+    (sage-shell-test:-insert-test-str1)
+
+    (goto-char 3)
+    (sage-shell:-cursor-forward nil)
+    (should (= (point) 4))
+
+    (goto-char 3)
+    (sage-shell:-cursor-back nil)
+    (should (= (point) 2))
+
+    (goto-char 3)
+    (sage-shell:-cursor-forward nil 3)
+    (should (= (point) 6))
+
+    (goto-char 26)
+    (sage-shell:-cursor-back nil 100)
+    (should (= (point) 24))
+
+    (goto-char 3)
+    (sage-shell:-cursor-forward nil 100)
+    (should (= (point) 23))))
+
+
+(ert-deftest sage-shell:-insert-and-handle-char-test ()
+  (let ((default-str "abcdefghijkABCDEFGHIJK
+123456789:;
+aaaaa"))
+    (with-temp-buffer
+      (sage-shell-test:-insert-test-str1)
+      (goto-char 3)
+      (sage-shell:-insert-and-handle-char "   ")
+      (should (string= (buffer-string)
+                       "ab   fghijkABCDEFGHIJK
+123456789:;
+aaaaa"))
+
+
+      (erase-buffer)
+      (sage-shell-test:-insert-test-str1)
+      (goto-char 7)
+      (sage-shell:-insert-and-handle-char "\n")
+      (should (= (point) 30))
+      (should (string= (buffer-string)
+                       default-str))
+
+      (goto-char 30)
+      (sage-shell:-insert-and-handle-char "\n")
+      (should (= (point) 42))
+      (should (string= (buffer-string)
+                       "abcdefghijkABCDEFGHIJK
+123456789:;
+aaaaa "))
+
+      (erase-buffer)
+      (sage-shell-test:-insert-test-str1)
+      (goto-char 12)
+      (sage-shell:-insert-and-handle-char "abc")
+      (should (string= (buffer-string)
+                       "abcdefghijkabcABCDEFGHIJK
+123456789:;
+aaaaa"))
+
+      (erase-buffer)
+      (sage-shell-test:-insert-test-str1)
+      (goto-char 12)
+      (sage-shell:-insert-and-handle-char "")
+      (should (string= (buffer-string) default-str))
+      (should (= (point) 1))
+
+      (goto-char (point-max))
+      (sage-shell:-insert-and-handle-char "abc\n123")
+      (should (string= (buffer-string) "abcdefghijkABCDEFGHIJK
+123456789:;
+aaaaaabc
+123")))))
+
+(ert-deftest sage-shell:-insert-and-handle-ansi-escape-test ()
+  (with-temp-buffer
+    (sage-shell:-insert-str "sage: ")
+    (sage-shell:-insert-and-handle-ansi-escape nil "[6D[Jsage: 12[8D
+[J")
+    (should (string= (buffer-string) "sage: 12\n")))
+
+  (with-temp-buffer
+    (sage-shell:-insert-str "sage: for a in range(10):")
+    (newline)
+    (sage-shell:-insert-str "....:     print a")
+    (newline)
+    (sage-shell:-insert-str "....:     ")
+    (sage-shell:-insert-and-handle-ansi-escape
+     nil
+     "[2A[10D[Jsage: for a in range(10):
+....:     print a
+....:     [10D
+[J")
+    (string= (buffer-string)
+             "sage: for a in range(10):
+....:     print a
+....:
+"))
+
+  (with-temp-buffer
+    (sage-shell:-insert-str "sage: if 1:")
+    (newline)
+    (sage-shell:-insert-str "....:     ")
+    (sage-shell:-insert-and-handle-ansi-escape
+     nil
+     "[A[4D     
+          [A[4D")
+    (should (string= (sage-shell:trim-right (buffer-string))
+                     "sage:"))))
