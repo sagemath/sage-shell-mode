@@ -2079,8 +2079,10 @@ Does not delete the prompt. If `sage-shell:use-prompt-toolkit' is
 non-nil, then this function may not delete lines which match
 sage-shell:-prompt-regexp-no-eol."
   (interactive)
-  (sage-shell:-delete-output
-   (sage-shell:-last-input-start-maybe)))
+  (let ((bol (sage-shell:line-beginning-position))
+        (out-start (sage-shell:-last-input-start-maybe)))
+    (when (< out-start bol)
+      (sage-shell:-delete-output out-start))))
 
 (defmacro sage-shell:font-lock-when-sage-line (&rest forms)
   `(when (save-match-data
@@ -3040,15 +3042,19 @@ send current line to Sage process buffer."
 
 (defun sage-shell:-last-input-start-maybe ()
   (cond (sage-shell:use-prompt-toolkit
-         (save-excursion
-           (goto-char comint-last-input-end)
-           (while (progn
-                    (forward-line 0)
-                    (and (looking-at-p sage-shell:-prompt-regexp-no-eol)
-                         (progn (end-of-line)
-                                (not (eobp)))))
-             (forward-line 1))
-           (point)))
+         (let ((inhibit-field-text-motion t)
+               (bol (sage-shell:line-beginning-position)))
+           (save-excursion
+             (goto-char comint-last-input-end)
+             (while (progn
+                      (forward-line 0)
+                      (and
+                       (< (point) bol)
+                       (looking-at-p sage-shell:-prompt-regexp-no-eol)
+                       (progn (end-of-line)
+                              (not (eobp)))))
+               (forward-line 1))
+             (point))))
         (t comint-last-input-end)))
 
 (defun sage-shell:last-output-beg-end ()
