@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+
+import inspect
+import os
 import re
 import sys
-import os
 from contextlib import contextmanager
-import inspect
 
 import IPython
 from IPython.core.completerlib import module_completion
@@ -12,7 +13,6 @@ from IPython.core.completerlib import module_completion
 import sage
 from sage.all import preparse
 from sage.misc.all import uniq
-
 
 try:
     ip = get_ipython()
