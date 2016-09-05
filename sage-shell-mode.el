@@ -46,7 +46,6 @@
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
 ;; 2. Add support for simple prompt.
 ;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
-;; 4. Fix sage-shell:copy-previous-output-to-kill-ring.
 ;; Should sage-shell:-adjust-window-size be added to
 ;; window-configuration-change-hook?
 
@@ -2076,9 +2075,12 @@ the last prompt."
 
 (defun sage-shell:delete-output ()
   "Delete all output from interpreter since last input.
-Does not delete the prompt."
+Does not delete the prompt. If `sage-shell:use-prompt-toolkit' is
+non-nil, then this function may not delete lines which match
+sage-shell:-prompt-regexp-no-eol."
   (interactive)
-  (sage-shell:-delete-output comint-last-input-end))
+  (sage-shell:-delete-output
+   (sage-shell:-last-input-start-maybe)))
 
 (defmacro sage-shell:font-lock-when-sage-line (&rest forms)
   `(when (save-match-data
@@ -3036,15 +3038,30 @@ send current line to Sage process buffer."
   "n" 'sage-shell:output-forward
   "p" 'sage-shell:output-backward)
 
+(defun sage-shell:-last-input-start-maybe ()
+  (cond (sage-shell:use-prompt-toolkit
+         (save-excursion
+           (goto-char comint-last-input-end)
+           (while (progn
+                    (forward-line 0)
+                    (and (looking-at-p sage-shell:-prompt-regexp-no-eol)
+                         (progn (end-of-line)
+                                (not (eobp)))))
+             (forward-line 1))
+           (point)))
+        (t comint-last-input-end)))
+
 (defun sage-shell:last-output-beg-end ()
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
     (save-excursion
       (goto-char (process-mark (get-buffer-process sage-shell:process-buffer)))
-      (list comint-last-input-end
+      (list (sage-shell:-last-input-start-maybe)
             (1- (sage-shell:line-beginning-position))))))
 
 (defun sage-shell:copy-previous-output-to-kill-ring ()
-  "Save the previous visible output to `kill-ring'."
+  "Save the previous visible output to `kill-ring'.
+If `sage-shell:use-prompt-toolkit' is non-nil, then the first several
+lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
   (interactive)
   (sage-shell:with-current-buffer-safe sage-shell:process-buffer
     (kill-new (apply #'buffer-substring-no-properties
