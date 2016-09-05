@@ -1570,7 +1570,7 @@ Match group 1 will be replaced with devel/sage-branch")
                  (and (re-search-forward "^." nil t)
                       (not (save-excursion
                              (forward-line 0)
-                             (looking-at sage-shell:output-finished-regexp))))
+                             (looking-at sage-shell:-prompt-regexp-no-eol))))
                  do
                  (let ((p (sage-shell:python-syntax-output-p
                            (buffer-substring (line-beginning-position)
