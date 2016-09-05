@@ -1926,19 +1926,17 @@ the point to end of the buffer"
 (defun sage-shell:-psh-to-pending-out (string)
   "Push string to sage-shell:-pending-outputs if necessary and
 return string for output."
-  (cond (sage-shell:-pending-outputs
-         (prog1
-             (mapconcat #'identity sage-shell:-pending-outputs "")
-           (setq sage-shell:-pending-outputs nil)))
-        ((string-match-p
-          (rx (or (and "[" (0+ (or num ";" "?")))
-                  "")
-              eol)
-          string)
-         (push string sage-shell:-pending-outputs)
-         ;; Return the empty and wait for next output
-         "")
-        (t string)))
+  (let ((pending-outputs
+         (concat (mapconcat #'identity sage-shell:-pending-outputs "")
+                 string)))
+    (cond ((string-match-p
+            (rx (or (and "[" (0+ (or num ";" "?"))) "") eol)
+            pending-outputs)
+           (push string sage-shell:-pending-outputs)
+           ;; Return the empty and wait for next output
+           "")
+          (t (setq sage-shell:-pending-outputs nil)
+             pending-outputs))))
 
 (defun sage-shell:output-filter (process string)
   (setq string (sage-shell:-ansi-escape-filter-out string))
