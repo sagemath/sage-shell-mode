@@ -2392,8 +2392,7 @@ this hook after inserting string.")
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
-  (when (and sage-shell:init-finished-p
-             (process-live-p (get-buffer-process (current-buffer))))
+  (when (process-live-p (get-buffer-process (current-buffer)))
     (let ((line (buffer-substring (point-at-bol) (line-end-position)))
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
