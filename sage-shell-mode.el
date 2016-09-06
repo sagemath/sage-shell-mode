@@ -1999,9 +1999,11 @@ return string for output."
 
       (goto-char (process-mark process)) ; in case a filter moved it
 
-      (when (save-excursion
-              (forward-line 0)
-              (looking-at-p sage-shell:output-finished-regexp))
+      (when (let ((bol (sage-shell:line-beginning-position)))
+              (string-match-p
+               sage-shell:output-finished-regexp
+               (buffer-substring-no-properties
+                bol (min (+ bol 10) (line-end-position)))))
         (setq sage-shell:output-finished-p t))
 
       (when (and (bolp)
