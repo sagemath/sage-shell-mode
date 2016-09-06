@@ -394,8 +394,9 @@ returned from the function, otherwise, this returns it self. "
     value-or-func))
 
 
-(defun sage-shell:line-beginning-position ()
-  (save-excursion (forward-line 0) (point)))
+(defsubst sage-shell:line-beginning-position ()
+  (let ((inhibit-field-text-motion t))
+    (line-beginning-position)))
 
 (defmacro sage-shell:with-current-buffer-safe (buf-maybe &rest body)
   (declare (indent 1))
@@ -1998,9 +1999,11 @@ return string for output."
 
       (goto-char (process-mark process)) ; in case a filter moved it
 
-      (when (save-excursion
-              (forward-line 0)
-              (looking-at-p sage-shell:output-finished-regexp))
+      (when (let ((bol (sage-shell:line-beginning-position)))
+              (string-match-p
+               sage-shell:output-finished-regexp
+               (buffer-substring-no-properties
+                bol (min (+ bol 10) (line-end-position)))))
         (setq sage-shell:output-finished-p t))
 
       (when (and (bolp)
@@ -2392,8 +2395,7 @@ this hook after inserting string.")
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
-  (when (and sage-shell:init-finished-p
-             (process-live-p (get-buffer-process (current-buffer))))
+  (when (process-live-p (get-buffer-process (current-buffer)))
     (let ((line (buffer-substring (point-at-bol) (line-end-position)))
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
