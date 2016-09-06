@@ -394,8 +394,9 @@ returned from the function, otherwise, this returns it self. "
     value-or-func))
 
 
-(defun sage-shell:line-beginning-position ()
-  (save-excursion (forward-line 0) (point)))
+(defsubst sage-shell:line-beginning-position ()
+  (let ((inhibit-field-text-motion t))
+    (line-beginning-position)))
 
 (defmacro sage-shell:with-current-buffer-safe (buf-maybe &rest body)
   (declare (indent 1))
