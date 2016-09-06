@@ -46,6 +46,7 @@
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
 ;; 2. Add support for simple prompt.
 ;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
+;; 4. Handle [6n.
 ;; Should sage-shell:-adjust-window-size be added to
 ;; window-configuration-change-hook?
 
