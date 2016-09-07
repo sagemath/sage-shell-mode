@@ -54,7 +54,6 @@
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
 (eval-and-compile (require 'cl-lib))
-(require 'term)
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
