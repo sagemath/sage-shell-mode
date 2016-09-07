@@ -195,7 +195,7 @@ This string will be inserted to the temporary file before evaluating code."
 
 (defcustom sage-shell:use-prompt-toolkit nil
   "Non `nil' means the Sage process uses the new prompt of IPython 5."
-  :type 'bool
+  :type 'boolean
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
