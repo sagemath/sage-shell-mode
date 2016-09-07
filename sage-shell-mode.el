@@ -1007,26 +1007,24 @@ When sync is nill this return a lambda function to get the result."
   "Name to use for TERM.")
 
 (defun sage-shell:start-sage-process (cmd buffer)
-  (let* ((cmdlist (split-string cmd))
-         (win (selected-window))
-         (win-size
-          (if (equal (window-buffer win) buffer)
-              (sage-shell:-window-size win)
-            (save-window-excursion
-              (let ((win (display-buffer buffer)))
-                (sage-shell:-window-size win))))))
+  (let ((cmdlist (split-string cmd)))
     (if sage-shell:use-prompt-toolkit
-        (apply 'make-comint-in-buffer "Sage" buffer
-               "/bin/sh"
-               nil
-               "-c"
-               (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
+        (let* ((win (selected-window))
+               (win-size
+                (if (equal (window-buffer win) buffer)
+                    (sage-shell:-window-size win)
+                  (save-window-excursion
+                    (let ((win (display-buffer buffer)))
+                      (sage-shell:-window-size win))))))
+          (apply 'make-comint-in-buffer "Sage" buffer
+                 "/bin/sh"
+                 nil
+                 "-c"
+                 (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
 if [ $1 = .. ]; then shift; fi; exec \"$@\""
-                       sage-shell:term-name
-                       (cdr win-size)
-                       (car win-size))
-               ".."
-               (car cmdlist) (cdr cmdlist))
+                         sage-shell:term-name (cdr win-size) (car win-size))
+                 ".."
+                 (car cmdlist) (cdr cmdlist)))
       (apply 'make-comint-in-buffer "Sage" buffer
              (car cmdlist) nil (cdr cmdlist)))))
 
