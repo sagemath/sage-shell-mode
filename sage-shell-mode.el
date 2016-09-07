@@ -1002,25 +1002,25 @@ When sync is nill this return a lambda function to get the result."
   "Sage command list evaluated after loading Sage.")
 
 (defun sage-shell:start-sage-process (cmd buffer)
-  (let* ((cmdlist (split-string cmd))
-         (win (selected-window))
-         (win-size
-          (if (equal (window-buffer win) buffer)
-              (sage-shell:-window-size win)
-            (save-window-excursion
-              (let ((win (display-buffer buffer)))
-                (sage-shell:-window-size win))))))
-    (if sage-shell:use-prompt-toolkit
-        (apply 'make-comint-in-buffer "Sage" buffer
-               "/bin/sh"
-               nil
-               "-c"
-               (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
+  (let ((cmdlist (split-string cmd)))
+    (let* ((win (selected-window))
+           (win-size
+            (if (equal (window-buffer win) buffer)
+                (sage-shell:-window-size win)
+              (save-window-excursion
+                (let ((win (display-buffer buffer)))
+                  (sage-shell:-window-size win))))))
+      (if sage-shell:use-prompt-toolkit
+          (apply 'make-comint-in-buffer "Sage" buffer
+                 "/bin/sh"
+                 nil
+                 "-c"
+                 (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
 if [ $1 = .. ]; then shift; fi; exec \"$@\"" (cdr win-size) (car win-size))
-               ".."
-               (car cmdlist) (cdr cmdlist))
-      (apply 'make-comint-in-buffer "Sage" buffer
-             (car cmdlist) nil (cdr cmdlist)))))
+                 ".."
+                 (car cmdlist) (cdr cmdlist))
+        (apply 'make-comint-in-buffer "Sage" buffer
+               (car cmdlist) nil (cdr cmdlist))))))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
