@@ -2694,7 +2694,8 @@ python-mode"
 
 (sage-shell:define-keys sage-shell:help-mode-map
   "C-c C-j" 'sage-shell-help:send-current-line
-  "C-c C-z" 'sage-shell-edit:pop-to-process-buffer)
+  "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
+  "C-i"     'forward-button)
 
 (defvar sage-shell-help:symbol-not-found-regexp
   "Object `.*?` not found."
