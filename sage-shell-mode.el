@@ -1116,9 +1116,7 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
                                     buffer-name
                                   (sage-shell:shell-buffer-name new))))
         (cur-buf (current-buffer)))
-    (when (and sage-shell:use-prompt-toolkit
-               (version<= emacs-version
-                          "24.3"))
+    (when (and sage-shell:use-prompt-toolkit (version< emacs-version "24.4"))
       (error "Please use Emacs 24.4 or later."))
     (cond ((eq switch-function 'no-switch)
            (switch-to-buffer cur-buf))
