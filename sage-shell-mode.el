@@ -54,6 +54,7 @@
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
 (eval-and-compile (require 'cl-lib))
+(require 'term)
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
@@ -1002,6 +1003,10 @@ When sync is nill this return a lambda function to get the result."
             sage-shell:python-script-directory)))
   "Sage command list evaluated after loading Sage.")
 
+(defvar sage-shell:term-name
+  (if (bound-and-true-p term-term-name) term-term-name "emacs")
+  "Name to use for TERM.")
+
 (defun sage-shell:start-sage-process (cmd buffer)
   (let* ((cmdlist (split-string cmd))
          (win (selected-window))
@@ -1016,8 +1021,11 @@ When sync is nill this return a lambda function to get the result."
                "/bin/sh"
                nil
                "-c"
-               (format "stty -nl echo rows %d columns %d sane 2>/dev/null;\
-if [ $1 = .. ]; then shift; fi; exec \"$@\"" (cdr win-size) (car win-size))
+               (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
+if [ $1 = .. ]; then shift; fi; exec \"$@\""
+                       sage-shell:term-name
+                       (cdr win-size)
+                       (car win-size))
                ".."
                (car cmdlist) (cdr cmdlist))
       (apply 'make-comint-in-buffer "Sage" buffer
