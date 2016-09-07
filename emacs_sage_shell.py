@@ -319,7 +319,7 @@ def _is_safe_str(s):
 
 
 def print_info(name):
-    ip.run_cell("%%pinfo %s" % (name,))
+    ip.run_cell("%s?" % (name,))
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 

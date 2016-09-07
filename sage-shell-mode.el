@@ -1003,8 +1003,7 @@ When sync is nill this return a lambda function to get the result."
             sage-shell:python-script-directory)))
   "Sage command list evaluated after loading Sage.")
 
-(defvar sage-shell:term-name
-  (if (bound-and-true-p term-term-name) term-term-name "emacs")
+(defvar sage-shell:term-name "emacs"
   "Name to use for TERM.")
 
 (defun sage-shell:start-sage-process (cmd buffer)
