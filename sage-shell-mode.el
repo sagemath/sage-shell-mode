@@ -1970,7 +1970,8 @@ return string for output."
 (defun sage-shell:output-filter-no-rdct (process string)
   ;; Insert STRING
   (let ((inhibit-read-only t)
-        (saved-point (copy-marker (point) t)))
+        (saved-point (copy-marker (point) t))
+        (inhibit-modification-hooks t))
 
     ;; We temporarily remove any buffer narrowing, in case the
     ;; process mark is outside of the restriction
@@ -2241,7 +2242,8 @@ sage-shell:-prompt-regexp-no-eol."
 
     (let* ((proc-buf (process-buffer process))
            (msg-id (buffer-local-value 'sage-shell:-redirection-msg-id
-                                       proc-buf)))
+                                       proc-buf))
+           (inhibit-modification-hooks t))
       (with-current-buffer proc-buf
         (setq input-string (sage-shell:-psh-to-pending-out input-string))
         (let ((out-buf comint-redirect-output-buffer)
