@@ -4130,9 +4130,10 @@ inserted in the process buffer before executing the command."
 (defun sage-shell-edit:make-temp-file-from-region (start end)
   "Make temp file from region and return temp file name."
   (let ((f (sage-shell-edit:temp-file
-            (sage-shell:aif (buffer-file-name)
-                (file-name-extension it)
-              "sage"))))
+            (let ((bfn (buffer-file-name)))
+              (if (and bfn (member (file-name-extension bfn) '("py" "sage")))
+                  (file-name-extension bfn)
+                "sage")))))
     (sage-shell-edit:write-region-to-file start end f)))
 
 (defun sage-shell-edit:beg-of-defun-position ()
