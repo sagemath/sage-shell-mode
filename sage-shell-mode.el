@@ -4068,9 +4068,10 @@ inserted in the process buffer before executing the command."
         (cond (insert-command-p
                (goto-char pmark)
                (insert command)
-               (sage-shell:send-input))
-              (t (sage-shell:prepare-for-send)
-                 (comint-send-string proc (concat command "\n"))))
+               (let ((comint-input-ring (make-ring 1)))
+                 (sage-shell:send-input)))
+               (t (sage-shell:prepare-for-send)
+                  (comint-send-string proc (concat command "\n"))))
         (save-excursion
           (insert line))))))
 
