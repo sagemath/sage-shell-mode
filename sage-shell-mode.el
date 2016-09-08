@@ -372,10 +372,14 @@ The name is made by appending a number to PREFIX, default
                 (setq ,sym
                       (run-with-timer
                        0.01 0.01
-                       (lambda () (when ,form
-                                (unwind-protect
-                                    (progn ,@body)
-                                  (cancel-timer ,sym)))))))))))
+                       (lambda () (condition-case err-var
+                                  (when ,form
+                                    (unwind-protect
+                                        (progn ,@body)
+                                      (cancel-timer ,sym)))
+                                (error (cancel-timer ,sym)
+                                       (signal (car err-var)
+                                               (cdr err-var))))))))))))
 
 (defmacro sage-shell:substitute-key-def (old-command new-command
                                                      search-keymap
