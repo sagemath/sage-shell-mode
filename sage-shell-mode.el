@@ -1009,27 +1009,34 @@ When sync is nill this return a lambda function to get the result."
 (defvar sage-shell:term-name "emacs"
   "Name to use for TERM.")
 
-(defun sage-shell:start-sage-process (cmd buffer)
-  (let ((cmdlist (split-string cmd)))
-    (if sage-shell:use-prompt-toolkit
-        (let* ((win (selected-window))
-               (win-size
-                (if (equal (window-buffer win) buffer)
-                    (sage-shell:-window-size win)
-                  (save-window-excursion
-                    (let ((win (display-buffer buffer)))
-                      (sage-shell:-window-size win))))))
-          (apply 'make-comint-in-buffer "Sage" buffer
-                 "/bin/sh"
-                 nil
-                 "-c"
-                 (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
+(defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
+  (let* ((cmdlist (split-string cmd))
+         (win (selected-window))
+         (win-size
+          (if (equal (window-buffer win) buffer)
+              (sage-shell:-window-size win)
+            (save-window-excursion
+              (let ((win (display-buffer buffer)))
+                (sage-shell:-window-size win))))))
+    (apply 'make-comint-in-buffer "Sage" buffer
+           "/bin/sh"
+           nil
+           "-c"
+           (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
 if [ $1 = .. ]; then shift; fi; exec \"$@\""
-                         sage-shell:term-name (cdr win-size) (car win-size))
-                 ".."
-                 (car cmdlist) (cdr cmdlist)))
-      (apply 'make-comint-in-buffer "Sage" buffer
-             (car cmdlist) nil (cdr cmdlist)))))
+                   sage-shell:term-name (cdr win-size) (car win-size))
+           ".."
+           (car cmdlist) (cdr cmdlist))))
+
+(defun sage-shell:-start-sage-process-readline (cmd buffer)
+  (let ((cmdlist (split-string cmd)))
+    (apply 'make-comint-in-buffer "Sage" buffer
+           (car cmdlist) nil (cdr cmdlist))))
+
+(defun sage-shell:start-sage-process (cmd buffer)
+  (if sage-shell:use-prompt-toolkit
+      (sage-shell:-start-sage-process-prompt-toolkit cmd buffer)
+    (sage-shell:-start-sage-process-readline cmd buffer)))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
