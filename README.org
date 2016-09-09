@@ -117,16 +117,18 @@
 
 ** Aliases
 
-  The major mode =sage-mode= and the command =run-sage= are provided
-  by [[https://bitbucket.org/gvol/sage-mode/src][sage-mode]] (the official =sage-mode=). To avoid name conflicts,
-  =sage-shell-mode= uses redundant names. By putting the following
-  code in =~/.emacs.d/init.el=,
+  The official Emacs major mode for Sage is [[https://bitbucket.org/gvol/sage-mode/src][sage-mode]]. To avoid name conflicts
+  with this package, =sage-shell-mode= prefixes all names with =sage-shell-=.
+
+  If you are not using =sage-mode= at all, you can define more convenient
+  aliases for =sage-shell-mode= by adding the following to your Emacs init file
+  after the line =(require 'sage-shell-mode)=:
 
   #+BEGIN_SRC elisp
     (sage-shell:define-alias)
   #+END_SRC
 
-  the following aliases will be defined.
+  The following aliases will be defined:
 
   | Original name             | Alias          |
   |---------------------------+----------------|
@@ -136,87 +138,110 @@
   | sage-shell:sage-mode-map  | sage-mode-map  |
   | sage-shell:sage-mode-hook | sage-mode-hook |
 
-  Then you can run Sage by =M-x run-sage= instead of =M-x
-  sage-shell:run-sage= with these aliases.
+  This means e.g. that you can do =M-x run-sage= to run Sage, instead of =M-x
+  sage-shell:run-sage=.
 
 ** Basic Usage
 
 *** Running a Sage process
 
-   You can run Sage by =M-x sage-shell:run-sage=. You can run new Sage
-   process by =M-x sage-shell:run-new-sage=.
+   You can start a Sage process by =M-x sage-shell:run-sage=. If you need
+   to open multiple Sage processes, you can start new ones by =M-x
+   sage-shell:run-new-sage=.
 
-   | Command                 | Alias        | Description             |
-   |-------------------------+--------------+-------------------------|
-   | sage-shell:run-sage     | run-sage     | Run a Sage process.     |
-   | sage-shell:run-new-sage | run-new-sage | Run a new Sage process. |
+   | Command                 | Alias        | Description               |
+   |-------------------------+--------------+---------------------------|
+   | sage-shell:run-sage     | run-sage     | Run a Sage process.       |
+   | sage-shell:run-new-sage | run-new-sage | Run another Sage process. |
 
-   The major-mode of the Sage process buffer is =sage-shell-mode=. The
-   basic key-bidings in =sage-shell-mode= are as follows:
+   The major-mode of the Sage process buffer is =sage-shell-mode=.
 
-   | Key Stroke | Command                                      | Description                                                                     |
-   |------------+----------------------------------------------+---------------------------------------------------------------------------------|
-   | RET        | sage-shell:send-input                        | Send the current input to the Sage process.                                     |
-   | TAB        | sage-shell-tab-command                       | Complete words at the point or indent a line.                                   |
-   | C-d        | sage-shell:delchar-or-maybe-eof              | Delete backward a character or send EOF if there are no inputs.                 |
-   | C-c C-c    | sage-shell:interrupt-subjob                  | Interrupt the current subjob.                                                   |
-   | M-p        | comint-previous-input                        | Go backward through input history.                                              |
-   | M-n        | sage-shell:next-input                        | Go forward through input history.                                               |
-   | C-c C-o    | sage-shell:delete-output                     | Delete all outputs since last input.                                            |
-   | C-c M-o    | sage-shell:clear-current-buffer              | Delete all outputs in the current buffer. This does not delete the last prompt. |
-   | C-c C-l    | sage-shell:load-file                         | Send contents of a file to the Sage process.                                    |
-   | C-c C-h    | sage-shell:help                              | Show a document string of a Sage object.                                        |
-   | C-c o      | sage-shell:list-outputs                      | List inputs and outputs in a buffer.                                            |
-   | C-c M-w    | sage-shell:copy-previous-output-to-kill-ring | Copy the previous output to =kill-ring=                                         |
+   The basic key-bindings in =sage-shell-mode= are as follows:
+
+   | Key Stroke | Command                                      | Description                                                                |
+   |------------+----------------------------------------------+----------------------------------------------------------------------------|
+   | RET        | sage-shell:send-input                        | Evaluate the expression written at the prompt.                             |
+   | TAB        | sage-shell-tab-command                       | Complete a partially written word or indent a line.                        |
+   | C-d        | sage-shell:delchar-or-maybe-eof              | Delete the next input character. End the Sage process if nothing is input. |
+   | C-c C-c    | sage-shell:interrupt-subjob                  | Interrupt the current computation.                                         |
+   | M-p        | comint-previous-input                        | Go backward through input history.                                         |
+   | M-n        | sage-shell:next-input                        | Go forward through input history.                                          |
+   | C-c C-o    | sage-shell:delete-output                     | Remove all output from Sage since last input prompt.                       |
+   | C-c M-o    | sage-shell:clear-current-buffer              | Clear the entire Sage process buffer, leaving just the prompt.             |
+   | C-c C-l    | sage-shell:load-file                         | Asks for a file and loads it into Sage                                     |
+   | C-c C-h    | sage-shell:help                              | Show the documentation of any Sage object. See also [[Question-mark help]]     |
+   | C-c o      | sage-shell:list-outputs                      | List inputs and outputs in a buffer.                                       |
+   | C-c M-w    | sage-shell:copy-previous-output-to-kill-ring | Copy the previous output to =kill-ring=                                    |
    For more commands and key-bindings see the help by =M-x
    describle-mode sage-shell-mode=.
 
+**** Question-mark help
+
+By writing the name of an object at the prompt, followed by =?= and then Enter, shows the documentation of that object:
+
+#+BEGIN_SRC term
+sage: G = graphs.PetersenGraph()
+sage. G.charpoly?
+<Documentation is shown in a new =Sage Document= buffer>
+#+END_SRC
+
+The behaviour is identical to running =C-c C-h= and then typing the object.
+
 *** TAB completion
 
-   By default, =TAB= completion uses =completion-at-point=. You can
-   use =pcomplete= by the following setting:
+   By default, =TAB= completion uses =completion-at-point=:
+
+   #+BEGIN_SRC term
+    sage: G = graphs.PetersenGraph()
+    sage. G.<TAB>
+    <All methods on G are shown in a new buffer>
+    sage. G.charp<TAB>
+    <G.charp is completed uniquely to G.charpoly>
+   #+END_SRC
+
+   Alternatively, you can use =pcomplete= by adding the following to your Emacs init file:
 
    #+BEGIN_SRC elisp
     (setq sage-shell:completion-function 'pcomplete)
    #+END_SRC
 
    You can also use =auto-complete=, =anything= or =helm= for
-   completion.  This requires extensions.
+   completion.  This requires installing those extensions, see [[Extensions]].
 
 *** Editing a Sage file
 
-   When you visit a file ended with =.sage=, then
+   When you visit a file with the suffix =.sage=, then
    =sage-shell:sage-mode= will be the major-mode of the buffer
-   automatically. If you want to edit a file ended with =.py= in
-   =sage-shell:sage-mode=, then use the following magic comment at the
-   first line of the file:
+   automatically.
+
+   To switch to =sage-shell:sage-mode= on a =.py= file, run =M-x
+   sage-shell:sage-mode=. To use =sage-shell:sage-mode= every time you visit
+   that file, you can add the following magic comment at the first line of the
+   file:
 
    #+BEGIN_SRC python
     # -*- mode: sage-shell:sage -*-
    #+END_SRC
 
-   With aliases above, instead of the line above you can use the
-   following magic comment:
+   If you've activated [[Aliases]]i you can instead use the following magic comment:
 
    #+BEGIN_SRC python
     # -*- mode: sage -*-
    #+END_SRC
 
-   The major mode =sage-shell:sage-mode= is almost same as
-   =python-mode= you use. The differences are some of key-bidings.
+   The major mode =sage-shell:sage-mode= is almost the same as
+   =python-mode=. The following key-bindings are the most important:
 
-   The basic key-bidings in =sage-shell:sage-mode= are as follows:
+   | Key     | Command                               | Description                                                      |
+   |---------+---------------------------------------+------------------------------------------------------------------|
+   | C-c C-c | sage-shell-edit:send-buffer           | Evaluate the contents of the current buffer in the Sage process. |
+   | C-c C-r | sage-shell-edit:send-region           | Evaluate the currently marked region in the Sage process.        |
+   | C-c C-j | sage-shell-edit:send-line             | Evaluate the current line in the Sage process.                   |
+   | C-c C-l | sage-shell-edit:load-file             | Load the current file in the Sage process.                       |
+   | C-c C-z | sage-shell-edit:pop-to-process-buffer | Select the Sage process buffer.                                  |
 
-   | Key     | Command                               | Description                             |
-   |---------+---------------------------------------+-----------------------------------------|
-   | C-c C-c | sage-shell-edit:send-buffer           | Send the current buffer to the process. |
-   | C-c C-r | sage-shell-edit:send-region           | Send the region to the process.         |
-   | C-c C-j | sage-shell-edit:send-line             | Send the current line to the process.   |
-   | C-c C-l | sage-shell-edit:load-file             | Send the file to the process.           |
-   | C-c C-z | sage-shell-edit:pop-to-process-buffer | Pop to the process buffer.              |
-
-   If you run multiple Sage processes, you can choose which process to
-   send by =M-x sage-shell:set-process-buffer=.
+   If you run multiple Sage processes, use =M-x sage-shell:set-process-buffer=
+   to change which one will be used for the above functions.
 
 ** Input history
 
