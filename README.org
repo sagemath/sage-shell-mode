@@ -143,7 +143,7 @@
 
 ** Basic Usage
 
-*** Running a Sage process
+*** Running a Sage Process
 
    You can start a Sage process by =M-x sage-shell:run-sage=. If you need
    to open multiple Sage processes, you can start new ones by =M-x
@@ -175,7 +175,7 @@
    For more commands and key-bindings see the help by =M-x
    describle-mode sage-shell-mode=.
 
-**** Question-mark help
+**** Question Mark Help
 
 By writing the name of an object at the prompt, followed by =?= and then Enter, shows the documentation of that object:
 
@@ -187,7 +187,7 @@ sage. G.charpoly?
 
 The behaviour is identical to running =C-c C-h= and then typing the object.
 
-*** TAB completion
+*** TAB Completion
 
    By default, =TAB= completion uses =completion-at-point=:
 
@@ -208,7 +208,7 @@ The behaviour is identical to running =C-c C-h= and then typing the object.
    You can also use =auto-complete=, =anything= or =helm= for
    completion.  This requires installing those extensions, see [[Extensions]].
 
-*** Editing a Sage file
+*** Editing a Sage File
 
    When you visit a file with the suffix =.sage=, then
    =sage-shell:sage-mode= will be the major-mode of the buffer
@@ -243,17 +243,24 @@ The behaviour is identical to running =C-c C-h= and then typing the object.
    If you run multiple Sage processes, use =M-x sage-shell:set-process-buffer=
    to change which one will be used for the above functions.
 
-** Input history
+** Input History
 
-  If the variable =sage-shell:input-history-cache-file= is =non-nil=
-  and it is a file name, then the input history (=comint-input-ring=)
-  will be saved to the file. Here is a sample configuration:
+  To save the history of input evaluated in a Sage process and use in future
+  Sage process (using the =M-p= keybinding), add the following to your Emacs
+  init file:
 
   #+BEGIN_SRC elisp
     (setq sage-shell:input-history-cache-file "~/.emacs.d/.sage_shell_input_history")
   #+END_SRC
 
+  The file name in the above line is the path for storing the inputs and you can
+  change it to what you prefer.
+
 ** SageTeX
+
+=sage-shell-mode= can be conveniently used when writing Sage-powered LaTeX files
+using [[https://github.com/dandrake/sagetex][SageTeX]].
+
 *** TEXINPUTS
 
    When a Sage process is spawned by =sage-shell:run-sage= or
@@ -297,7 +304,7 @@ The behaviour is identical to running =C-c C-h= and then typing the object.
    For example, you can run =sage-shell-sagetex:compile-current-file=
    by =C-c s c= in a =LaTeX-mode= buffer with this setting.
 
-*** Customize =latex= command
+*** Customize the =latex= Command
 
    You can change a =latex= command used by
    =sage-shell-sagetex:compile-file= and
@@ -367,7 +374,7 @@ The behaviour is identical to running =C-c C-h= and then typing the object.
 
   [[./images/helm1.png]]
 
-** Workaround for flycheck
+** Workaround for Flycheck
 
   To use =flycheck-mode= in a =sage-shell:sage-mode= buffer and a
   =python-mode= buffer, try the following code.
