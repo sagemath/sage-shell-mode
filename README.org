@@ -107,7 +107,7 @@
 ** Aliases
 
   The official Emacs major mode for Sage is [[https://bitbucket.org/gvol/sage-mode/src][sage-mode]]. To avoid name conflicts
-  with this package, =sage-shell-mode= prefixes all names with =sage-shell-=.
+  with this package, =sage-shell-mode= prefixes all names with =sage-shell=.
 
   If you are not using =sage-mode= at all, you can define more convenient
   aliases for =sage-shell-mode= by adding the following to your Emacs init file
@@ -267,7 +267,7 @@ sage: G.charpoly??
    |---------+---------------------------------------+------------------------------------------------------------------|
    | C-c C-c | sage-shell-edit:send-buffer           | Evaluate the contents of the current buffer in the Sage process. |
    | C-c C-r | sage-shell-edit:send-region           | Evaluate the currently marked region in the Sage process.        |
-   | C-c C-j | sage-shell-edit:send-line             | Evaluate the current line in the Sage process.                   |
+   | C-c C-j | sage-shell-edit:send-line*            | Evaluate the current line in the Sage process.                   |
    | C-c C-l | sage-shell-edit:load-file             | Load the current file in the Sage process.                       |
    | C-c C-z | sage-shell-edit:pop-to-process-buffer | Select the Sage process buffer.                                  |
 
