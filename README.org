@@ -12,7 +12,7 @@
 
   1. =sage-shell-mode= to run the Sage terminal inside Emacs.
 
-  1. =sage-shell:sage-mode= for editing =.sage= source files, withn functions for sending contents directly to the Sage terminal. This major mode is derived from =python-mode=.
+  1. =sage-shell:sage-mode= for editing =.sage= source files and sending their contents directly to the Sage terminal. This major mode is derived from =python-mode=.
 
   The package supports extensions with [[https://github.com/stakemori/auto-complete-sage][auto-complete-sage]], [[https://github.com/stakemori/helm-sage][helm-sage]],
   [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
@@ -32,17 +32,16 @@
 
 ** Requirements
 
-   1. GNU Emacs 24.1 (or 24.4) or later
+   1. GNU Emacs 24.1 (or 24.4) or later.
 
       For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4. In that
-      case, you should set =sage-shell:use-prompt-toolkit= to =t= value, as
-      explained in the following section. The technical reason is that Sage 7.4
-      uses IPython 5, where python-prompt-toolkit is used instead of GNU
-      readline
+      case, you should set =sage-shell:use-prompt-toolkit= as explained in the
+      following section. The technical reason is that Sage 7.4 uses IPython 5,
+      where python-prompt-toolkit is used instead of GNU readline
 
       For Sage 7.3 or earlier, Emacs 24.1 is sufficient.
 
-   2. Local installation of [[http://www.sagemath.org/][Sage]]
+   2. Local installation of [[http://www.sagemath.org/][Sage]].
 
    3. The Emacs package [[https://github.com/kiwanami/emacs-deferred][deferred]]. This will be installed automatically if you follow the guide below.
 
@@ -60,7 +59,7 @@
   1. Add the following to your Emacs init file (=~/.emacs.d/init.el=):
 
      #+BEGIN_SRC elisp
-     (require 'sage-shell-mode)
+      (require 'sage-shell-mode)
      #+END_SRC
 
      This must be added *after* the line =(package-initialize)=. If you don't
@@ -69,7 +68,7 @@
   1. If you have Sage 7.4 or later, then also add the following:
 
      #+BEGIN_SRC elisp
-     (setq sage-shell:use-prompt-toolkit t)
+      (setq sage-shell:use-prompt-toolkit t)
      #+END_SRC
 
   1. You can now run Sage inside Emacs by =M-x sage-shell:run-sage= if Emacs
