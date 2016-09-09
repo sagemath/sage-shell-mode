@@ -4424,7 +4424,7 @@ inserted in the process buffer before executing the command."
   "C-M-x" 'sage-shell-edit:send-defun
   "C-c C-l" 'sage-shell-edit:load-file
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
-  "C-c C-j" 'sage-shell-edit:send-line)
+  "C-c C-j" 'sage-shell-edit:send-line*)
 
 
 ;;; Alias

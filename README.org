@@ -192,7 +192,7 @@
    |---------+---------------------------------------+-----------------------------------------|
    | C-c C-c | sage-shell-edit:send-buffer           | Send the current buffer to the process. |
    | C-c C-r | sage-shell-edit:send-region           | Send the region to the process.         |
-   | C-c C-j | sage-shell-edit:send-line             | Send the current line to the process.   |
+   | C-c C-j | sage-shell-edit:send-line*            | Send the current line to the process.   |
    | C-c C-l | sage-shell-edit:load-file             | Send the file to the process.           |
    | C-c C-z | sage-shell-edit:pop-to-process-buffer | Pop to the process buffer.              |
 
