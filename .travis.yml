@@ -11,9 +11,6 @@ env:
   - EMACS=emacs EVM_EMACS=emacs-24.4-travis
   - EMACS=emacs EVM_EMACS=emacs-24.5-travis
   - EMACS=emacs EVM_EMACS=emacs-25-pre-travis
-script:
-  - emacs --version
-  - make test
 
 script:
   - emacs --version
