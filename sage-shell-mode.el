@@ -88,8 +88,7 @@
 
 (defcustom sage-shell:input-history-cache-file
   nil
-  "If non nil, after invoking
-`sage-shell:send-eof',`comint-input-ring' is saved to this file."
+  "If non nil, then `comint-input-ring' is saved to this file when the Sage process exits."
   :group 'sage-shell
   :type '(choice (file :tag "file")
                  (const :tag "Off" nil)))
@@ -712,7 +711,9 @@ to a process buffer.")
   (sage-shell:pcomplete-setup)
   ;; ansi-color-process-output may cause an error.
   (remove-hook 'comint-output-filter-functions
-               'ansi-color-process-output t))
+               'ansi-color-process-output t)
+  (add-hook 'sage-shell:process-exit-hook
+            #'sage-shell:-after-send-eof-func nil t))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
@@ -775,8 +776,7 @@ Sends an EOF only if point is at the end of the buffer and there is no input. "
   "Send an EOF to the current buffer's process."
   (interactive)
   (sage-shell:comint-send-input t t)
-  (process-send-eof)
-  (sage-shell:-after-send-eof-func))
+  (process-send-eof))
 
 (defun sage-shell:-after-send-eof-func ()
   ;; kill cache buffes
@@ -2512,9 +2512,6 @@ this hook after inserting string.")
                 (file-exists-p (match-string 1 line)))
                (ignore-errors
                  (cd (match-string 1 line))))
-              ((string-match (rx symbol-start (or "quit" "exit") symbol-end)
-                             line)
-               (sage-shell:-after-send-eof-func))
               ((string-match (rx bol (zero-or-more blank)
                                  (zero-or-one "%")
                                  "cd" (zero-or-more blank)
