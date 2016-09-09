@@ -1012,17 +1012,21 @@ When sync is nill this return a lambda function to get the result."
 (defvar sage-shell:process-exit-hook nil
   "List of functions to be called after the Sage process exits.")
 
-(defun sage-shell:-process-sentinel (proc msg)
-  (internal-default-process-sentinel proc msg)
-  (unless (process-live-p proc)
-    (run-hooks 'sage-shell:process-exit-hook)))
+(defun sage-shell:-process-sentinel-generator (default-sentinel)
+  (lambda (proc msg)
+    (funcall default-sentinel proc msg)
+    (unless (process-live-p proc)
+      (run-hooks 'sage-shell:process-exit-hook))))
 
 (defun sage-shell:start-sage-process (cmd buffer)
   (if sage-shell:use-prompt-toolkit
       (sage-shell:-start-sage-process-prompt-toolkit cmd buffer)
     (sage-shell:-start-sage-process-readline cmd buffer))
-  (let ((proc (get-buffer-process buffer)))
-    (set-process-sentinel proc #'sage-shell:-process-sentinel)))
+  (let* ((proc (get-buffer-process buffer))
+         (default-sentinel (process-sentinel proc)))
+    (set-process-sentinel
+     proc
+     (sage-shell:-process-sentinel-generator default-sentinel))))
 
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
