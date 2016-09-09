@@ -62,7 +62,7 @@
       (require 'sage-shell-mode)
      #+END_SRC
 
-     This must be added *after* the line =(package-initialize)=. If you don't
+  This must be added *after* the line =(package-initialize)=. If you don't
      already have that line in you Emacs init file, add it.
 
   1. If you have Sage 7.4 or later, then also add the following:
