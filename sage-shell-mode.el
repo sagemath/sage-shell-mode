@@ -1131,7 +1131,7 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
     (format "%s %s" (sage-shell:sage-executable)
             (mapconcat 'identity (cdr lst) " "))))
 
-(cl-defun sage-shell:run (cmd new &optional
+(cl-defun sage-shell:run (cmd new &key
                               (switch-function 'switch-to-buffer)
                               buffer-name)
   "Running Sage function internal.
@@ -3995,7 +3995,8 @@ whose key is in KEYS."
                                        "Start new process? ")))
             (let ((proc-buf
                    (sage-shell:run
-                    (sage-shell:read-command) nil 'display-buffer)))
+                    (sage-shell:read-command) nil
+                    :switch-function 'display-buffer)))
               (with-current-buffer cur-buf
                 (setq sage-shell:process-buffer proc-buf)))))
          ;; if there are multiple processes
