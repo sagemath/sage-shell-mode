@@ -1175,10 +1175,10 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
 
 (defun sage-shell:restart-sage (cmd)
   (interactive (list (sage-shell:read-command)))
-  (let ((proc (get-buffer-process (current-buffer))))
+  (let ((buf (current-buffer))
+        (proc (get-buffer-process (current-buffer))))
     (add-hook 'sage-shell:process-exit-hook
-              (lambda () (with-current-buffer sage-shell:process-buffer
-                       (sage-shell:run cmd nil)))
+              (lambda () (sage-shell:run cmd nil :buffer-name (buffer-name buf)))
               nil t)
     (process-send-eof proc)))
 
