@@ -156,7 +156,78 @@
 
    The major-mode of the Sage process buffer is =sage-shell-mode=.
 
-   The basic key-bindings in =sage-shell-mode= are as follows:
+*** The Sage Process as a terminal
+
+The primary element of =sage-shell-mode= is interacting with the Sage process
+you just started. The Sage process buffer communicates directly with a Sage
+shell in the background and behaves very much like it. You just type and send
+the command with =<Enter>=:
+
+
+#+BEGIN_SRC python
+sage: 2+2
+4
+sage: x^2 + 1
+x^2 + 1
+#+END_SRC
+
+The buffer behaves like an Emacs shell:
+
+- =M-p= or =C-up= goes through earlier input.
+- Previous input and output is retained earlier in the buffer. You can move
+  around just as in any Emacs buffer and e.g. copy from it or search.
+- To exit, you can enter =quit= at the prompt, or simply kill the buffer.
+
+The buffer also behaves much like the Sage terminal:
+
+**** Tab completion
+=<Tab>= at the prompt completes the current word. It understands all Sage and xe
+Python functions currently in scope, and it also completes attributes of
+objects. If there are multiple possibilitiyes, they are presented in another
+window.
+
+#+BEGIN_SRC python
+sage: G = graphs.PetersenGraph()
+sage. G.<TAB>
+<All methods on G are shown in a new buffer>
+sage. G.charp<TAB>
+<G.charp is completed uniquely to G.charpoly>
+#+END_SRC
+
+By default, =TAB= completion uses =completion-at-point=. Alternatively, you can
+use =pcomplete= by adding the following to your Emacs init file:
+
+#+BEGIN_SRC elisp
+(setq sage-shell:completion-function 'pcomplete)
+#+END_SRC
+
+You can also use =auto-complete=, =anything= or =helm= for
+completion.  This requires installing those extensions, see [[Extensions]].
+
+**** =?= Help
+
+By writing the name of an object at the prompt, followed by =?= and then =RET=, shows the documentation of that object:
+
+#+BEGIN_SRC python
+sage: G = graphs.PetersenGraph()
+sage. G.charpoly?
+<Documentation is shown in a new =Sage Document= buffer>
+#+END_SRC
+
+The behaviour is identical to running =C-c C-h= and then typing the object.
+
+**** =??= Source Lookup
+
+If you use =??= instead =?= after a Sage object, then the *source code* for that object will be opened in a new buffer:
+
+#+BEGIN_SRC python
+sage: G = graphs.PetersenGraph()
+sage. G.charpoly??
+<The file src/sage/graphs/generic_graph.py is opened at "def characteristic_polynomial(...):">
+#+END_SRC
+
+
+**** Most important key-bindings
 
    | Key Stroke | Command                                      | Description                                                                |
    |------------+----------------------------------------------+----------------------------------------------------------------------------|
@@ -169,44 +240,12 @@
    | C-c C-o    | sage-shell:delete-output                     | Remove all output from Sage since last input prompt.                       |
    | C-c M-o    | sage-shell:clear-current-buffer              | Clear the entire Sage process buffer, leaving just the prompt.             |
    | C-c C-l    | sage-shell:load-file                         | Asks for a file and loads it into Sage                                     |
-   | C-c C-h    | sage-shell:help                              | Show the documentation of any Sage object. See also [[Question-mark help]]     |
+   | C-c C-h    | sage-shell:help                              | Ask for the name of a Sage object and show its documentation.              |
+   | ? RET      | sage-shell:help                              | Show the documentation of the object directly preceding the =?=.           |
    | C-c o      | sage-shell:list-outputs                      | List inputs and outputs in a buffer.                                       |
    | C-c M-w    | sage-shell:copy-previous-output-to-kill-ring | Copy the previous output to =kill-ring=                                    |
-   For more commands and key-bindings see the help by =M-x
-   describle-mode sage-shell-mode=.
-
-**** Question Mark Help
-
-By writing the name of an object at the prompt, followed by =?= and then Enter, shows the documentation of that object:
-
-#+BEGIN_SRC term
-sage: G = graphs.PetersenGraph()
-sage. G.charpoly?
-<Documentation is shown in a new =Sage Document= buffer>
-#+END_SRC
-
-The behaviour is identical to running =C-c C-h= and then typing the object.
-
-*** TAB Completion
-
-   By default, =TAB= completion uses =completion-at-point=:
-
-   #+BEGIN_SRC term
-    sage: G = graphs.PetersenGraph()
-    sage. G.<TAB>
-    <All methods on G are shown in a new buffer>
-    sage. G.charp<TAB>
-    <G.charp is completed uniquely to G.charpoly>
-   #+END_SRC
-
-   Alternatively, you can use =pcomplete= by adding the following to your Emacs init file:
-
-   #+BEGIN_SRC elisp
-    (setq sage-shell:completion-function 'pcomplete)
-   #+END_SRC
-
-   You can also use =auto-complete=, =anything= or =helm= for
-   completion.  This requires installing those extensions, see [[Extensions]].
+   For more commands and key-bindings see the help by =M-x describe-mode
+   sage-shell-mode=.
 
 *** Editing a Sage File
 
