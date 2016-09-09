@@ -477,3 +477,8 @@ aaaaaabc
           [A[4D")
     (should (string= (sage-shell:trim-right (buffer-string))
                      "sage:"))))
+
+(ert-deftest sage-shell:-hook-test ()
+  (let ((hook (intern (symbol-name (sage-shell:gensym "sage-shell")))))
+    (should (not (boundp hook)))
+    (should (equal (add-hook hook #'ignore) (list #'ignore)))))
