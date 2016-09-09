@@ -1009,6 +1009,21 @@ When sync is nill this return a lambda function to get the result."
 (defvar sage-shell:term-name "emacs"
   "Name to use for TERM.")
 
+(defvar sage-shell:process-exit-hook nil
+  "List of functions to be called after the Sage process exits.")
+
+(defun sage-shell:-process-sentinel (proc msg)
+  (internal-default-process-sentinel proc msg)
+  (unless (process-live-p proc)
+    (run-hooks 'sage-shell:process-exit-hook)))
+
+(defun sage-shell:start-sage-process (cmd buffer)
+  (if sage-shell:use-prompt-toolkit
+      (sage-shell:-start-sage-process-prompt-toolkit cmd buffer)
+    (sage-shell:-start-sage-process-readline cmd buffer))
+  (let ((proc (get-buffer-process buffer)))
+    (set-process-sentinel proc #'sage-shell:-process-sentinel)))
+
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
          (win (selected-window))
@@ -1032,11 +1047,6 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
   (let ((cmdlist (split-string cmd)))
     (apply 'make-comint-in-buffer "Sage" buffer
            (car cmdlist) nil (cdr cmdlist))))
-
-(defun sage-shell:start-sage-process (cmd buffer)
-  (if sage-shell:use-prompt-toolkit
-      (sage-shell:-start-sage-process-prompt-toolkit cmd buffer)
-    (sage-shell:-start-sage-process-readline cmd buffer)))
 
 (defvar sage-shell:init-finished-p nil)
 (make-variable-buffer-local 'sage-shell:init-finished-p)
