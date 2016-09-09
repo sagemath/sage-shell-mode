@@ -56,16 +56,7 @@
      - =M-x package-refresh-contents=
      - =M-x package-install RET sage-shell-mode=.
 
-  1. Add the following to your Emacs init file (=~/.emacs.d/init.el=):
-
-     #+BEGIN_SRC elisp
-      (require 'sage-shell-mode)
-     #+END_SRC
-
-     This must be added *after* the line =(package-initialize)=. If you don't
-     already have that line in you Emacs init file, add it.
-
-  1. If you have Sage 7.4 or later, then also add the following:
+  1. If you have Sage 7.4 or later, then add the following to your Emacs init file (=~/.emacs.d/init.el=):
 
      #+BEGIN_SRC elisp
       (setq sage-shell:use-prompt-toolkit t)
@@ -102,7 +93,6 @@
     Here is a sample configuration.
 
     #+BEGIN_SRC elisp
-      (require 'sage-shell-mode)
       ;; Run SageMath by M-x run-sage instead of M-x sage-shell:run-sage
       (sage-shell:define-alias)
 
