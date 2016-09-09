@@ -136,12 +136,14 @@
 
    You can start a Sage process by =M-x sage-shell:run-sage=. If you need
    to open multiple Sage processes simultaneously, you can start new ones by
-   =M-x sage-shell:run-new-sage=.
+   =M-x sage-shell:run-new-sage=. You can restart the current process by
+   =M-x sage-shell:restart-sage=.
 
-   | Command                 | Alias        | Description               |
-   |-------------------------+--------------+---------------------------|
-   | sage-shell:run-sage     | run-sage     | Run a Sage process.       |
-   | sage-shell:run-new-sage | run-new-sage | Run another Sage process. |
+   | Command                 | Alias        | Description                       |
+   |-------------------------+--------------+-----------------------------------|
+   | sage-shell:run-sage     | run-sage     | Run a Sage process.               |
+   | sage-shell:run-new-sage | run-new-sage | Run another Sage process.         |
+   | sage-shell:restart-sage | None         | Restart the current Sage process. |
 
    The major-mode of the Sage process buffer is =sage-shell-mode=.
 
