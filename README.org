@@ -8,13 +8,14 @@
   =sage-shell-mode= is an elisp package and provides an Emacs front
   end for [[http://www.sagemath.org/][Sage]].
 
-  By =sage-shell-mode=, you can run Sage process in GNU Emacs and send
-  contents of a buffer or a file to the Sage process.
+  =sage-shell-mode= provides two main features:
 
-  This package also provides a major-mode derived from =python-mode=.
+  1. =sage-shell-mode= to run the Sage terminal inside Emacs.
 
-  There are extensions for this package, [[https://github.com/stakemori/auto-complete-sage][auto-complete-sage]], [[https://github.com/stakemori/helm-sage][helm-sage]]
-  , [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
+  1. =sage-shell:sage-mode= for editing =.sage= source files and sending their contents directly to the Sage terminal. This major mode is derived from =python-mode=.
+
+  The package supports extensions with [[https://github.com/stakemori/auto-complete-sage][auto-complete-sage]], [[https://github.com/stakemori/helm-sage][helm-sage]],
+  [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
 
 ** Table of Contents                                                    :TOC:
      - [[#requriements][Requirements]]
@@ -31,83 +32,102 @@
 
 ** Requirements
 
-   1. GNU Emacs 24.1 (or 24.4) or later
+   1. GNU Emacs 24.1 (or 24.4) or later.
 
-      If your Sage depends on IPython 5 (i.e. it uses python-prompt-toolkit instead of GNU readline),
-      then this package requires requires Emacs 24.4 or later.
-      In that case, you should set =sage-shell:use-prompt-toolkit= to a non-nil value.
-      Otherwise it requires Emacs 24.1 or later.
+      For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4. In that
+      case, you should set =sage-shell:use-prompt-toolkit= as explained in the
+      following section. The technical reason is that Sage 7.4 uses IPython 5,
+      where python-prompt-toolkit is used instead of GNU readline
 
-   2. Local install of [[http://www.sagemath.org/][Sage]]
+      For Sage 7.3 or earlier, Emacs 24.1 is sufficient.
+
+   2. Local installation of [[http://www.sagemath.org/][Sage]].
+
+   3. The Emacs package [[https://github.com/kiwanami/emacs-deferred][deferred]]. This will be installed automatically if you follow the guide below.
 
 ** Installation and Setup
 
-  You can install =sage-shell-mode= from [[https://github.com/milkypostman/melpa.git][MELPA]].
+  The most convenient is to use the Emacs package manager to install =sage-shell-mode= from [[https://github.com/milkypostman/melpa.git][MELPA]]:
 
   1. See http://melpa.org/#/getting-started if you do not have a
      configuration for MELPA.
 
-  2. Install =sage-shell-mode= by
+  1. Install =sage-shell-mode= by
      - =M-x package-refresh-contents=
      - =M-x package-install RET sage-shell-mode=.
 
-  3. If your Sage uses python-prompt-toolkit instead of GNU readline, then set
-     =sage-shell:use-prompt-toolkit= to non-nil.
+  1. Add the following to your Emacs init file (=~/.emacs.d/init.el=):
 
-  4. You can run Sage inside Emacs by =M-x sage-shell:run-sage= if Emacs
+     #+BEGIN_SRC elisp
+      (require 'sage-shell-mode)
+     #+END_SRC
+
+     This must be added *after* the line =(package-initialize)=. If you don't
+     already have that line in you Emacs init file, add it.
+
+  1. If you have Sage 7.4 or later, then also add the following:
+
+     #+BEGIN_SRC elisp
+      (setq sage-shell:use-prompt-toolkit t)
+     #+END_SRC
+
+  1. You can now run Sage inside Emacs by =M-x sage-shell:run-sage=, if Emacs
      can find the executable file of Sage.
 
-  If Emacs cannot find the executable file, put the following line to
-  =~/.emacs.d/init.el=.
+     If Emacs cannot find the executable file, add the following line to your Emacs init file:
 
-  #+BEGIN_SRC elisp
-   (setq sage-shell:sage-root "/path/to/sage/root_directory")
-  #+END_SRC
+     #+BEGIN_SRC elisp
+     (setq sage-shell:sage-root "/path/to/sage/root_directory")
+     #+END_SRC
 
-  And replace =/path/to/sage_root_directory= by the root directory of
-  Sage, i.e. =$SAGE_ROOT=. If you do not know the root directory of
-  Sage, evaluate the following code in Sage:
+     And replace =/path/to/sage_root_directory= by the root directory of
+     Sage, i.e. =$SAGE_ROOT=. If you do not know the root directory of
+     Sage, evaluate the following code in a Sage terminal:
 
-  #+BEGIN_SRC python
-   import os; print os.environ["SAGE_ROOT"]
-  #+END_SRC
+     #+BEGIN_SRC python
+     import os; print os.environ["SAGE_ROOT"]
+     #+END_SRC
 
-  Alternatively, instead of setting =sage-shell:sage-root=, you may
-    set the variable =sage-shell:sage-executable=.
+     Alternatively, instead of setting =sage-shell:sage-root=, you may
+     set the variable =sage-shell:sage-executable=.
 
-  #+BEGIN_SRC elisp
-   (setq sage-shell:sage-executable "/path/to/sage/executable")
-  #+END_SRC
+     #+BEGIN_SRC elisp
+     (setq sage-shell:sage-executable "/path/to/sage/executable")
+     #+END_SRC
 
-  Here =/path/to/sage/executable= is the path of the executable file
-  of Sage.  This may be a symbolic link.
+     Here =/path/to/sage/executable= is the path of the executable file
+     of Sage. This may be a symbolic link.
 
 *** Sample configuration
     Here is a sample configuration.
 
     #+BEGIN_SRC elisp
+      (require 'sage-shell-mode)
       ;; Run SageMath by M-x run-sage instead of M-x sage-shell:run-sage
       (sage-shell:define-alias)
-      ;; Turn on eldoc-mode
+
+      ;; Turn on eldoc-mode in Sage terminal and in Sage source files
       (add-hook 'sage-shell-mode-hook #'eldoc-mode)
       (add-hook 'sage-shell:sage-mode-hook #'eldoc-mode)
 
-      ;; If your Sage uses python-prompt-toolkit,
-      ;; then you should uncomment the following line.
+      ;; If you have Sage 7.4 or later, uncomment the following line.
       ;; (setq sage-shell:use-prompt-toolkit t)
     #+END_SRC
+
 ** Aliases
 
-  The major mode =sage-mode= and the command =run-sage= are provided
-  by [[https://bitbucket.org/gvol/sage-mode/src][sage-mode]] (the official =sage-mode=). To avoid name conflicts,
-  =sage-shell-mode= uses redundant names. By putting the following
-  code in =~/.emacs.d/init.el=,
+  The official Emacs major mode for Sage is [[https://bitbucket.org/gvol/sage-mode/src][sage-mode]]. To avoid name conflicts
+  with this package, =sage-shell-mode= prefixes all names with =sage-shell-=.
+
+  If you are not using =sage-mode= at all, you can define more convenient
+  aliases for =sage-shell-mode= by adding the following to your Emacs init file
+  after the line =(require 'sage-shell-mode)=:
 
   #+BEGIN_SRC elisp
     (sage-shell:define-alias)
   #+END_SRC
 
-  the following aliases will be defined.
+  The following aliases will be defined:
 
   | Original name             | Alias          |
   |---------------------------+----------------|
@@ -117,99 +137,171 @@
   | sage-shell:sage-mode-map  | sage-mode-map  |
   | sage-shell:sage-mode-hook | sage-mode-hook |
 
-  Then you can run Sage by =M-x run-sage= instead of =M-x
-  sage-shell:run-sage= with these aliases.
+  This means e.g. that you can do =M-x run-sage= to run Sage, instead of =M-x
+  sage-shell:run-sage=.
 
 ** Basic Usage
 
-*** Running a Sage process
+*** Running a Sage Process
 
-   You can run Sage by =M-x sage-shell:run-sage=. You can run new Sage
-   process by =M-x sage-shell:run-new-sage=.
+   You can start a Sage process by =M-x sage-shell:run-sage=. If you need
+   to open multiple Sage processes simultaneously, you can start new ones by
+   =M-x sage-shell:run-new-sage=.
 
-   | Command                 | Alias        | Description             |
-   |-------------------------+--------------+-------------------------|
-   | sage-shell:run-sage     | run-sage     | Run a Sage process.     |
-   | sage-shell:run-new-sage | run-new-sage | Run a new Sage process. |
+   | Command                 | Alias        | Description               |
+   |-------------------------+--------------+---------------------------|
+   | sage-shell:run-sage     | run-sage     | Run a Sage process.       |
+   | sage-shell:run-new-sage | run-new-sage | Run another Sage process. |
 
-   The major-mode of the Sage process buffer is =sage-shell-mode=. The
-   basic key-bidings in =sage-shell-mode= are as follows:
+   The major-mode of the Sage process buffer is =sage-shell-mode=.
 
-   | Key Stroke | Command                                      | Description                                                                     |
-   |------------+----------------------------------------------+---------------------------------------------------------------------------------|
-   | RET        | sage-shell:send-input                        | Send the current input to the Sage process.                                     |
-   | TAB        | sage-shell-tab-command                       | Complete words at the point or indent a line.                                   |
-   | C-d        | sage-shell:delchar-or-maybe-eof              | Delete backward a character or send EOF if there are no inputs.                 |
-   | C-c C-c    | sage-shell:interrupt-subjob                  | Interrupt the current subjob.                                                   |
-   | M-p        | comint-previous-input                        | Go backward through input history.                                              |
-   | M-n        | sage-shell:next-input                        | Go forward through input history.                                               |
-   | C-c C-o    | sage-shell:delete-output                     | Delete all outputs since last input.                                            |
-   | C-c M-o    | sage-shell:clear-current-buffer              | Delete all outputs in the current buffer. This does not delete the last prompt. |
-   | C-c C-l    | sage-shell:load-file                         | Send contents of a file to the Sage process.                                    |
-   | C-c C-h    | sage-shell:help                              | Show a document string of a Sage object.                                        |
-   | C-c o      | sage-shell:list-outputs                      | List inputs and outputs in a buffer.                                            |
-   | C-c M-w    | sage-shell:copy-previous-output-to-kill-ring | Copy the previous output to =kill-ring=                                         |
-   For more commands and key-bindings see the help by =M-x
-   describle-mode sage-shell-mode=.
+*** The Sage Process as a terminal
 
-*** TAB completion
+The primary element of =sage-shell-mode= is interacting with the Sage process
+you just started. The Sage process buffer communicates directly with a Sage
+shell in the background and behaves very much like it. You just type and send
+the command with =<Enter>=:
 
-   By default, =TAB= completion uses =completion-at-point=. You can
-   use =pcomplete= by the following setting:
 
-   #+BEGIN_SRC elisp
-    (setq sage-shell:completion-function 'pcomplete)
-   #+END_SRC
+#+BEGIN_SRC python
+sage: 2+2
+4
+sage: (x^2 + 2*x + 1).factor()
+(x + 1)^2
+sage:
+ #+END_SRC
 
-   You can also use =auto-complete=, =anything= or =helm= for
-   completion.  This requires extensions.
+The buffer behaves like an Emacs shell:
 
-*** Editing a Sage file
+- =M-p= or =C-up= goes through earlier input.
+- Previous input and output is retained earlier in the buffer. You can move
+  around just as usual and e.g. copy from it or search.
+- To exit, you can enter =quit= at the prompt, or simply kill the buffer.
 
-   When you visit a file ended with =.sage=, then
+The buffer also behaves much like the Sage terminal:
+
+**** Tab completion
+=<Tab>= at the prompt completes the current word. It understands all Sage and
+Python functions currently in scope, and it also completes attributes of
+objects. If there are multiple possibilities, they are presented in another
+window.
+
+#+BEGIN_SRC python
+sage: G = graphs.PetersenGraph()
+sage: G.<TAB>
+<All methods on G are shown in a new buffer>
+sage: G.charp<TAB>
+<G.charp is completed uniquely to G.charpoly>
+#+END_SRC
+
+By default, Tab completion uses =completion-at-point=. Alternatively, you can
+use =pcomplete= by adding the following to your Emacs init file:
+
+#+BEGIN_SRC elisp
+(setq sage-shell:completion-function 'pcomplete)
+#+END_SRC
+
+You can also use =auto-complete=, =anything= or =helm= for
+completion.  This requires installing those extensions, see [[Extensions]].
+
+**** =?= Help
+
+By writing the name of an object at the prompt, followed by =?= and then =RET=,
+you are shown the documentation of that object:
+
+#+BEGIN_SRC python
+sage: G = graphs.PetersenGraph()
+sage: G.charpoly?
+<Documentation is shown in a new Sage Document buffer>
+#+END_SRC
+
+This is identical to running =C-c C-h= and then typing the name of the object.
+
+**** =??= Source Lookup
+
+If you use =??= instead =?= after a Sage object, then the *source code* for that object will be opened in a new buffer:
+
+#+BEGIN_SRC python
+sage: G = graphs.PetersenGraph()
+sage: G.charpoly??
+<The file src/sage/graphs/generic_graph.py is opened at "def characteristic_polynomial(...):">
+#+END_SRC
+
+
+**** Most important key-bindings
+
+   | Key Stroke | Command                                      | Description                                                                |
+   |------------+----------------------------------------------+----------------------------------------------------------------------------|
+   | RET        | sage-shell:send-input                        | Evaluate the expression written at the prompt.                             |
+   | TAB        | sage-shell-tab-command                       | Complete a partially written word or indent a line.                        |
+   | C-d        | sage-shell:delchar-or-maybe-eof              | Delete the next input character. End the Sage process if nothing is input. |
+   | C-c C-c    | sage-shell:interrupt-subjob                  | Interrupt the current computation.                                         |
+   | M-p        | comint-previous-input                        | Go backward through input history.                                         |
+   | M-n        | sage-shell:next-input                        | Go forward through input history.                                          |
+   | C-c C-o    | sage-shell:delete-output                     | Remove all output from Sage since last input prompt.                       |
+   | C-c M-o    | sage-shell:clear-current-buffer              | Clear the entire Sage process buffer, leaving just the prompt.             |
+   | C-c C-l    | sage-shell:load-file                         | Asks for a file and loads it into Sage                                     |
+   | C-c C-h    | sage-shell:help                              | Ask for the name of a Sage object and show its documentation.              |
+   | ? RET      | sage-shell-help::describe-symbol             | Show the documentation of the object directly preceding the =?=.           |
+   | ?? RET     | sage-shell:find-source-in-view-mode          | Visits the source code of the object directly preceding the =??=.          |
+   | C-c o      | sage-shell:list-outputs                      | List inputs and outputs in a buffer.                                       |
+   | C-c M-w    | sage-shell:copy-previous-output-to-kill-ring | Copy the previous output to =kill-ring=                                    |
+   For more commands and key-bindings see the help using =M-x describe-mode
+   sage-shell-mode=.
+
+*** Editing a Sage File
+
+   When you visit a file with the suffix =.sage=, then
    =sage-shell:sage-mode= will be the major-mode of the buffer
-   automatically. If you want to edit a file ended with =.py= in
-   =sage-shell:sage-mode=, then use the following magic comment at the
-   first line of the file:
+   automatically.
+
+   To switch to =sage-shell:sage-mode= on a =.py= file, run =M-x
+   sage-shell:sage-mode=. To use =sage-shell:sage-mode= every time you visit
+   that file, you can add the following magic comment at the first line of the
+   file:
 
    #+BEGIN_SRC python
     # -*- mode: sage-shell:sage -*-
    #+END_SRC
 
-   With aliases above, instead of the line above you can use the
-   following magic comment:
+   If you've activated [[Aliases]] you can instead use the following magic comment:
 
    #+BEGIN_SRC python
     # -*- mode: sage -*-
    #+END_SRC
 
-   The major mode =sage-shell:sage-mode= is almost same as
-   =python-mode= you use. The differences are some of key-bidings.
+   The major mode =sage-shell:sage-mode= is almost the same as
+   =python-mode=. The following new key-bindings are added:
 
-   The basic key-bidings in =sage-shell:sage-mode= are as follows:
+   | Key     | Command                               | Description                                                      |
+   |---------+---------------------------------------+------------------------------------------------------------------|
+   | C-c C-c | sage-shell-edit:send-buffer           | Evaluate the contents of the current buffer in the Sage process. |
+   | C-c C-r | sage-shell-edit:send-region           | Evaluate the currently marked region in the Sage process.        |
+   | C-c C-j | sage-shell-edit:send-line             | Evaluate the current line in the Sage process.                   |
+   | C-c C-l | sage-shell-edit:load-file             | Load the current file in the Sage process.                       |
+   | C-c C-z | sage-shell-edit:pop-to-process-buffer | Select the Sage process buffer.                                  |
 
-   | Key     | Command                               | Description                             |
-   |---------+---------------------------------------+-----------------------------------------|
-   | C-c C-c | sage-shell-edit:send-buffer           | Send the current buffer to the process. |
-   | C-c C-r | sage-shell-edit:send-region           | Send the region to the process.         |
-   | C-c C-j | sage-shell-edit:send-line             | Send the current line to the process.   |
-   | C-c C-l | sage-shell-edit:load-file             | Send the file to the process.           |
-   | C-c C-z | sage-shell-edit:pop-to-process-buffer | Pop to the process buffer.              |
+   If you run multiple Sage processes, use =M-x sage-shell:set-process-buffer=
+   to change which one will be used for the above functions.
 
-   If you run multiple Sage processes, you can choose which process to
-   send by =M-x sage-shell:set-process-buffer=.
+** Input History
 
-** Input history
-
-  If the variable =sage-shell:input-history-cache-file= is =non-nil=
-  and it is a file name, then the input history (=comint-input-ring=)
-  will be saved to the file. Here is a sample configuration:
+  To save the history of input evaluated in a Sage process and use in future
+  Sage process (using the =M-p= keybinding), add the following to your Emacs
+  init file:
 
   #+BEGIN_SRC elisp
     (setq sage-shell:input-history-cache-file "~/.emacs.d/.sage_shell_input_history")
   #+END_SRC
 
+  The file name in the above line is the path for storing the inputs and you can
+  change it to what you prefer.
+
 ** SageTeX
+
+=sage-shell-mode= can be conveniently used when writing Sage-powered LaTeX files
+using [[https://github.com/dandrake/sagetex][SageTeX]].
+
 *** TEXINPUTS
 
    When a Sage process is spawned by =sage-shell:run-sage= or
@@ -253,7 +345,7 @@
    For example, you can run =sage-shell-sagetex:compile-current-file=
    by =C-c s c= in a =LaTeX-mode= buffer with this setting.
 
-*** Customize =latex= command
+*** Customize the =latex= Command
 
    You can change a =latex= command used by
    =sage-shell-sagetex:compile-file= and
@@ -323,7 +415,7 @@
 
   [[./images/helm1.png]]
 
-** Workaround for flycheck
+** Workaround for Flycheck
 
   To use =flycheck-mode= in a =sage-shell:sage-mode= buffer and a
   =python-mode= buffer, try the following code.
