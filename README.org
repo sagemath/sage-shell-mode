@@ -8,13 +8,14 @@
   =sage-shell-mode= is an elisp package and provides an Emacs front
   end for [[http://www.sagemath.org/][Sage]].
 
-  By =sage-shell-mode=, you can run Sage process in GNU Emacs and send
-  contents of a buffer or a file to the Sage process.
+  =sage-shell-mode= provides two main features:
 
-  This package also provides a major-mode derived from =python-mode=.
+  1. =sage-shell-mode= to run the Sage terminal inside Emacs.
 
-  There are extensions for this package, [[https://github.com/stakemori/auto-complete-sage][auto-complete-sage]], [[https://github.com/stakemori/helm-sage][helm-sage]]
-  , [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
+  1. =sage-shell:sage-mode= for editing =.sage= source files, withn functions for sending contents directly to the Sage terminal. This major mode is derived from =python-mode=.
+
+  The package supports extensions with [[https://github.com/stakemori/auto-complete-sage][auto-complete-sage]], [[https://github.com/stakemori/helm-sage][helm-sage]],
+  [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
 
 ** Table of Contents                                                    :TOC:
      - [[#requriements][Requirements]]
@@ -33,32 +34,48 @@
 
    1. GNU Emacs 24.1 (or 24.4) or later
 
-      If your Sage depends on IPython 5 (i.e. it uses python-prompt-toolkit instead of GNU readline),
-      then this package requires requires Emacs 24.4 or later.
-      In that case, you should set =sage-shell:use-prompt-toolkit= to a non-nil value.
-      Otherwise it requires Emacs 24.1 or later.
+      For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4. In that
+      case, you should set =sage-shell:use-prompt-toolkit= to =t= value, as
+      explained in the following section. The technical reason is that Sage 7.4
+      uses IPython 5, where python-prompt-toolkit is used instead of GNU
+      readline
 
-   2. Local install of [[http://www.sagemath.org/][Sage]]
+      For Sage 7.3 or earlier, Emacs 24.1 is sufficient.
+
+   2. Local installation of [[http://www.sagemath.org/][Sage]]
+
+   3. The Emacs package [[https://github.com/kiwanami/emacs-deferred][deferred]]. This will be installed automatically if you follow the guide below.
 
 ** Installation and Setup
 
-  You can install =sage-shell-mode= from [[https://github.com/milkypostman/melpa.git][MELPA]].
+  The most convenient is to use the Emacs package manager to install =sage-shell-mode= from [[https://github.com/milkypostman/melpa.git][MELPA]]:
 
   1. See http://melpa.org/#/getting-started if you do not have a
      configuration for MELPA.
 
-  2. Install =sage-shell-mode= by
+  1. Install =sage-shell-mode= by
      - =M-x package-refresh-contents=
      - =M-x package-install RET sage-shell-mode=.
 
-  3. If your Sage uses python-prompt-toolkit instead of GNU readline, then set
-     =sage-shell:use-prompt-toolkit= to non-nil.
+  1. Add the following to your Emacs init file (=~/.emacs.d/init.el=):
 
-  4. You can run Sage inside Emacs by =M-x sage-shell:run-sage= if Emacs
+     #+BEGIN_SRC elisp
+     (require 'sage-shell-mode)
+     #+END_SRC
+
+     This must be added *after* the line =(package-initialize)=. If you don't
+     already have that line in you Emacs init file, add it.
+
+  1. If you have Sage 7.4 or later, then also add the following:
+
+     #+BEGIN_SRC elisp
+     (setq sage-shell:use-prompt-toolkit t)
+     #+END_SRC
+
+  1. You can now run Sage inside Emacs by =M-x sage-shell:run-sage= if Emacs
      can find the executable file of Sage.
 
-  If Emacs cannot find the executable file, put the following line to
-  =~/.emacs.d/init.el=.
+  If Emacs cannot find the executable file, add the following line to your Emacs init file:
 
   #+BEGIN_SRC elisp
    (setq sage-shell:sage-root "/path/to/sage/root_directory")
@@ -66,36 +83,38 @@
 
   And replace =/path/to/sage_root_directory= by the root directory of
   Sage, i.e. =$SAGE_ROOT=. If you do not know the root directory of
-  Sage, evaluate the following code in Sage:
+  Sage, evaluate the following code in a Sage:
 
   #+BEGIN_SRC python
    import os; print os.environ["SAGE_ROOT"]
   #+END_SRC
 
   Alternatively, instead of setting =sage-shell:sage-root=, you may
-    set the variable =sage-shell:sage-executable=.
+  set the variable =sage-shell:sage-executable=.
 
   #+BEGIN_SRC elisp
    (setq sage-shell:sage-executable "/path/to/sage/executable")
   #+END_SRC
 
   Here =/path/to/sage/executable= is the path of the executable file
-  of Sage.  This may be a symbolic link.
+  of Sage. This may be a symbolic link.
 
 *** Sample configuration
     Here is a sample configuration.
 
     #+BEGIN_SRC elisp
+      (require 'sage-shell-mode)
       ;; Run SageMath by M-x run-sage instead of M-x sage-shell:run-sage
       (sage-shell:define-alias)
-      ;; Turn on eldoc-mode
+
+      ;; Turn on eldoc-mode in Sage terminal and in Sage source files
       (add-hook 'sage-shell-mode-hook #'eldoc-mode)
       (add-hook 'sage-shell:sage-mode-hook #'eldoc-mode)
 
-      ;; If your Sage uses python-prompt-toolkit,
-      ;; then you should uncomment the following line.
+      ;; If you have Sage 7.4 or later, uncomment the following line.
       ;; (setq sage-shell:use-prompt-toolkit t)
     #+END_SRC
+
 ** Aliases
 
   The major mode =sage-mode= and the command =run-sage= are provided
