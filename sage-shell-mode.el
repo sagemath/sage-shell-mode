@@ -4273,6 +4273,18 @@ inserted in the process buffer before executing the command."
           (display-function sage-shell-edit:display-function)
           (insert-command-p t) (before-sentence nil)
           (gerund "Loading"))
+
+  (let ((buf (cl-loop for b in (buffer-list)
+                      for bfn = (buffer-file-name b)
+                      if (and bfn (equal (expand-file-name bfn)
+                                         (expand-file-name file-name))
+                              (buffer-modified-p b))
+                      return b)))
+    (when (and buf (y-or-n-p (message "Save file %s?"
+                                      (buffer-file-name buf))))
+      (with-current-buffer buf
+        (save-buffer))))
+
   (sage-shell-edit:exec-command-base
    :command (or command (format "load('%s')" file-name))
    :switch-p switch-p
