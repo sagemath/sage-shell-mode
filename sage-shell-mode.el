@@ -4189,9 +4189,10 @@ inserted in the process buffer before executing the command."
 
 (eval-when-compile
   (defvar sage-shell-edit:exec-command-base-alist
-    (list (cons 'buffer (list :beg '(point-min)
-                              :end '(point-max)
-                              :name "buffer"))
+    (list (cons '-buffer (list :beg '(point-min)
+                               :end '(point-max)
+                               :name "buffer"
+                               :doc "internal function"))
           (cons 'region (list :beg 'beg :end 'end :name "region"
                               :interactive "r"
                               :args '(beg end)))
@@ -4227,8 +4228,9 @@ inserted in the process buffer before executing the command."
   (append '(progn)
           (cl-loop for (type . plist) in sage-shell-edit:exec-command-base-alist
                    for func-name-base = (format "sage-shell-edit:send-%s" type)
-                   for doc-string = (format "Evaluate the current %S in the Sage process."
-                                            type)
+                   for doc-string = (or (plist-get plist :doc)
+                                        (format "Evaluate the current %S in the Sage process."
+                                                type))
                    for int = (sage-shell:aif (plist-get plist :interactive)
                                  `(interactive ,it)
                                '(interactive))
@@ -4242,6 +4244,22 @@ inserted in the process buffer before executing the command."
                                     (sage-shell-edit:send-obj-base :type ,type :switch-p ,b))))))
 
 (sage-shell-edit:defun-exec-commands)
+
+(defun sage-shell-edit:send-buffer ()
+  "Evaluate the contents of the current buffer in the Sage process."
+  (interactive)
+  (let ((bfn (buffer-file-name)))
+    (cond ((and bfn (not (buffer-modified-p)))
+           (sage-shell-edit:load-file bfn))
+          (t (sage-shell-edit:send--buffer)))))
+
+(defun sage-shell-edit:send-buffer-and-go ()
+  "Evaluate the contents of the current buffer in the Sage process."
+  (interactive)
+  (let ((bfn (buffer-file-name)))
+    (cond ((and bfn (not (buffer-modified-p)))
+           (sage-shell-edit:load-file-and-go bfn))
+          (t (sage-shell-edit:send--buffer-and-go)))))
 
 (defvar sage-shell:file-extensions '("sage" "py" "spyx" "pyx"))
 
