@@ -4227,7 +4227,7 @@ inserted in the process buffer before executing the command."
   (append '(progn)
           (cl-loop for (type . plist) in sage-shell-edit:exec-command-base-alist
                    for func-name-base = (format "sage-shell-edit:send-%s" type)
-                   for doc-string = (format "Send the current %S to the Sage process."
+                   for doc-string = (format "Evaluate the current %S in the Sage process."
                                             type)
                    for int = (sage-shell:aif (plist-get plist :interactive)
                                  `(interactive ,it)
