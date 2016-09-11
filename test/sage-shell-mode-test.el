@@ -255,7 +255,7 @@ foo=bar(1, 2), baz=(1, 2")))
       (sage-shell:run-cell
        (format "print '%s'" rand-str)
        :process-buffer proc-buf
-       :call-back (lambda (res)
+       :callback (lambda (res)
                     (ert-deftest sage-shell:test-run-cell-1 ()
                       (should (equal (sage-shell:output-stct-output res)
                                      (format "%s\n" rand-str)))
@@ -264,7 +264,7 @@ foo=bar(1, 2), baz=(1, 2")))
     (sage-shell:run-cell
      "x/(x - x)"
      :process-buffer proc-buf
-     :call-back (lambda (res)
+     :callback (lambda (res)
                   (ert-deftest sage-shell:test-run-cell-2 ()
                     (should (equal (sage-shell:output-stct-success res) nil))
                     (should (string-match "ZeroDivisionError"

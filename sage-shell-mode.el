@@ -372,13 +372,13 @@ The name is made by appending a number to PREFIX, default
                       (run-with-timer
                        0.01 0.01
                        (lambda () (condition-case err-var
-                                  (when ,form
-                                    (unwind-protect
-                                        (progn ,@body)
-                                      (cancel-timer ,sym)))
-                                (error (cancel-timer ,sym)
-                                       (signal (car err-var)
-                                               (cdr err-var))))))))))))
+                                      (when ,form
+                                        (unwind-protect
+                                            (progn ,@body)
+                                          (cancel-timer ,sym)))
+                                    (error (cancel-timer ,sym)
+                                           (signal (car err-var)
+                                                   (cdr err-var))))))))))))
 
 (defmacro sage-shell:substitute-key-def (old-command new-command
                                                      search-keymap
@@ -707,7 +707,7 @@ to a process buffer.")
   ;; Run init functions after Sage loaded.
   (add-to-list 'sage-shell:output-filter-finished-hook
                (lambda () (sage-shell:after-init-function
-                       sage-shell:process-buffer)))
+                           sage-shell:process-buffer)))
   (sage-shell:pcomplete-setup)
   ;; ansi-color-process-output may cause an error.
   (remove-hook 'comint-output-filter-functions
@@ -728,7 +728,7 @@ to a process buffer.")
                (proc (get-buffer-process (current-buffer))))
           (add-hook 'sage-shell:-pre-output-filter-hook
                     (lambda () (let ((inhibit-redisplay t))
-                             (delete-region bol eol))))
+                                 (delete-region bol eol))))
           (process-send-string proc (concat line ""))
           ;; Delete whitespaces
           (add-hook 'sage-shell:-post-output-filter-hook
@@ -846,19 +846,19 @@ succesive lines in history."
 
 
 
-(cl-defun sage-shell:run-cell (cell &key call-back
+(cl-defun sage-shell:run-cell (cell &key callback
                                     output-buffer
                                     process-buffer
                                     sync)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
-        (call-back (lambda (output)
-                     (funcall call-back (sage-shell:eval-state output)))))
+        (callback (lambda (output)
+                    (funcall callback (sage-shell:eval-state output)))))
     (sage-shell:run-cell-raw-output cell
                                     :output-buffer output-buffer
                                     :process-buffer process-buffer
                                     :sync sync
                                     :evaluator evaluator
-                                    :call-back call-back)))
+                                    :callback callback)))
 
 (defmacro sage-shell:after-redirect-finished (&rest body)
   (declare (indent 0))
@@ -869,7 +869,7 @@ succesive lines in history."
               (add-to-list 'sage-shell:redirect-filter-finished-hook
                            (lambda () ,@body))))))
 
-(cl-defun sage-shell:run-cell-raw-output (cell &key call-back
+(cl-defun sage-shell:run-cell-raw-output (cell &key callback
                                                process-buffer
                                                output-buffer
                                                sync
@@ -877,7 +877,7 @@ succesive lines in history."
                                                evaluator
                                                to-string)
   "CELL is a string which will be sent to the proces buffer,
-When non-nil, Call-BACK should be a function and will be called if the
+When non-nil, CALLBACK should be a function and will be called if the
 evaluation completes. The output will be passed as its argument.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
@@ -906,11 +906,11 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
         (sage-shell:wait-for-redirection-to-complete)))
 
 
-    (when (functionp call-back)
+    (when (functionp callback)
       (sage-shell:after-redirect-finished
         (let ((raw-output
                (sage-shell:-redirect-get-buffer-string out-buf)))
-          (funcall call-back raw-output))))
+          (funcall callback raw-output))))
     (when to-string
       (sage-shell:-redirect-get-buffer-string out-buf))))
 
@@ -931,7 +931,7 @@ When sync is nill this return a lambda function to get the result."
   (let* ((output nil)
          (res-func (lambda () output))
          (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
-         (call-back
+         (callback
           (unless sync
             (lambda (x)
               (setq output x)))))
@@ -939,7 +939,7 @@ When sync is nill this return a lambda function to get the result."
      command
      :process-buffer process-buffer
      :output-buffer output-buffer
-     :call-back call-back
+     :callback callback
      :sync sync
      :raw raw)
     (unless sync res-func)))
@@ -1754,8 +1754,8 @@ Match group 1 will be replaced with devel/sage-branch")
 
 (defvar sage-shell:-ansi-escape-drop-regexp
   (rx (and "["
-               (0+ (or num ";" "=" "?"))
-               (regexp "[nmhl]"))))
+           (0+ (or num ";" "=" "?"))
+           (regexp "[nmhl]"))))
 
 (defun sage-shell:-ansi-escape-filter-out (str)
   (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
@@ -2541,7 +2541,7 @@ this hook after inserting string.")
                                        (line-end-position))))
                  (add-hook 'sage-shell:-pre-output-filter-hook
                            (lambda () (let ((inhibit-redisplay t))
-                                    (delete-region proc-pos line-end))))
+                                        (delete-region proc-pos line-end))))
                  (let ((comint-input-sender
                         (lambda (proc _str) (process-send-string proc line))))
                    (sage-shell:comint-send-input t)
@@ -2616,10 +2616,10 @@ this hook after inserting string.")
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
            (lambda (proc _str) (comint-simple-send
-                            proc
-                            (if sage-shell:use-prompt-toolkit
-                                ""
-                              ""))))
+                                proc
+                                (if sage-shell:use-prompt-toolkit
+                                    ""
+                                  ""))))
           (win (get-buffer-window sage-shell:process-buffer)))
       (let ((line (buffer-substring
                    (line-beginning-position)
@@ -3645,7 +3645,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
              (sage-shell-cpl:-cached-mod-key it compl-state)
              sage-shell-cpl:-modules-cached))
           (sage-shell:remove-if (lambda (s) (or (string= s "modules")
-                                            (string= s "vars-in-module")))
+                                                (string= s "vars-in-module")))
                                 types)
         types)
       (if (and in-function-call
@@ -3705,13 +3705,13 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
            cmd
            :output-buffer output-buffer
            :sync sync
-           :call-back
+           :callback
            (lambda (s)
-             (sage-shell-cpl:-cpl-init-call-back s compl-state)))
+             (sage-shell-cpl:-cpl-init-callback s compl-state)))
           (if sync
               sage-shell-cpl:-last-sexp))))))
 
-(defun sage-shell-cpl:-cpl-init-call-back (s compl-state)
+(defun sage-shell-cpl:-cpl-init-callback (s compl-state)
   (cond ((sage-shell:output-stct-success s)
          (let ((output (sage-shell:output-stct-output s)))
            (unless (string-match (rx "))\n" buffer-end) output)
@@ -4135,8 +4135,8 @@ inserted in the process buffer before executing the command."
                (insert command)
                (let ((comint-input-ring (make-ring 1)))
                  (sage-shell:send-input)))
-               (t (sage-shell:prepare-for-send)
-                  (comint-send-string proc (concat command "\n"))))
+              (t (sage-shell:prepare-for-send)
+                 (comint-send-string proc (concat command "\n"))))
         (save-excursion
           (insert line))))))
 
@@ -4829,7 +4829,7 @@ file name.")
           cmd)
         (deferred:nextc it
           (lambda (_x) (when verbose
-                     (message "Running \"%s\" ... Done." cmd-name)))))
+                         (message "Running \"%s\" ... Done." cmd-name)))))
       (deferred:error it
         (lambda (e) (sage-shell-sagetex:insert-error e))))))
 
