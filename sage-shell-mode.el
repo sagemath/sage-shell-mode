@@ -2457,6 +2457,10 @@ this hook after inserting string.")
                  (forward-line 1))
                line)))))
 
+(defun sage-shell:-ring-push-if-new (ring item)
+  (unless (equal (ring-ref ring 0) item)
+    (ring-insert ring item)))
+
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
 ;; * Set `sage-shell:output-finished-p'.
@@ -2501,6 +2505,7 @@ this hook after inserting string.")
               (rx (or (and bol (group (1+ nonl)) "??" (0+ blank) eol)
                       (and bol (0+ blank) "??" (group (1+ nonl)) eol)))
               line))
+        (sage-shell:-ring-push-if-new comint-input-ring line)
         (sage-shell:find-source-in-view-mode
          (or (match-string-no-properties 1 line)
              (match-string-no-properties 2 line)))
@@ -2510,6 +2515,7 @@ this hook after inserting string.")
               (rx (or (and bol (group (1+ nonl)) "?" (0+ blank) eol)
                       (and bol (0+ blank) "?" (group (1+ nonl)) eol)))
               line))
+        (sage-shell:-ring-push-if-new comint-input-ring line)
         (sage-shell-help:describe-symbol
          (or (match-string-no-properties 1 line)
              (match-string-no-properties 2 line)))
@@ -2523,6 +2529,7 @@ this hook after inserting string.")
                                (zero-or-more blank) ")"
                                (zero-or-more blank)
                                eol) line))
+        (sage-shell:-ring-push-if-new comint-input-ring line)
         (sage-shell-help:describe-symbol
          (match-string-no-properties 1 line) "help(%s)")
         (sage-shell:send-blank-line))
