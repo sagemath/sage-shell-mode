@@ -2423,6 +2423,40 @@ function does not highlight the input."
 this hook after inserting string.")
 (make-variable-buffer-local 'sage-shell:-post-output-filter-hook)
 
+(defun sage-shell:-current-line1 ()
+  (save-excursion
+    (let ((inhibit-field-text-motion t))
+      (end-of-line))
+    (cond ((sage-shell:-at-output-p (point))
+           (buffer-substring-no-properties
+            (sage-shell:-bol)
+            (line-end-position)))
+          (t (let ((inhibit-field-text-motion nil))
+               (buffer-substring-no-properties
+                (line-beginning-position)
+                (line-end-position)))))))
+
+(defun sage-shell:-current-line (&optional pos)
+  "Return the command line at POS in the Sage shell."
+  (save-excursion
+    (when pos
+      (goto-char pos))
+    (beginning-of-line)
+    (cond ((or
+            ;; The last line in the buffer
+            (save-excursion (end-of-line) (eobp))
+            ;; readline
+            (null sage-shell:use-prompt-toolkit)
+            ;; multiple-input
+            (looking-at-p (rx (0+ nonl) ":" (0+ whitespace) eol)))
+           (sage-shell:-current-line1))
+          (t (let ((line (sage-shell:-current-line1)))
+               (forward-line 1)
+               (while (looking-at-p sage-shell:prompt2-regexp)
+                 (setq line (concat line (sage-shell:-current-line1)))
+                 (forward-line 1))
+               line)))))
+
 ;; This function has many side effects:
 ;; * Set `sage-shell:input-ring-index'.
 ;; * Set `sage-shell:output-finished-p'.
@@ -2435,7 +2469,7 @@ this hook after inserting string.")
   "Send current line to Sage process. "
   (interactive)
   (when (process-live-p (get-buffer-process (current-buffer)))
-    (let ((line (buffer-substring (point-at-bol) (line-end-position)))
+    (let ((line (sage-shell:-current-line))
           (inhibit-read-only t)
           (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
 
@@ -2503,12 +2537,15 @@ this hook after inserting string.")
         (cond (sage-shell:use-prompt-toolkit
                (let* ((proc (get-buffer-process sage-shell:process-buffer))
                       (proc-pos (marker-position (process-mark proc)))
-                      (line-end (line-end-position)))
-                 (sage-shell:comint-send-input t)
-                 (process-send-string proc "")
+                      (line-end (progn (goto-char proc-pos)
+                                       (line-end-position))))
                  (add-hook 'sage-shell:-pre-output-filter-hook
-                             (lambda () (let ((inhibit-redisplay t))
-                                      (delete-region proc-pos line-end))))))
+                           (lambda () (let ((inhibit-redisplay t))
+                                    (delete-region proc-pos line-end))))
+                 (let ((comint-input-sender
+                        (lambda (proc _str) (process-send-string proc line))))
+                   (sage-shell:comint-send-input t)
+                   (process-send-string proc ""))))
               (t (sage-shell:comint-send-input)))))
 
       ;; If current line contains from ... import *, then update sage commands
