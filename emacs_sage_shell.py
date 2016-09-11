@@ -326,10 +326,12 @@ ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 def _sage_getdef(name, base_name=None):
     try:
-        if _is_safe_str(name) and (_should_be_ignored(name, base_name)
+        if _is_safe_str(name) and (_should_be_ignored(name, base_name, clses=[])
                                    is not None):
             gd_name = "sage.misc.sageinspect.sage_getdef"
             name_ob = ip.ev(preparse(name))
+            if isinstance(name_ob, sage.misc.lazy_import.LazyImport):
+                name_ob = name_ob._get_object()
             if inspect.isclass(name_ob):
                 df = ip.ev("%s(%s.__init__)" % (gd_name, name))
             else:
@@ -350,15 +352,17 @@ _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
 _doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
 
 
-def _should_be_ignored(name, base_name):
+def _should_be_ignored(name, base_name, clses=None):
+    if clses is None:
+        clses = ignore_classes
     if isinstance(base_name, str):
         base_ob = ip.ev(preparse(base_name))
-        if any((isinstance(base_ob, cls) for cls in ignore_classes)):
+        if any((isinstance(base_ob, cls) for cls in clses)):
             return None
     else:
         base_ob = None
     name_ob = ip.ev(preparse(name))
-    if any((isinstance(name_ob, cls) for cls in ignore_classes)):
+    if any((isinstance(name_ob, cls) for cls in clses)):
         return None
     else:
         return True
