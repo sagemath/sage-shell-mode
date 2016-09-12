@@ -3227,6 +3227,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
         (error (format "No such attribute %S" attribute))))))
 
 (defun sage-shell-interfaces:update-cmd-lst (itfc)
+  "Update command list sync"
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-cpl:set-cmd-lst itfc nil)
     (let ((sexp (sage-shell-cpl:completion-init
