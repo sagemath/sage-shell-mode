@@ -1190,7 +1190,7 @@ function asks which process is to be restarted."
                   (sage-shell:run cmd nil
                                   :buffer-name (buffer-name buf)
                                   :switch-function 'display-buffer))
-                nil t)
+                t t)
       (process-send-eof proc))))
 
 (defun sage-shell-tab-command ()
