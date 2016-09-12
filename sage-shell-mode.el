@@ -4020,7 +4020,8 @@ whose key is in KEYS."
       (let ((case-fold-search nil))
         (cl-loop for proc in (process-list)
                  for buffer-name = (sage-shell:aif (process-buffer proc)
-                                       (buffer-name it))
+                                       (and (buffer-live-p it)
+                                            (buffer-name it)))
                  for proc-name = (process-name proc)
                  if (and buffer-name
                          (string-match
