@@ -232,11 +232,22 @@ def resolve_module_path(modname):
             return _pth
 
 
+def lazy_import_get_obj(obj):
+    _max = 10
+    i = 0
+    while (isinstance(obj, sage.misc.lazy_import.LazyImport) and
+           i < _max):
+        obj = obj._get_object()
+        i += 1
+    return obj
+
+
 def source_line(obj):
     return sage.misc.sageinspect.sage_getsourcelines(obj)[-1]
 
 
 def print_source_file_and_line_num(obj):
+    obj = lazy_import_get_obj(obj)
     sf = sage.misc.sageinspect.sage_getfile(obj)
     sl = source_line(obj)
     print(sf, '*', sl)
@@ -330,8 +341,7 @@ def _sage_getdef(name, base_name=None):
                                    is not None):
             gd_name = "sage.misc.sageinspect.sage_getdef"
             name_ob = ip.ev(preparse(name))
-            if isinstance(name_ob, sage.misc.lazy_import.LazyImport):
-                name_ob = name_ob._get_object()
+            name_ob = lazy_import_get_obj(name_ob)
             if inspect.isclass(name_ob):
                 df = ip.ev("%s(%s.__init__)" % (gd_name, name))
             else:
