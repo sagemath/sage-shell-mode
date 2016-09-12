@@ -4500,9 +4500,6 @@ inserted in the process buffer before executing the command."
 
 (defvar sage-shell-edit:-eldoc-orig-func nil)
 
-(defvar sage-shell-edit:eldoc-show-methods-doc nil
-  "Non-`nil' means show eldoc for methods..")
-
 (defun sage-shell-edit:eldoc-function ()
   (let ((orig-eldoc (sage-shell:aif (functionp sage-shell-edit:-eldoc-orig-func)
                         (ignore-errors (funcall it)))))
@@ -4515,10 +4512,10 @@ inserted in the process buffer before executing the command."
              (sage-int-state '((interface . "sage")
                                (types "interface"))))
         (when (and in-function-call
-                   sage-shell:process-buffer
+                   (progn
+                     (sage-shell-edit:set-sage-proc-buf-internal nil nil)
+                     sage-shell:process-buffer)
                    (get-buffer sage-shell:process-buffer)
-                   (or (null base-name)
-                       sage-shell-edit:eldoc-show-methods-doc)
                    (sage-shell:in (if base-name
                                       (sage-shell:trim-right
                                        (car (split-string base-name (rx "."))))
