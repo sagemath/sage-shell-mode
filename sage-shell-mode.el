@@ -4526,8 +4526,13 @@ inserted in the process buffer before executing the command."
                                    (buffer-local-value
                                     'sage-shell-cpl:-cands-in-current-session
                                     sage-shell:process-buffer)
-                                   (sage-shell-cpl:candidates
-                                    :state sage-int-state))))
+                                   (or (sage-shell-cpl:candidates
+                                        :state sage-int-state)
+                                       ;; If cache is not created, update
+                                       ;; the command list.
+                                       (progn (sage-shell:update-sage-commands)
+                                              (sage-shell-cpl:candidates
+                                               :state sage-int-state))))))
           (sage-shell:-eldoc-function state))))))
 
 
