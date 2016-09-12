@@ -2469,7 +2469,8 @@ this hook after inserting string.")
                line)))))
 
 (defun sage-shell:-ring-push-if-new (ring item)
-  (unless (equal (ring-ref ring 0) item)
+  (unless (or (ring-empty-p ring)
+              (equal (ring-ref ring 0) item))
     (ring-insert ring item)))
 
 ;; This function has many side effects:
