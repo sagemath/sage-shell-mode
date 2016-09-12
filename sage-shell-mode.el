@@ -1991,7 +1991,7 @@ return string for output."
   (setq string (sage-shell:-convert-to-ascii-banner string))
   (unless (string= string "")
     (let ((oprocbuf (process-buffer process)))
-      (with-current-buffer (and string oprocbuf)
+      (sage-shell:with-current-buffer-safe (and string oprocbuf)
         (let ((win (get-buffer-window (process-buffer process))))
           (save-selected-window
             (when (and (windowp win) (window-live-p win))
@@ -4013,7 +4013,9 @@ whose key is in KEYS."
 
 ;;; sage-edit
 (defun sage-shell-edit:process-alist ()
-  (or (sage-shell:aif (get-buffer-process sage-shell:process-buffer)
+  (or (sage-shell:aif (and sage-shell:process-buffer
+                           (buffer-live-p sage-shell:process-buffer)
+                           (get-buffer-process sage-shell:process-buffer))
           (list (cons it (process-name it))))
       (let ((case-fold-search nil))
         (cl-loop for proc in (process-list)
