@@ -4076,7 +4076,8 @@ whose key is in KEYS."
 
 (cl-defun sage-shell-edit:exec-command-base
     (&key command pre-message post-message switch-p
-          (display-function nil) (insert-command-p t) (before-sentence nil))
+          (display-function nil) (insert-command-p t) (before-sentence nil)
+          (push-to-input-history-p nil))
   "If `insert-command-p' is non-nil, then it inserts `command' in
 the process buffer. If `before-sentence' is non-nil, it will be
 inserted in the process buffer before executing the command."
@@ -4086,11 +4087,13 @@ inserted in the process buffer before executing the command."
   (sage-shell:when-process-alive
     (sage-shell-edit:-exec-command-base
      command pre-message post-message switch-p
-     display-function insert-command-p before-sentence)))
+     display-function insert-command-p before-sentence
+     push-to-input-history-p)))
 
 (defun sage-shell-edit:-exec-command-base
     (command pre-message post-message switch-p
-             display-function insert-command-p before-sentence)
+             display-function insert-command-p before-sentence
+             push-to-input-history-p)
 
   (with-current-buffer sage-shell:process-buffer
     (sage-shell:change-mode-line-process t)
@@ -4100,7 +4103,8 @@ inserted in the process buffer before executing the command."
 
   (sage-shell:as-soon-as (sage-shell:output-finished-p)
     (let ((win (get-buffer-window sage-shell:process-buffer))
-          (args (list command insert-command-p before-sentence)))
+          (args (list command insert-command-p before-sentence
+                      push-to-input-history-p)))
       (if (and (windowp win) (window-live-p win))
           (with-selected-window win
             (apply 'sage-shell-edit:exec-cmd-internal args))
@@ -4124,7 +4128,7 @@ inserted in the process buffer before executing the command."
   (when switch-p (pop-to-buffer sage-shell:process-buffer)))
 
 (defun sage-shell-edit:exec-cmd-internal
-    (command insert-command-p before-sentence)
+    (command insert-command-p before-sentence push-to-input-history-p)
   (let* ((proc (get-buffer-process sage-shell:process-buffer))
          (pmark (process-mark proc)))
     (with-current-buffer sage-shell:process-buffer
@@ -4140,8 +4144,10 @@ inserted in the process buffer before executing the command."
         (cond (insert-command-p
                (goto-char pmark)
                (insert command)
-               (let ((comint-input-ring (make-ring 1)))
-                 (sage-shell:send-input)))
+               (if push-to-input-history-p
+                   (sage-shell:send-input)
+                 (let ((comint-input-ring (make-ring 1)))
+                   (sage-shell:send-input))))
               (t (sage-shell:prepare-for-send)
                  (comint-send-string proc (concat command "\n"))))
         (save-excursion
@@ -4327,7 +4333,8 @@ inserted in the process buffer before executing the command."
                                                (line-beginning-position)
                                                (line-end-position))
                                      :insert-command-p t
-                                     :display-function 'display-buffer))
+                                     :display-function 'display-buffer
+                                     :push-to-input-history-p t))
 
 
 (cl-defun sage-shell-edit:load-file-base
