@@ -1175,13 +1175,23 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
   (sage-shell:run cmd t))
 
 (defun sage-shell:restart-sage (cmd)
+  "Restart the Sage process. If there are multiple Sage processes, then this
+function asks which process is to be restarted."
   (interactive (list (sage-shell:read-command)))
-  (let ((buf (current-buffer))
-        (proc (get-buffer-process (current-buffer))))
-    (add-hook 'sage-shell:process-exit-hook
-              (lambda () (sage-shell:run cmd nil :buffer-name (buffer-name buf)))
-              nil t)
-    (process-send-eof proc)))
+  (sage-shell-edit:set-sage-proc-buf-internal
+   nil t (concat
+          "There are multiple Sage processes. "
+          "Please select the process buffer to be restarted: "))
+  (let* ((buf sage-shell:process-buffer)
+         (proc (get-buffer-process buf)))
+    (with-current-buffer buf
+      (add-hook 'sage-shell:process-exit-hook
+                (lambda ()
+                  (sage-shell:run cmd nil
+                                  :buffer-name (buffer-name buf)
+                                  :switch-function 'display-buffer))
+                nil t)
+      (process-send-eof proc))))
 
 (defun sage-shell-tab-command ()
   (interactive)
@@ -4026,7 +4036,10 @@ whose key is in KEYS."
                        (buffer-name it)))))
 
 (cl-defun sage-shell-edit:set-sage-proc-buf-internal
-    (&optional (start-p t) (select-p t))
+    (&optional (start-p t) (select-p t)
+               (select-msg (concat
+                            "There are multiple Sage processes. "
+                            "Please select the process buffer: ")))
   "Set `sage-shell:process-buffer'"
   (or (and (buffer-live-p sage-shell:process-buffer)
            (get-buffer-process sage-shell:process-buffer))
@@ -4052,9 +4065,7 @@ whose key is in KEYS."
                              collect (buffer-name (process-buffer proc))))
                    (buffer-name
                     (completing-read
-                     (concat
-                      "There are multiple Sage processes. "
-                      "Please select the process buffer: ")
+                     select-msg
                      buffer-names nil nil
                      (try-completion "" buffer-names)))
                    (proc (get-buffer-process buffer-name)))
