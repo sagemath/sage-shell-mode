@@ -4528,7 +4528,6 @@ inserted in the process buffer before executing the command."
                      (sage-shell-edit:set-sage-proc-buf-internal nil nil)
                      sage-shell:process-buffer)
                    (get-buffer sage-shell:process-buffer)
-                   (sage-shell:redirect-and-output-finished-p)
                    (sage-shell:in (if base-name
                                       (sage-shell:trim-right
                                        (car (split-string base-name (rx "."))))
