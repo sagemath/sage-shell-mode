@@ -1016,8 +1016,10 @@ When sync is nill this return a lambda function to get the result."
   (lambda (proc msg)
     (funcall default-sentinel proc msg)
     (unless (process-live-p proc)
-      (with-current-buffer (process-buffer proc)
-        (run-hooks 'sage-shell:process-exit-hook)))))
+      (let ((buf (process-buffer proc)))
+        (when (buffer-live-p buf)
+          (with-current-buffer (process-buffer proc)
+            (run-hooks 'sage-shell:process-exit-hook)))))))
 
 (defun sage-shell:start-sage-process (cmd buffer)
   (if sage-shell:use-prompt-toolkit
