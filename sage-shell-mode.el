@@ -713,7 +713,9 @@ to a process buffer.")
   (remove-hook 'comint-output-filter-functions
                'ansi-color-process-output t)
   (add-hook 'sage-shell:process-exit-hook
-            #'sage-shell:-after-send-eof-func nil t))
+            #'sage-shell:-after-send-eof-func nil t)
+  (add-hook 'kill-buffer-hook
+            #'sage-shell:-kill-buffer-func nil t))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
@@ -1008,6 +1010,13 @@ When sync is nill this return a lambda function to get the result."
 
 (defvar sage-shell:term-name "emacs"
   "Name to use for TERM.")
+
+(defun sage-shell:-kill-buffer-func ()
+  "Purpose of this function is to run
+`sage-shell:-after-send-eof-func' even if the process buffer is killed."
+  (let ((proc (get-buffer-process (current-buffer))))
+    (when (and proc (process-live-p proc))
+      (sage-shell:-after-send-eof-func))))
 
 (defvar sage-shell:process-exit-hook nil
   "List of functions to be called after the Sage process exits.")
