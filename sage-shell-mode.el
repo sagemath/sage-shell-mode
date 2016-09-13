@@ -2660,7 +2660,11 @@ this hook after inserting string.")
         (when sage-shell:use-prompt-toolkit
           (save-excursion
             (goto-char pt)
-            (insert line)))))))
+            (insert line))
+          (let ((proc (get-buffer-process (current-buffer))))
+            (when proc
+              (sage-shell:after-output-finished
+                (goto-char (process-mark proc))))))))))
 
 (defun sage-shell:at-top-level-p ()
   (save-excursion
