@@ -2089,11 +2089,7 @@ return string for output."
         (when (and sage-shell:output-finished-p
                    (null sage-shell:use-prompt-toolkit))
           (sage-shell-indent:insert-whitespace)))
-      (if sage-shell:output-finished-p
-          (progn (goto-char (process-mark process))
-                 ;; For auto indentation
-                 (end-of-line))
-        (goto-char saved-point)))))
+      (goto-char saved-point))))
 
 (defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
