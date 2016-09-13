@@ -2090,7 +2090,9 @@ return string for output."
                    (null sage-shell:use-prompt-toolkit))
           (sage-shell-indent:insert-whitespace)))
       (if sage-shell:output-finished-p
-          (goto-char (process-mark process))
+          (progn (goto-char (process-mark process))
+                 ;; For auto indentation
+                 (end-of-line))
         (goto-char saved-point)))))
 
 (defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
