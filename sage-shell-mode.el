@@ -790,6 +790,11 @@ Sends an EOF only if point is at the end of the buffer and there is no input. "
   ;; write comint-input-ring
   (comint-write-input-ring))
 
+(defun sage-shell:ido-input-history ()
+  (interactive)
+  (insert (ido-completing-read "Input history: "
+                               (ring-elements comint-input-ring))))
+
 ;; comint.el uses comint-input-ring-index for the input history, but
 ;; comint-send-input sets it to nil. So we need another global variable.
 (defvar sage-shell:input-ring-index nil)
