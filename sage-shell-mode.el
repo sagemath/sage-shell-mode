@@ -1783,7 +1783,7 @@ Match group 1 will be replaced with devel/sage-branch")
 (defvar sage-shell:-ansi-escape-drop-regexp
   (rx (and "["
            (0+ (or num ";" "=" "?"))
-           (regexp "[mhl]"))))
+           (regexp "[Rmhl]"))))
 
 (defun sage-shell:-ansi-escape-filter-out (str)
   (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
