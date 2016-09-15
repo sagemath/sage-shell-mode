@@ -1272,11 +1272,13 @@ returns a lamda function with no args to obtain the result."
     (delete-region beg (point))
     (insert can)))
 
-(defun sage-shell:word-at-pt-beg (&optional pt)
+(defun sage-shell:word-at-pt-beg (&optional pt interface)
+  "This can be used in both sage-shell-mode and sage-shell:sage-mode."
   (save-excursion
     (when pt (goto-char pt))
     (let ((chars (sage-shell-interfaces:get
-                  (or (sage-shell-interfaces:current-interface) "sage")
+                  (or interface
+                      (sage-shell-interfaces:current-interface) "sage")
                   'var-chars)))
       (skip-chars-backward chars) (point))))
 
