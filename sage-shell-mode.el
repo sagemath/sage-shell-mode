@@ -4036,6 +4036,24 @@ whose key is in KEYS."
     (buffer-substring-no-properties (sage-shell:symbol-beg) (point))
     (sage-shell:-completion-at-point))))
 
+(defun sage-shell-edit:candidates-sync (&optional regexp)
+  (let ((state (sage-shell-edit:parse-current-state)))
+    (when (and state
+               (progn
+                 (sage-shell-edit:set-sage-proc-buf-internal nil nil)
+                 sage-shell:process-buffer
+                 (buffer-live-p sage-shell:process-buffer))
+               (sage-shell:redirect-and-output-finished-p))
+      (sage-shell-cpl:candidates
+       :sexp (sage-shell-cpl:completion-init t :compl-state state)
+       :state state
+       :regexp (or regexp (sage-shell-interfaces:get "sage" 'cmd-rxp))))))
+
+(defun sage-shell-edit:completion-at-point-func ()
+  "Used for completion-at-point."
+  (let ((wab (sage-shell:word-at-pt-beg)))
+    (list wab (point) (sage-shell-edit:candidates-sync))))
+
 
 ;;; sage-edit
 (defun sage-shell-edit:process-alist ()
@@ -4570,7 +4588,9 @@ inserted in the process buffer before executing the command."
 (define-derived-mode sage-shell:sage-mode python-mode "Sage"
   (setq sage-shell-edit:-eldoc-orig-func eldoc-documentation-function)
   (set (make-local-variable 'eldoc-documentation-function)
-       #'sage-shell-edit:eldoc-function))
+       #'sage-shell-edit:eldoc-function)
+  (add-hook 'completion-at-point-functions
+            'sage-shell-edit:completion-at-point-func nil t))
 
 (sage-shell:define-keys sage-shell:sage-mode-map
   "C-c C-c" 'sage-shell-edit:send-buffer
