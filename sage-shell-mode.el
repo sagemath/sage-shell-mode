@@ -46,7 +46,6 @@
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
 ;; 2. Add support for simple prompt.
 ;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
-;; 4. Handle [6n.
 ;; Should sage-shell:-adjust-window-size be added to
 ;; window-configuration-change-hook?
 
@@ -1738,7 +1737,7 @@ Match group 1 will be replaced with devel/sage-branch")
         (t string)))
 
 (defvar sage-shell:-ansi-escpace-handler-alist
-  `((?n . ,#'ignore)
+  `((?n . ,#'sage-shell:-report-cursor-pos)
     (?J . ,#'sage-shell:-delete-display)
     (?D . ,#'sage-shell:-cursor-back)
     (?C . ,#'sage-shell:-cursor-forward)
@@ -1782,7 +1781,7 @@ Match group 1 will be replaced with devel/sage-branch")
 (defvar sage-shell:-ansi-escape-drop-regexp
   (rx (and "["
            (0+ (or num ";" "=" "?"))
-           (regexp "[nmhl]"))))
+           (regexp "[mhl]"))))
 
 (defun sage-shell:-ansi-escape-filter-out (str)
   (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
@@ -2002,6 +2001,11 @@ return string for output."
           (t (setq sage-shell:-pending-outputs nil)
              pending-outputs))))
 
+(defsubst sage-shell:-drop-escape-seq-and-blank (str)
+  (setq str (replace-regexp-in-string sage-shell:-ansi-escape-regexp
+                                      "" str nil t))
+  (replace-regexp-in-string (rx (or space "\n")) "" str nil t))
+
 (defun sage-shell:output-filter (process string)
   (setq string (sage-shell:-ansi-escape-filter-out string))
   (setq string (sage-shell:-convert-to-ascii-banner string))
@@ -2017,7 +2021,9 @@ return string for output."
           (when sage-shell:output-finished-p
             (when sage-shell:scroll-to-the-bottom
               (comint-postoutput-scroll-to-bottom string))
-            (setq buffer-undo-list nil)
+            (let ((str-dropped (sage-shell:-drop-escape-seq-and-blank string)))
+              (unless (string= str-dropped "")
+                (setq buffer-undo-list nil)))
             (sage-shell:run-hook-once
              'sage-shell:output-filter-finished-hook)))))))
 
@@ -2095,7 +2101,19 @@ return string for output."
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
-        (sage-shell-pdb:comint-output-filter-function))
+        (sage-shell-pdb:comint-output-filter-function)
+
+        ;; Delete whitespaces from the end of line to point-max
+        (when sage-shell:use-prompt-toolkit
+          (save-excursion
+            (goto-char (process-mark process))
+            (let ((inhibit-field-text-motion t))
+              (end-of-line))
+            (let ((str (buffer-substring-no-properties
+                        (point)
+                        (point-max))))
+              (when (string= (sage-shell:trim-left str) "")
+                (delete-region (point) (point-max)))))))
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
