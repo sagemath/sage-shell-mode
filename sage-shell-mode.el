@@ -4399,6 +4399,59 @@ inserted in the process buffer before executing the command."
                                      :display-function 'display-buffer
                                      :push-to-input-history-p t))
 
+(defun sage-shell:-doctest-lines ()
+  "If the current line start with a sage: prompt, return lines for doctest."
+  (save-excursion
+    (beginning-of-line)
+    (skip-chars-forward " 	")
+    (when (looking-at-p (rx (1+ "sage: ")))
+      (let ((inhibit-field-text-motion t)
+            (regexp (rx-to-string `(and line-start
+                                        (0+ whitespace)
+                                        ,sage-shell:-prompt-regexp-no-eol-rx))))
+        (cl-loop while (and
+                        (not (eobp))
+                        (progn
+                          (beginning-of-line)
+                          (looking-at regexp)))
+                 collect (buffer-substring-no-properties
+                          (match-end 0)
+                          (line-end-position))
+                 do (forward-line 1))))))
+
+(defun sage-shell:send-doctest ()
+  (interactive)
+  (sage-shell-edit:set-sage-proc-buf-internal)
+  (let ((lines (sage-shell:-doctest-lines)))
+    (cond ((null (cdr lines))
+           (sage-shell-edit:exec-command-base
+            :command (car lines)
+            :insert-command-p t
+            :display-function 'display-buffer
+            :push-to-input-history-p t))
+          (t
+           (let ((lines (append (cons "%cpaste" lines)
+                                (list "--"))))
+             (with-current-buffer sage-shell:process-buffer
+               (setq-local sage-shell:output-finished-regexp
+                           (rx-to-string
+                            `(and line-start
+                                  (or ,sage-shell:output-finished-regexp-rx
+                                      (and ":" line-end))))))
+             (sage-shell:-send-doctest--lines lines))))))
+
+(defun sage-shell:-send-doctest--lines (lines)
+  (sage-shell-edit:exec-command-base
+   :command (car lines)
+   :insert-command-p t
+   :display-function 'display-buffer
+   :push-to-input-history-p t)
+  (setq lines (cdr lines))
+  (cond (lines (sage-shell:after-output-finished
+                 (sage-shell:-send-doctest--lines lines)))
+        (t (with-current-buffer sage-shell:process-buffer
+             (setq sage-shell:output-finished-regexp
+                   (default-value 'sage-shell:output-finished-regexp))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
