@@ -4404,41 +4404,48 @@ inserted in the process buffer before executing the command."
   (save-excursion
     (beginning-of-line)
     (skip-chars-forward " 	")
-    (when (looking-at-p (rx (1+ "sage: ")))
-      (let ((inhibit-field-text-motion t)
-            (regexp (rx-to-string `(and line-start
-                                        (0+ whitespace)
-                                        ,sage-shell:-prompt-regexp-no-eol-rx))))
+    (when (looking-at (rx (1+ "sage: ")))
+      (let* ((inhibit-field-text-motion t)
+             (lines (list (buffer-substring-no-properties
+                           (match-end 0)
+                           (line-end-position))))
+             (regexp (rx line-start (0+ whitespace) "....: ")))
+        (forward-line 1)
         (cl-loop while (and
                         (not (eobp))
                         (progn
                           (beginning-of-line)
                           (looking-at regexp)))
-                 collect (buffer-substring-no-properties
-                          (match-end 0)
-                          (line-end-position))
-                 do (forward-line 1))))))
+                 do
+                 (push (buffer-substring-no-properties
+                        (match-end 0)
+                        (line-end-position))
+                       lines)
+                 (forward-line 1)
+                 finally return (nreverse lines))))))
 
 (defun sage-shell:send-doctest ()
   (interactive)
   (sage-shell-edit:set-sage-proc-buf-internal)
   (let ((lines (sage-shell:-doctest-lines)))
-    (cond ((null (cdr lines))
-           (sage-shell-edit:exec-command-base
-            :command (car lines)
-            :insert-command-p t
-            :display-function 'display-buffer
-            :push-to-input-history-p t))
-          (t
-           (let ((lines (append (cons "%cpaste" lines)
-                                (list "--"))))
-             (with-current-buffer sage-shell:process-buffer
-               (setq-local sage-shell:output-finished-regexp
-                           (rx-to-string
-                            `(and line-start
-                                  (or ,sage-shell:output-finished-regexp-rx
-                                      (and ":" line-end))))))
-             (sage-shell:-send-doctest--lines lines))))))
+    (cond
+     ((null lines))
+     ((null (cdr lines))
+      (sage-shell-edit:exec-command-base
+       :command (car lines)
+       :insert-command-p t
+       :display-function 'display-buffer
+       :push-to-input-history-p t))
+     (t
+      (let ((lines (append (cons "%cpaste" lines)
+                           (list "--"))))
+        (with-current-buffer sage-shell:process-buffer
+          (setq-local sage-shell:output-finished-regexp
+                      (rx-to-string
+                       `(and line-start
+                             (or ,sage-shell:output-finished-regexp-rx
+                                 (and ":" line-end))))))
+        (sage-shell:-send-doctest--lines lines))))))
 
 (defun sage-shell:-send-doctest--lines (lines)
   (sage-shell-edit:exec-command-base
