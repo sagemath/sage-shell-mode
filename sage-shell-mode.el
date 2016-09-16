@@ -547,14 +547,16 @@ returned from the function, otherwise, this returns it self. "
                    "(Pdb)" "ipdb>" "(gdb)") " ")))
   "Regular expression matching the Sage prompt.")
 
+(defvar sage-shell:-prompt-regexp-no-eol-rx
+  `(and (or
+         (1+ (and (or "sage:" "sage0:" ">>>" "....:"
+                      "(Pdb)" "ipdb>" "(gdb)") " "))
+         (and (or ,@sage-shell-interfaces:other-interfaces)
+              ": "))))
+
 (defvar sage-shell:-prompt-regexp-no-eol
   (rx-to-string
-   `(and line-start
-         (or
-          (1+ (and (or "sage:" "sage0:" ">>>" "....:"
-                       "(Pdb)" "ipdb>" "(gdb)") " "))
-          (and (or ,@sage-shell-interfaces:other-interfaces)
-               ": ")))))
+   `(and line-start ,sage-shell:-prompt-regexp-no-eol-rx)))
 
 ;; cache buffers
 (defvar sage-shell-indent:indenting-buffer-name " *sage-indent*")
