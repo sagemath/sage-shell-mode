@@ -2694,38 +2694,9 @@ lines beg end"
 
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
-    (let ((comint-input-sender
-           (lambda (proc _str) (comint-simple-send
-                                proc
-                                (if sage-shell:use-prompt-toolkit
-                                    ""
-                                  ""))))
-          (win (get-buffer-window sage-shell:process-buffer)))
-      (let ((line (buffer-substring
-                   (line-beginning-position)
-                   (line-end-position)))
-            (pt (point)))
-        (when sage-shell:use-prompt-toolkit
-          (delete-region (line-beginning-position)
-                         (line-end-position)))
-        (if (and (windowp win)
-                 (window-live-p win))
-            (with-selected-window win
-              (sage-shell:comint-send-input
-               sage-shell:use-prompt-toolkit))
-          (sage-shell:comint-send-input
-           sage-shell:use-prompt-toolkit))
-        (when sage-shell:use-prompt-toolkit
-          (save-excursion
-            (goto-char pt)
-            (insert line))
-          (let ((proc (get-buffer-process (current-buffer))))
-            (when proc
-              (sage-shell:after-output-finished
-                (when (and (windowp win)
-                           (window-live-p win))
-                  (with-selected-window win
-                      (goto-char (process-mark proc))))))))))))
+    (sage-shell-edit:exec-command-base
+     :command ""
+     :insert-command-p t)))
 
 (defun sage-shell:at-top-level-p ()
   (save-excursion
