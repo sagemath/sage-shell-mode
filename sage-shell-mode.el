@@ -4449,7 +4449,12 @@ prompt."
                        `(and line-start
                              (or ,sage-shell:output-finished-regexp-rx
                                  (and ":" line-end))))))
-        (sage-shell:-send--lines-internal lines))))))
+        (sage-shell:-send--lines-internal lines))))
+    (when lines
+      (forward-line (length lines)))
+    (when (re-search-forward (rx line-start (0+ whitespace) "sage: ")
+                             nil t)
+      (forward-char (- (length "sage: "))))))
 
 (defun sage-shell:-send--lines-internal (lines)
   (sage-shell-edit:exec-command-base
