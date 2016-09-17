@@ -1617,6 +1617,7 @@ Match group 1 will be replaced with devel/sage-branch")
   line is regarded as python sentence. If a number, then it
   indicates the index in LINE where comment starts."
   (cond
+   ((string-match-p (rx line-start "Pasting code; enter") line) nil)
    ((not (string-match "'\\|\"" line)) t)
    ((string-match (rx "Error" eow (1+ whitespace) "Traceback") line) t)
    ((string-match (rx "Error" (group ": ")) line) (match-beginning 1))
