@@ -546,14 +546,16 @@ returned from the function, otherwise, this returns it self. "
                    "(Pdb)" "ipdb>" "(gdb)") " ")))
   "Regular expression matching the Sage prompt.")
 
+(defvar sage-shell:-prompt-regexp-no-eol-rx
+  `(and (or
+         (1+ (and (or "sage:" "sage0:" ">>>" "....:"
+                      "(Pdb)" "ipdb>" "(gdb)") " "))
+         (and (or ,@sage-shell-interfaces:other-interfaces)
+              ": "))))
+
 (defvar sage-shell:-prompt-regexp-no-eol
   (rx-to-string
-   `(and line-start
-         (or
-          (1+ (and (or "sage:" "sage0:" ">>>" "....:"
-                       "(Pdb)" "ipdb>" "(gdb)") " "))
-          (and (or ,@sage-shell-interfaces:other-interfaces)
-               ": ")))))
+   `(and line-start ,sage-shell:-prompt-regexp-no-eol-rx)))
 
 ;; cache buffers
 (defvar sage-shell-indent:indenting-buffer-name " *sage-indent*")
@@ -1614,6 +1616,7 @@ Match group 1 will be replaced with devel/sage-branch")
   line is regarded as python sentence. If a number, then it
   indicates the index in LINE where comment starts."
   (cond
+   ((string-match-p (rx line-start "Pasting code; enter") line) nil)
    ((not (string-match "'\\|\"" line)) t)
    ((string-match (rx "Error" eow (1+ whitespace) "Traceback") line) t)
    ((string-match (rx "Error" (group ": ")) line) (match-beginning 1))
@@ -1936,7 +1939,8 @@ the point to end of the buffer"
       (goto-char pt)
       (delete-region pt (line-end-position))
       (while (progn (forward-line 1)
-                    (not (eobp)))
+                    (and (sage-shell:-at-output-p (point))
+                         (not (eobp))))
         (delete-region (line-beginning-position) (line-end-position))))))
 
 (defun sage-shell:-delete-to-end-of-line (&optional pt)
@@ -2484,26 +2488,39 @@ this hook after inserting string.")
                 (line-beginning-position)
                 (line-end-position)))))))
 
-(defun sage-shell:-current-line (&optional pos)
-  "Return the command line at POS in the Sage shell."
+(defun sage-shell:-current-line (proc-mark &optional pos)
+  "Return the command line at POS in the Sage shell.
+In case of multiple lines, it returns a list of
+lines beg end"
   (save-excursion
     (when pos
       (goto-char pos))
-    (beginning-of-line)
-    (cond ((or
-            ;; The last line in the buffer
-            (save-excursion (end-of-line) (eobp))
-            ;; readline
-            (null sage-shell:use-prompt-toolkit)
-            ;; multiple-input
-            (looking-at-p (rx (0+ nonl) ":" (0+ whitespace) eol)))
-           (sage-shell:-current-line1))
-          (t (let ((line (sage-shell:-current-line1)))
-               (forward-line 1)
-               (while (looking-at-p sage-shell:prompt2-regexp)
-                 (setq line (concat line (sage-shell:-current-line1)))
-                 (forward-line 1))
-               line)))))
+    (let ((line nil))
+      (cond
+       ;; Multiple lines
+       ((and (<= proc-mark (point))
+             (progn (setq line (buffer-substring-no-properties
+                                proc-mark
+                                (line-end-position)))
+                    (string-match-p (rx "\n") line)))
+        (list (split-string line "\n")
+              proc-mark (line-end-position)))
+       ((progn
+          (beginning-of-line)
+          (or
+           ;; The last line in the buffer
+           (save-excursion (end-of-line) (eobp))
+           ;; readline
+           (null sage-shell:use-prompt-toolkit)
+           ;; multiple-input
+           (looking-at-p (rx (0+ nonl) ":" (0+ whitespace) eol))))
+        (sage-shell:-current-line1))
+       (t (let ((line (sage-shell:-current-line1)))
+            (forward-line 1)
+            (while (looking-at-p sage-shell:prompt2-regexp)
+              (setq line (concat line (sage-shell:-current-line1)))
+              (forward-line 1))
+            line))))))
 
 (defun sage-shell:-ring-push-if-new (ring item)
   (unless (or (ring-empty-p ring)
@@ -2518,118 +2535,131 @@ this hook after inserting string.")
 ;; * (comint-send-input)
 ;; * change default-directory
 
+(defsubst sage-shell:-cpaste-lines (lines)
+  (append (cons "%cpaste" lines) (list "--")))
+
 (defun sage-shell:send-input ()
   "Send current line to Sage process. "
   (interactive)
-  (when (process-live-p (get-buffer-process (current-buffer)))
-    (let ((line (sage-shell:-current-line))
-          (inhibit-read-only t)
-          (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
+  (let ((process (get-buffer-process (current-buffer))))
+    (when (process-live-p process)
+      (let ((line (sage-shell:-current-line (process-mark process)))
+            (inhibit-read-only t))
+        (cond ((listp line)
+               (let ((lines (car line)))
+                 (delete-region (cadr line) (caddr line))
+                 (sage-shell:-send--lines-internal
+                  (sage-shell:-cpaste-lines lines))))
+              (t (sage-shell:-send-input-one-line line)
+                 (sage-shell:-clear-cache-in-send-input)))))))
 
-      ;; If we're currently completing, stop.  We're definitely done
-      ;; completing, and by sending the input, we might cause side effects
-      ;; that will confuse the code running in the completion
-      ;; post-command-hook.
-      (when (and (fboundp 'completion-in-region-mode)
-                 (boundp 'completion-in-region-mode)
-                 completion-in-region-mode)
-        (completion-in-region-mode -1))
+(defun sage-shell:-send-input-one-line (line)
+  (let ((inhibit-read-only t)
+        (at-tl-in-sage-p (sage-shell:at-top-level-and-in-sage-p)))
 
-      ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
-      ;; then update the command list.
-      (sage-shell:awhen (sage-shell-cpl:switch-to-another-interface-p line)
-        (unless (sage-shell-cpl:get-cmd-lst it)
-          (sage-shell-interfaces:update-cmd-lst it)))
+    ;; If we're currently completing, stop.  We're definitely done
+    ;; completing, and by sending the input, we might cause side effects
+    ;; that will confuse the code running in the completion
+    ;; post-command-hook.
+    (when (and (fboundp 'completion-in-region-mode)
+               (boundp 'completion-in-region-mode)
+               completion-in-region-mode)
+      (completion-in-region-mode -1))
 
-      (sage-shell:prepare-for-send)
-      ;; Since comint-send-input sets comint-input-ring-index to nil,
-      ;; restore its value
-      (setq sage-shell:input-ring-index comint-input-ring-index)
+    ;; If current line contains %gap, gap.console(), gap.interact(), %gp, ...
+    ;; then update the command list.
+    (sage-shell:awhen (sage-shell-cpl:switch-to-another-interface-p line)
+      (unless (sage-shell-cpl:get-cmd-lst it)
+        (sage-shell-interfaces:update-cmd-lst it)))
 
-      ;; if current line is ***? and current interface is sage then
-      ;; show help or find-file-read-only source file.
-      (cond
-       ((and at-tl-in-sage-p
-             (string-match
-              (rx (or (and bol (group (1+ nonl)) "??" (0+ blank) eol)
-                      (and bol (0+ blank) "??" (group (1+ nonl)) eol)))
-              line))
-        (sage-shell:-ring-push-if-new comint-input-ring line)
-        (sage-shell:find-source-in-view-mode
-         (or (match-string-no-properties 1 line)
-             (match-string-no-properties 2 line)))
-        (sage-shell:send-blank-line))
-       ((and at-tl-in-sage-p
-             (string-match
-              (rx (or (and bol (group (1+ nonl)) "?" (0+ blank) eol)
-                      (and bol (0+ blank) "?" (group (1+ nonl)) eol)))
-              line))
-        (sage-shell:-ring-push-if-new comint-input-ring line)
-        (sage-shell-help:describe-symbol
-         (or (match-string-no-properties 1 line)
-             (match-string-no-properties 2 line)))
-        (sage-shell:send-blank-line))
-       ((and at-tl-in-sage-p
-             (string-match (rx bol (zero-or-more blank)
-                               "help"
-                               (zero-or-more blank)
-                               "("
-                               (group (1+ nonl))
-                               (zero-or-more blank) ")"
-                               (zero-or-more blank)
-                               eol) line))
-        (sage-shell:-ring-push-if-new comint-input-ring line)
-        (sage-shell-help:describe-symbol
-         (match-string-no-properties 1 line) "help(%s)")
-        (sage-shell:send-blank-line))
+    (sage-shell:prepare-for-send)
+    ;; Since comint-send-input sets comint-input-ring-index to nil,
+    ;; restore its value
+    (setq sage-shell:input-ring-index comint-input-ring-index)
 
-       ;; send current line to process normally
-       (t
-        ;; FIXME: Run sage-shell:send-line-to-indenting-buffer-and-indent
-        ;; if sage-shell:use-prompt-toolkit is non-nil.
-        ;; To do it, disable auto-indent.
-        (unless sage-shell:use-prompt-toolkit
-          (sage-shell:send-line-to-indenting-buffer-and-indent line))
-        (cond (sage-shell:use-prompt-toolkit
-               (let* ((proc (get-buffer-process sage-shell:process-buffer))
-                      (proc-pos (marker-position (process-mark proc)))
-                      (line-end (progn (goto-char proc-pos)
-                                       (line-end-position))))
-                 (add-hook 'sage-shell:-pre-output-filter-hook
-                           (lambda () (let ((inhibit-redisplay t))
-                                        (delete-region proc-pos line-end))))
-                 (let ((comint-input-sender
-                        (lambda (proc _str) (process-send-string proc line))))
-                   (sage-shell:comint-send-input t)
-                   (process-send-string proc ""))))
-              (t (sage-shell:comint-send-input)))))
+    (cond
+     ;; if current line is ***? and current interface is sage then
+     ;; show help or find-file-read-only source file.
+     ((and at-tl-in-sage-p
+           (string-match
+            (rx (or (and bol (group (1+ nonl)) "??" (0+ blank) eol)
+                    (and bol (0+ blank) "??" (group (1+ nonl)) eol)))
+            line))
+      (sage-shell:-ring-push-if-new comint-input-ring line)
+      (sage-shell:find-source-in-view-mode
+       (or (match-string-no-properties 1 line)
+           (match-string-no-properties 2 line)))
+      (sage-shell:send-blank-line))
+     ((and at-tl-in-sage-p
+           (string-match
+            (rx (or (and bol (group (1+ nonl)) "?" (0+ blank) eol)
+                    (and bol (0+ blank) "?" (group (1+ nonl)) eol)))
+            line))
+      (sage-shell:-ring-push-if-new comint-input-ring line)
+      (sage-shell-help:describe-symbol
+       (or (match-string-no-properties 1 line)
+           (match-string-no-properties 2 line)))
+      (sage-shell:send-blank-line))
+     ((and at-tl-in-sage-p
+           (string-match (rx bol (zero-or-more blank)
+                             "help"
+                             (zero-or-more blank)
+                             "("
+                             (group (1+ nonl))
+                             (zero-or-more blank) ")"
+                             (zero-or-more blank)
+                             eol) line))
+      (sage-shell:-ring-push-if-new comint-input-ring line)
+      (sage-shell-help:describe-symbol
+       (match-string-no-properties 1 line) "help(%s)")
+      (sage-shell:send-blank-line))
 
-      ;; If current line contains from ... import *, then update sage commands
-      (when (sage-shell-update-sage-commands-p line)
-        (sage-shell:update-sage-commands))
-      (when at-tl-in-sage-p
-        ;; change default-directory if needed
-        (cond ((and
-                (string-match (rx bol (zero-or-more blank)
-                                  (zero-or-one "%")
-                                  "cd" (zero-or-more blank)
-                                  (group (one-or-more (regexp "[^\n \t]"))))
-                              line)
-                (file-exists-p (match-string 1 line)))
-               (ignore-errors
-                 (cd (match-string 1 line))))
-              ((string-match (rx bol (zero-or-more blank)
-                                 (zero-or-one "%")
-                                 "cd" (zero-or-more blank)
-                                 eol)
-                             line)
-               (cd "~")))
+     ;; send current line to process normally
+     (t
+      ;; FIXME: Run sage-shell:send-line-to-indenting-buffer-and-indent
+      ;; if sage-shell:use-prompt-toolkit is non-nil.
+      ;; To do it, disable auto-indent.
+      (unless sage-shell:use-prompt-toolkit
+        (sage-shell:send-line-to-indenting-buffer-and-indent line))
+      (cond (sage-shell:use-prompt-toolkit
+             (let* ((proc (get-buffer-process sage-shell:process-buffer))
+                    (proc-pos (marker-position (process-mark proc)))
+                    (line-end (progn (goto-char proc-pos)
+                                     (line-end-position))))
+               (add-hook 'sage-shell:-pre-output-filter-hook
+                         (lambda () (let ((inhibit-redisplay t))
+                                  (delete-region proc-pos line-end))))
+               (let ((comint-input-sender
+                      (lambda (proc _str) (process-send-string proc line))))
+                 (sage-shell:comint-send-input t)
+                 (process-send-string proc ""))))
+            (t (sage-shell:comint-send-input)))))
 
-        (sage-shell-cpl:-add-to-cands-in-cur-session line)
-        (when (string-match sage-shell:clear-commands-regexp line)
-          (add-hook 'sage-shell:output-filter-finished-hook
-                    #'sage-shell:clear-current-buffer))))
-    (sage-shell:-clear-cache-in-send-input)))
+    ;; If current line contains from ... import *, then update sage commands
+    (when (sage-shell-update-sage-commands-p line)
+      (sage-shell:update-sage-commands))
+    (when at-tl-in-sage-p
+      ;; change default-directory if needed
+      (cond ((and
+              (string-match (rx bol (zero-or-more blank)
+                                (zero-or-one "%")
+                                "cd" (zero-or-more blank)
+                                (group (one-or-more (regexp "[^\n \t]"))))
+                            line)
+              (file-exists-p (match-string 1 line)))
+             (ignore-errors
+               (cd (match-string 1 line))))
+            ((string-match (rx bol (zero-or-more blank)
+                               (zero-or-one "%")
+                               "cd" (zero-or-more blank)
+                               eol)
+                           line)
+             (cd "~")))
+
+      (sage-shell-cpl:-add-to-cands-in-cur-session line)
+      (when (string-match sage-shell:clear-commands-regexp line)
+        (add-hook 'sage-shell:output-filter-finished-hook
+                  #'sage-shell:clear-current-buffer)))))
 
 (defun sage-shell:-clear-cache-in-send-input ()
   (sage-shell:-inputs-outputs-clear-cache)
@@ -4415,6 +4445,73 @@ inserted in the process buffer before executing the command."
                                      :display-function 'display-buffer
                                      :push-to-input-history-p t))
 
+(defun sage-shell:-doctest-lines ()
+  "If the current line start with a sage: prompt, return lines for doctest."
+  (save-excursion
+    (beginning-of-line)
+    (skip-chars-forward " 	")
+    (when (looking-at (rx (1+ "sage: ")))
+      (let* ((inhibit-field-text-motion t)
+             (lines (list (buffer-substring-no-properties
+                           (match-end 0)
+                           (line-end-position))))
+             (regexp (rx line-start (0+ whitespace) "....: ")))
+        (forward-line 1)
+        (cl-loop while (and
+                        (not (eobp))
+                        (progn
+                          (beginning-of-line)
+                          (looking-at regexp)))
+                 do
+                 (push (buffer-substring-no-properties
+                        (match-end 0)
+                        (line-end-position))
+                       lines)
+                 (forward-line 1)
+                 finally return (nreverse lines))))))
+
+(defun sage-shell:send-doctest ()
+  (interactive)
+  "If the current line start with a Sage prompt 'sage: ' then, this function
+evaluates the code block at the current line and moves cursor to the next
+prompt."
+  (sage-shell-edit:set-sage-proc-buf-internal)
+  (let ((lines (sage-shell:-doctest-lines)))
+    (cond
+     ((null lines))
+     ((null (cdr lines))
+      (sage-shell-edit:exec-command-base
+       :command (car lines)
+       :insert-command-p t
+       :display-function 'display-buffer
+       :push-to-input-history-p t))
+     (t
+      (let ((lines (sage-shell:-cpaste-lines lines)))
+        (sage-shell:-send--lines-internal lines))))
+    (when lines
+      (forward-line (length lines)))
+    (when (re-search-forward (rx line-start (0+ whitespace) "sage: ")
+                             nil t)
+      (forward-char (- (length "sage: "))))))
+
+(defun sage-shell:-send--lines-internal (lines)
+  (with-current-buffer sage-shell:process-buffer
+    (setq-local sage-shell:output-finished-regexp
+                (rx-to-string
+                 `(and line-start
+                       (or ,sage-shell:output-finished-regexp-rx
+                           (and ":" line-end))))))
+  (sage-shell-edit:exec-command-base
+   :command (car lines)
+   :insert-command-p t
+   :display-function 'display-buffer
+   :push-to-input-history-p t)
+  (setq lines (cdr lines))
+  (cond (lines (sage-shell:after-output-finished
+                 (sage-shell:-send--lines-internal lines)))
+        (t (with-current-buffer sage-shell:process-buffer
+             (setq sage-shell:output-finished-regexp
+                   (default-value 'sage-shell:output-finished-regexp))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p

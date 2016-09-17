@@ -306,8 +306,8 @@ foo=bar(1, 2), baz=(1, 2")))
     (sage-shell:-delete-display nil)
     (should (string= (buffer-string)
                      "abcABCDEFGHIJK
-
-")))
+123456789:;
+aaaaa")))
   (with-temp-buffer
     (sage-shell-test:-insert-test-str1)
     (goto-char 4)
@@ -319,9 +319,10 @@ aaaaa")))
     (sage-shell-test:-insert-test-str1)
     (goto-char 4)
     (sage-shell:-delete-display nil 2)
-    (should (string= (buffer-string) "ABCDEFGHIJK
-
-"))))
+    (should (string= (buffer-string)
+                     "ABCDEFGHIJK
+123456789:;
+aaaaa"))))
 
 (ert-deftest sage-shell:delete-line-test ()
   (with-temp-buffer
@@ -494,11 +495,11 @@ aaaaaabc
       (sage-shell:-insert-str "....: ")
       (insert "    pass\n")
       (goto-char (point-min))
-      (should (string= (sage-shell:-current-line) "foo"))
+      (should (string= (sage-shell:-current-line 7) "foo"))
       (forward-line 1)
-      (should (string= (sage-shell:-current-line) "def foo():"))
+      (should (string= (sage-shell:-current-line 17) "def foo():"))
       (forward-line 1)
-      (should (string= (sage-shell:-current-line) "    pass"))))
+      (should (string= (sage-shell:-current-line 34) "    pass"))))
   (let ((sage-shell:use-prompt-toolkit t))
     (with-temp-buffer
       (sage-shell:-insert-str "sage: foo\n")
@@ -508,15 +509,15 @@ aaaaaabc
       (insert "def fooo():")
 
       (goto-char (point-min))
-      (should (string= (sage-shell:-current-line) "foo"))
+      (should (string= (sage-shell:-current-line 7) "foo"))
       (forward-line 1)
-      (should (string= (sage-shell:-current-line) "1234343412343434"))
+      (should (string= (sage-shell:-current-line 17) "1234343412343434"))
       (forward-line 2)
-      (should (string= (sage-shell:-current-line) "def fooo():"))
+      (should (string= (sage-shell:-current-line 47) "def fooo():"))
 
       (goto-char (point-max))
       (insert "\n")
       (sage-shell:-insert-str "....:     ")
       (insert "pass")
 
-      (should (string= (sage-shell:-current-line) "pass")))))
+      (should (string= (sage-shell:-current-line 69) "pass")))))
