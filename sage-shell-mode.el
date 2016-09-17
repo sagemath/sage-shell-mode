@@ -1940,7 +1940,8 @@ the point to end of the buffer"
       (goto-char pt)
       (delete-region pt (line-end-position))
       (while (progn (forward-line 1)
-                    (not (eobp)))
+                    (and (sage-shell:-at-output-p (point))
+                         (not (eobp))))
         (delete-region (line-beginning-position) (line-end-position))))))
 
 (defun sage-shell:-delete-to-end-of-line (&optional pt)
