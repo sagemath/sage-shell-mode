@@ -2109,19 +2109,7 @@ return string for output."
         ;; create links in the output buffer.
         (when sage-shell:make-error-link-p
           (sage-shell:make-error-links comint-last-input-end (point)))
-        (sage-shell-pdb:comint-output-filter-function)
-
-        ;; Delete whitespaces from the end of line to point-max
-        (when sage-shell:use-prompt-toolkit
-          (save-excursion
-            (goto-char (process-mark process))
-            (let ((inhibit-field-text-motion t))
-              (end-of-line))
-            (let ((str (buffer-substring-no-properties
-                        (point)
-                        (point-max))))
-              (when (string= (sage-shell:trim-left str) "")
-                (delete-region (point) (point-max)))))))
+        (sage-shell-pdb:comint-output-filter-function))
 
       ;; sage-shell:output-filter-finished-hook may change the current buffer.
       (with-current-buffer (process-buffer process)
