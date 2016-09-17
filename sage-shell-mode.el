@@ -4446,9 +4446,9 @@ inserted in the process buffer before executing the command."
                        `(and line-start
                              (or ,sage-shell:output-finished-regexp-rx
                                  (and ":" line-end))))))
-        (sage-shell:-send-doctest--lines lines))))))
+        (sage-shell:-send--lines-internal lines))))))
 
-(defun sage-shell:-send-doctest--lines (lines)
+(defun sage-shell:-send--lines-internal (lines)
   (sage-shell-edit:exec-command-base
    :command (car lines)
    :insert-command-p t
@@ -4456,7 +4456,7 @@ inserted in the process buffer before executing the command."
    :push-to-input-history-p t)
   (setq lines (cdr lines))
   (cond (lines (sage-shell:after-output-finished
-                 (sage-shell:-send-doctest--lines lines)))
+                 (sage-shell:-send--lines-internal lines)))
         (t (with-current-buffer sage-shell:process-buffer
              (setq sage-shell:output-finished-regexp
                    (default-value 'sage-shell:output-finished-regexp))))))
