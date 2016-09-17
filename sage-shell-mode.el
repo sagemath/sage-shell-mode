@@ -1925,11 +1925,13 @@ Return value is not deifned."
                       (line-number-at-pos))))
     (1+ (- (line-number-at-pos) start-line))))
 
-(defun sage-shell:-report-cursor-pos (proc &rest _args)
-  (process-send-string proc
-                       (format "\e[%s;%sR"
-                               (sage-shell:-current-row)
-                               (sage-shell:-current-column))))
+(defun sage-shell:-report-cursor-pos (proc &rest args)
+  (let ((arg (car args)))
+    (cond ((equal arg 6)
+           (process-send-string proc
+                                (format "\e[%s;%sR"
+                                        (sage-shell:-current-row)
+                                        (sage-shell:-current-column)))))))
 
 (defun sage-shell:-delete-to-end-of-output (&optional pt)
   "Assuming current point is at output, delete output text from
