@@ -1790,9 +1790,10 @@ Match group 1 will be replaced with devel/sage-branch")
            (regexp "[Rmhl]"))))
 
 (defun sage-shell:-ansi-escape-filter-out (str)
-  (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
-                            ""
-                            str nil t))
+  (let ((case-fold-search nil))
+    (replace-regexp-in-string sage-shell:-ansi-escape-drop-regexp
+                              ""
+                              str nil t)))
 
 (defun sage-shell:-insert-str (str)
   (let ((str (propertize str 'field 'output)))
