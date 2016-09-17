@@ -723,6 +723,7 @@ to a process buffer.")
 (defun sage-shell:interrupt-subjob ()
   "Interrupt the current subjob."
   (interactive)
+  (sage-shell:prepare-for-send)
   (if sage-shell:use-prompt-toolkit
       (progn
         (let* ((bol (line-beginning-position))
@@ -731,7 +732,7 @@ to a process buffer.")
                (proc (get-buffer-process (current-buffer))))
           (add-hook 'sage-shell:-pre-output-filter-hook
                     (lambda () (let ((inhibit-redisplay t))
-                                 (delete-region bol eol))))
+                             (delete-region bol eol))))
           (process-send-string proc (concat line ""))
           ;; Delete whitespaces
           (add-hook 'sage-shell:-post-output-filter-hook
@@ -2019,11 +2020,12 @@ return string for output."
     (let ((oprocbuf (process-buffer process)))
       (sage-shell:with-current-buffer-safe (and string oprocbuf)
         (let ((win (get-buffer-window (process-buffer process))))
-          (save-selected-window
-            (when (and (windowp win) (window-live-p win))
-              (select-window win))
-            (setq string (sage-shell:-psh-to-pending-out string))
-            (sage-shell:output-filter-no-rdct process string))
+          (unless sage-shell:output-finished-p
+            (save-selected-window
+              (when (and (windowp win) (window-live-p win))
+                (select-window win))
+              (setq string (sage-shell:-psh-to-pending-out string))
+              (sage-shell:output-filter-no-rdct process string)))
           (when sage-shell:output-finished-p
             (when sage-shell:scroll-to-the-bottom
               (comint-postoutput-scroll-to-bottom string))
@@ -2158,6 +2160,7 @@ return string for output."
     (sage-shell:clear-completion-sync-cached)
     ;; Output message and put back prompt
     (let ((sage-shell:output-filter-finished-hook nil))
+      (sage-shell:prepare-for-send)
       (sage-shell:output-filter proc replacement))))
 
 (defun sage-shell:clear-current-buffer ()
@@ -2424,6 +2427,7 @@ sage-shell:-prompt-regexp-no-eol."
   "This function is almost same as `comint-send-input'. But this
 function does not highlight the input."
   (interactive)
+  (sage-shell:prepare-for-send)
   (comint-send-input no-newline artificial)
   (add-text-properties comint-last-input-start
                        comint-last-input-end
@@ -2572,7 +2576,6 @@ lines beg end"
       (unless (sage-shell-cpl:get-cmd-lst it)
         (sage-shell-interfaces:update-cmd-lst it)))
 
-    (sage-shell:prepare-for-send)
     ;; Since comint-send-input sets comint-input-ring-index to nil,
     ;; restore its value
     (setq sage-shell:input-ring-index comint-input-ring-index)
