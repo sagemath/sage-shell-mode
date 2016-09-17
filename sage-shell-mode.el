@@ -4427,6 +4427,9 @@ inserted in the process buffer before executing the command."
 
 (defun sage-shell:send-doctest ()
   (interactive)
+  "If the current line start with a Sage prompt 'sage: ' then, this function
+evaluates the code block at the current line and moves cursor to the next
+prompt."
   (sage-shell-edit:set-sage-proc-buf-internal)
   (let ((lines (sage-shell:-doctest-lines)))
     (cond
