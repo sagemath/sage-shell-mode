@@ -2117,7 +2117,10 @@ return string for output."
         (when (and sage-shell:output-finished-p
                    (null sage-shell:use-prompt-toolkit))
           (sage-shell-indent:insert-whitespace)))
-      (goto-char saved-point))))
+      (cond ((and sage-shell:use-prompt-toolkit
+                  sage-shell:output-finished-p)
+             (goto-char (process-mark process)))
+            (t (goto-char saved-point))))))
 
 (defun sage-shell:highlight-prompt1 (prompt-start prompt-end)
   (let ((inhibit-read-only t)
