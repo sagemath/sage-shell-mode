@@ -1927,7 +1927,11 @@ Return value is not deifned."
 
 (defun sage-shell:-report-cursor-pos (proc &rest args)
   (let ((arg (car args)))
-    (cond ((equal arg 6)
+    (cond ((and (equal arg 6)
+                ;; Don't send cursor position inside %cpaste.
+                (save-excursion
+                  (goto-char (sage-shell:line-beginning-position))
+                  (looking-at-p sage-shell:-prompt-regexp-no-eol)))
            (process-send-string proc
                                 (format "\e[%s;%sR"
                                         (sage-shell:-current-row)
