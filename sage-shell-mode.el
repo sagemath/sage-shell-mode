@@ -1933,17 +1933,23 @@ Return value is not deifned."
                       (line-number-at-pos))))
     (1+ (- (line-number-at-pos) start-line))))
 
+(defun sage-shell:-inside-cpaste-p ()
+  (save-excursion
+    (forward-line -1)
+    (looking-at-p (rx (or (and line-start ":")
+                          (and line-start "Pasting code; enter"))))))
+
 (defun sage-shell:-report-cursor-pos (proc &rest args)
   (let ((arg (car args)))
     (cond ((and (equal arg 6)
-                ;; Don't send cursor position inside %cpaste.
-                (save-excursion
-                  (goto-char (sage-shell:line-beginning-position))
-                  (looking-at-p sage-shell:-prompt-regexp-no-eol)))
-           (process-send-string proc
-                                (format "\e[%s;%sR"
-                                        (sage-shell:-current-row)
-                                        (sage-shell:-current-column)))))))
+                (not (sage-shell:-inside-cpaste-p)))
+           (let ((row (cond ((= (line-end-position) (point-max))
+                             (process-get proc 'sage-shell:win-height))
+                            (t (sage-shell:-current-row)))))
+             (process-send-string proc
+                                  (format "\e[%s;%sR"
+                                          row
+                                          (sage-shell:-current-column))))))))
 
 (defun sage-shell:-delete-to-end-of-output (&optional pt)
   "Assuming current point is at output, delete output text from
