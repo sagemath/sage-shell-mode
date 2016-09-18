@@ -4492,8 +4492,8 @@ prompt."
   (cond (lines (sage-shell:after-output-finished
                  (sage-shell:-send--lines-internal lines)))
         (t (with-current-buffer sage-shell:process-buffer
-             (setq sage-shell:output-finished-regexp
-                   (default-value 'sage-shell:output-finished-regexp))))))
+             (setq-local sage-shell:output-finished-regexp
+                         (default-value 'sage-shell:output-finished-regexp))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
