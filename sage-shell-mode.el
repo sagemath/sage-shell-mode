@@ -1941,15 +1941,16 @@ Return value is not deifned."
 
 (defun sage-shell:-report-cursor-pos (proc &rest args)
   (let ((arg (car args)))
-    (cond ((and (equal arg 6)
-                (not (sage-shell:-inside-cpaste-p)))
-           (let ((row (cond ((= (line-end-position) (point-max))
-                             (process-get proc 'sage-shell:win-height))
-                            (t (sage-shell:-current-row)))))
-             (process-send-string proc
-                                  (format "\e[%s;%sR"
-                                          row
-                                          (sage-shell:-current-column))))))))
+    (cond ((equal arg 6)
+           (sage-shell:after-output-finished
+             (unless (sage-shell:-inside-cpaste-p)
+               (let ((row (cond ((= (line-end-position) (point-max))
+                                 (process-get proc 'sage-shell:win-height))
+                                (t (sage-shell:-current-row)))))
+                 (process-send-string proc
+                                      (format "\e[%s;%sR"
+                                              row
+                                              (sage-shell:-current-column))))))))))
 
 (defun sage-shell:-delete-to-end-of-output (&optional pt)
   "Assuming current point is at output, delete output text from
