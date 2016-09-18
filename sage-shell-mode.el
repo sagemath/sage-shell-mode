@@ -1064,7 +1064,10 @@ When sync is nill this return a lambda function to get the result."
 if [ $1 = .. ]; then shift; fi; exec \"$@\""
                    sage-shell:term-name (cdr win-size) (car win-size))
            ".."
-           (car cmdlist) (cdr cmdlist))))
+           (car cmdlist) (cdr cmdlist))
+    (let ((proc (get-buffer-process buffer)))
+      (process-put proc 'sage-shell:win-height (cdr win-size))
+      (process-put proc 'sage-shell:win-width (car win-size)))))
 
 (defun sage-shell:-start-sage-process-readline (cmd buffer)
   (let ((cmdlist (split-string cmd)))
@@ -1716,10 +1719,15 @@ Match group 1 will be replaced with devel/sage-branch")
   (let ((buf (window-buffer win)))
     (with-current-buffer buf
       (when (and proc (process-live-p proc)
-                 (eq major-mode 'sage-shell-mode))
-        (let ((sizes (sage-shell:-proc-window-size proc win)))
-          (when sizes
-            (set-process-window-size proc  (cdr sizes) (car sizes))))))))
+                 (eq major-mode 'sage-shell-mode)
+                 (sage-shell:redirect-and-output-finished-p))
+        (let ((sizes (sage-shell:-proc-window-size proc win))
+              (height (process-get proc 'sage-shell:win-height))
+              (width (process-get proc 'sage-shell:win-width)))
+          (when (and sizes (not (equal sizes (cons width height))))
+            (set-process-window-size proc (cdr sizes) (car sizes))
+            (process-put proc 'sage-shell:win-height (cdr sizes))
+            (process-put proc 'sage-shell:win-width (car sizes))))))))
 
 (defun sage-shell:-adjust-window-size ()
   (walk-windows
