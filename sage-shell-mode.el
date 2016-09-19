@@ -1637,7 +1637,6 @@ Match group 1 will be replaced with devel/sage-branch")
                  (goto-char comint-last-output-start)
                  while (not (eobp))
                  do
-                 (forward-line 1)
                  (unless (save-excursion
                            (forward-line 0)
                            (looking-at sage-shell:-prompt-regexp-no-eol))
@@ -1647,13 +1646,14 @@ Match group 1 will be replaced with devel/sage-branch")
                      (cond ((not p)
                             (put-text-property
                              (line-beginning-position)
-                             (line-end-position)
+                             (1+ (line-beginning-position))
                              'syntax-table (cons 11 nil)))
                            ((numberp p)
                             (setq p (+ p (line-beginning-position)))
                             (put-text-property
-                             p (line-end-position) 'syntax-table
-                             (cons 11 nil)))))))))))
+                             p (1+ p) 'syntax-table
+                             (cons 11 nil))))))
+                 (forward-line 1))))))
 
 (defmacro sage-shell:after-output-finished (&rest body)
   (declare (indent 0))
