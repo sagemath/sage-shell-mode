@@ -1635,25 +1635,25 @@ Match group 1 will be replaced with devel/sage-branch")
       (when comint-last-output-start
         (cl-loop initially
                  (goto-char comint-last-output-start)
-                 while
-                 (and (re-search-forward "^." nil t)
-                      (not (save-excursion
-                             (forward-line 0)
-                             (looking-at sage-shell:-prompt-regexp-no-eol))))
+                 while (not (eobp))
                  do
-                 (let ((p (sage-shell:python-syntax-output-p
-                           (buffer-substring (line-beginning-position)
-                                             (line-end-position)))))
-                   (cond ((not p)
-                          (put-text-property
-                           (line-beginning-position)
-                           (line-end-position)
-                           'syntax-table (cons 11 nil)))
-                         ((numberp p)
-                          (setq p (+ p (line-beginning-position)))
-                          (put-text-property
-                           p (line-end-position) 'syntax-table
-                           (cons 11 nil))))))))))
+                 (forward-line 1)
+                 (unless (save-excursion
+                           (forward-line 0)
+                           (looking-at sage-shell:-prompt-regexp-no-eol))
+                   (let ((p (sage-shell:python-syntax-output-p
+                             (buffer-substring (line-beginning-position)
+                                               (line-end-position)))))
+                     (cond ((not p)
+                            (put-text-property
+                             (line-beginning-position)
+                             (line-end-position)
+                             'syntax-table (cons 11 nil)))
+                           ((numberp p)
+                            (setq p (+ p (line-beginning-position)))
+                            (put-text-property
+                             p (line-end-position) 'syntax-table
+                             (cons 11 nil)))))))))))
 
 (defmacro sage-shell:after-output-finished (&rest body)
   (declare (indent 0))
