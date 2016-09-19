@@ -46,9 +46,6 @@
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
 ;; 2. Add support for simple prompt.
 ;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
-;; Should sage-shell:-adjust-window-size be added to
-;; window-configuration-change-hook?
-
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
@@ -1182,7 +1179,9 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
           (sage-shell-mode))))
     ;; Tell the process the window size for Ipython5's newprompt
     (when sage-shell:use-prompt-toolkit
-      (sage-shell:-adjust-window-size))
+      (sage-shell:-adjust-window-size)
+      (add-hook 'window-configuration-change-hook
+                #'sage-shell:-adjust-window-size nil t))
     buf))
 
 ;;;###autoload
