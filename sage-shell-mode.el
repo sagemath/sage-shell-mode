@@ -44,6 +44,7 @@
 ;;; Code:
 ;; TODO
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
+;; 1. Fix sage-shell-edit:exec-command-base when the line is not empty.
 ;; 2. Add support for simple prompt.
 ;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 
@@ -2727,9 +2728,21 @@ lines beg end"
 
 (defun sage-shell:send-blank-line ()
   (with-current-buffer sage-shell:process-buffer
-    (sage-shell-edit:exec-command-base
-     :command ""
-     :insert-command-p t)))
+    (if sage-shell:use-prompt-toolkit
+        (sage-shell-edit:exec-command-base
+         :command ""
+         :insert-command-p t)
+      (sage-shell:send-blank-line-readline))))
+
+(defun sage-shell:send-blank-line-readline ()
+  (with-current-buffer sage-shell:process-buffer
+    (let ((comint-input-sender
+           (lambda (proc _str) (comint-simple-send proc "")))
+          (win (get-buffer-window sage-shell:process-buffer)))
+      (if (and (windowp win) (window-live-p win))
+          (with-selected-window win
+            (sage-shell:comint-send-input))
+        (sage-shell:comint-send-input)))))
 
 (defun sage-shell:at-top-level-p ()
   (save-excursion
