@@ -4505,13 +4505,15 @@ prompt."
    :command (car lines)
    :insert-command-p t
    :display-function 'display-buffer
-   :push-to-input-history-p t)
-  (setq lines (cdr lines))
-  (cond (lines (sage-shell:after-output-finished
-                 (sage-shell:-send--lines-internal lines)))
-        (t (with-current-buffer sage-shell:process-buffer
-             (setq-local sage-shell:output-finished-regexp
-                         (default-value 'sage-shell:output-finished-regexp))))))
+   :push-to-input-history-p t
+   :callback
+   (lambda ()
+     (cond ((cdr lines)
+            (sage-shell:-send--lines-internal (cdr lines)))
+           (t (with-current-buffer sage-shell:process-buffer
+                (setq-local sage-shell:output-finished-regexp
+                            (default-value
+                              'sage-shell:output-finished-regexp))))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
