@@ -920,6 +920,12 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
     (with-current-buffer out-buf
       (erase-buffer))
 
+    (when (functionp callback)
+      (sage-shell:push-to-redirect-finished-filter
+       (let ((raw-output
+              (sage-shell:-redirect-get-buffer-string out-buf)))
+         (funcall callback raw-output))))
+
     (with-current-buffer proc-buf
       (sage-shell:redirect-setup out-buf proc-buf raw)
       (process-send-string
@@ -927,12 +933,6 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
       (when sync
         (sage-shell:wait-for-redirection-to-complete)))
 
-
-    (when (functionp callback)
-      (sage-shell:after-redirect-finished
-        (let ((raw-output
-               (sage-shell:-redirect-get-buffer-string out-buf)))
-          (funcall callback raw-output))))
     (when to-string
       (sage-shell:-redirect-get-buffer-string out-buf))))
 
@@ -2741,11 +2741,12 @@ lines beg end"
   (cond (sage-shell:use-prompt-toolkit
          (let ((win (get-buffer-window sage-shell:process-buffer)))
            (sage-shell-edit:exec-command-base
-            :command "" :insert-command-p t)
-           (sage-shell:after-output-finished
-             (sage-shell:with-selected-window-if-possible win
-               (goto-char (process-mark (get-buffer-process
-                                         sage-shell:process-buffer)))))))
+            :command "" :insert-command-p t
+            :callback
+            (lambda ()
+              (sage-shell:with-selected-window-if-possible win
+                (goto-char (process-mark (get-buffer-process
+                                          sage-shell:process-buffer))))))))
         (t (sage-shell:send-blank-line-readline))))
 
 (defun sage-shell:send-blank-line-readline ()
@@ -4222,28 +4223,29 @@ inserted in the process buffer before executing the command."
   (sage-shell:awhen pre-message (message it))
 
   (sage-shell:as-soon-as (sage-shell:output-finished-p)
-    (let ((win (get-buffer-window sage-shell:process-buffer))
-          (args (list command insert-command-p before-sentence
-                      push-to-input-history-p callback)))
-      (sage-shell:with-selected-window-if-possible win
-        (apply 'sage-shell-edit:exec-cmd-internal args)))
-    (when post-message
-      (sage-shell:after-output-finished
-        (message post-message)))
-    ;; display buffer
-    (when display-function
-      (sage-shell:after-output-finished
+    (sage-shell:push-to-output-finished-filter
+      (when post-message
+        (message post-message))
+
+      ;; display buffer
+      (when display-function
         (let ((win (funcall display-function sage-shell:process-buffer)))
           (sage-shell:with-selected-window-if-possible win
             (goto-char
              (process-mark
-              (get-buffer-process sage-shell:process-buffer)))))))
-    (sage-shell:after-output-finished
+              (get-buffer-process sage-shell:process-buffer))))))
+
       (with-current-buffer sage-shell:process-buffer
-        (sage-shell:change-mode-line-process nil)))
-    (when (functionp callback)
-      (with-current-buffer sage-shell:process-buffer
-        (push callback sage-shell:output-filter-finished-hook))))
+        (sage-shell:change-mode-line-process nil))
+
+      (when (functionp callback)
+        (funcall callback)))
+
+    (let ((win (get-buffer-window sage-shell:process-buffer))
+          (args (list command insert-command-p before-sentence
+                      push-to-input-history-p callback)))
+      (sage-shell:with-selected-window-if-possible win
+        (apply 'sage-shell-edit:exec-cmd-internal args))))
   (when switch-p (pop-to-buffer sage-shell:process-buffer)))
 
 (defun sage-shell-edit:exec-cmd-internal
@@ -4773,11 +4775,11 @@ prompt."
     (sage-shell-edit:exec-command-base
      :command cmd
      :insert-command-p t
-     :display-function 'display-buffer)
-    (sage-shell:after-output-finished
-      (with-current-buffer sage-shell:process-buffer
-        (goto-char (process-mark (get-buffer-process
-                                  sage-shell:process-buffer)))))))
+     :display-function 'display-buffer
+     :callback (lambda ()
+                 (with-current-buffer sage-shell:process-buffer
+                   (goto-char (process-mark (get-buffer-process
+                                             sage-shell:process-buffer))))))))
 
 (eval-when-compile
   (defvar sage-shell-pdb:command-list
@@ -5009,11 +5011,11 @@ file name.")
             (sage-shell-sagetex:tex-master-maybe f t))))
 
 (defun sage-shell-sagetex:-load-and-run-latex (f)
-  (sage-shell-sagetex:load-file f)
-  (sage-shell:after-output-finished
+  (sage-shell:push-to-output-finished-filter
     ;; Run process in the same directory of as f.
     (sage-shell:with-default-directory (file-name-directory f)
-      (sage-shell-sagetex:-run-latex f t))))
+      (sage-shell-sagetex:-run-latex f t)))
+  (sage-shell-sagetex:load-file f))
 
 (defun sage-shell-sagetex:-run-latex (f &optional verbose)
   (let* ((cmd (let ((b (or (get-file-buffer f)
