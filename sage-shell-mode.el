@@ -858,8 +858,9 @@ succesive lines in history."
                                     process-buffer
                                     sync)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
-        (callback (lambda (output)
-                    (funcall callback (sage-shell:eval-state output)))))
+        (callback (when (functionp callback)
+                    (lambda (output)
+                      (funcall callback (sage-shell:eval-state output))))))
     (sage-shell:run-cell-raw-output cell
                                     :output-buffer output-buffer
                                     :process-buffer process-buffer
