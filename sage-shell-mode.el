@@ -885,7 +885,7 @@ succesive lines in history."
               (add-to-list 'sage-shell:redirect-filter-finished-hook
                            (lambda () ,@body))))))
 
-(defmacro sage-shell:push-to-redirect-finished-filter (&rest body)
+(defmacro sage-shell:push-to-redirect-finished-hook (&rest body)
   (declare (indent 0))
   `(with-current-buffer sage-shell:process-buffer
      (push (lambda () ,@body)
@@ -921,7 +921,7 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
       (erase-buffer))
 
     (when (functionp callback)
-      (sage-shell:push-to-redirect-finished-filter
+      (sage-shell:push-to-redirect-finished-hook
        (let ((raw-output
               (sage-shell:-redirect-get-buffer-string out-buf)))
          (funcall callback raw-output))))
@@ -1679,7 +1679,7 @@ Match group 1 will be replaced with devel/sage-branch")
               (add-to-list 'sage-shell:output-filter-finished-hook
                            (lambda () ,@body))))))
 
-(defmacro sage-shell:push-to-output-finished-filter (&rest body)
+(defmacro sage-shell:push-to-output-finished-hook (&rest body)
   (declare (indent 0))
   `(with-current-buffer sage-shell:process-buffer
      (push (lambda () ,@body)
@@ -4223,7 +4223,7 @@ inserted in the process buffer before executing the command."
   (sage-shell:awhen pre-message (message it))
 
   (sage-shell:as-soon-as (sage-shell:output-finished-p)
-    (sage-shell:push-to-output-finished-filter
+    (sage-shell:push-to-output-finished-hook
       (when post-message
         (message post-message))
 
@@ -5011,7 +5011,7 @@ file name.")
             (sage-shell-sagetex:tex-master-maybe f t))))
 
 (defun sage-shell-sagetex:-load-and-run-latex (f)
-  (sage-shell:push-to-output-finished-filter
+  (sage-shell:push-to-output-finished-hook
     ;; Run process in the same directory of as f.
     (sage-shell:with-default-directory (file-name-directory f)
       (sage-shell-sagetex:-run-latex f t)))
