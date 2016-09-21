@@ -1622,14 +1622,10 @@ Match group 1 will be replaced with devel/sage-branch")
   indicates the index in LINE where comment starts."
   (cond
    ((string-match-p (rx line-start "Pasting code; enter") line) nil)
-   ((not (string-match "'\\|\"" line)) t)
-   ((string-match (rx "Error" eow (1+ whitespace) "Traceback") line) t)
-   ((string-match (rx "Error" (group ": ")) line) (match-beginning 1))
-   ((and (not (string-match (rx (or "\"\"\"" "'''")) line))
-         (string-match (rx (or (>= 3 whitespace)
-                               "--> ")
-                           (1+ digit)
-                           (1+ whitespace)) line)) t)))
+   ((string-match-p "'\\|\"" line) nil)
+   ((string-match-p (rx "Error" eow (1+ whitespace) "Traceback") line) t)
+   ((string-match-p (rx "Error" (group ": ")) line) (match-beginning 1))
+   (t t)))
 
 (defun sage-shell:comment-out-output ()
   (let ((inhibit-read-only t)
