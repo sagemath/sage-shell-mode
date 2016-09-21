@@ -1757,7 +1757,7 @@ Match group 1 will be replaced with devel/sage-branch")
         (t string)))
 
 (defvar sage-shell:-ansi-escpace-handler-alist
-  `((?n . ,#'sage-shell:-report-cursor-pos)
+  `((?n . ,#'ignore)
     (?J . ,#'sage-shell:-delete-display)
     (?D . ,#'sage-shell:-cursor-back)
     (?C . ,#'sage-shell:-cursor-forward)
