@@ -2727,21 +2727,22 @@ lines beg end"
 
 
 (defun sage-shell:send-blank-line ()
-  (with-current-buffer sage-shell:process-buffer
-    (if sage-shell:use-prompt-toolkit
-        (sage-shell-edit:exec-command-base
-         :command ""
-         :insert-command-p t)
-      (sage-shell:send-blank-line-readline))))
+  (cond (sage-shell:use-prompt-toolkit
+         (let ((win (get-buffer-window sage-shell:process-buffer)))
+           (sage-shell-edit:exec-command-base
+            :command "" :insert-command-p t)
+           (sage-shell:after-output-finished
+             (sage-shell:with-selected-window-if-possible win
+               (goto-char (process-mark (get-buffer-process
+                                         sage-shell:process-buffer)))))))
+        (t (sage-shell:send-blank-line-readline))))
 
 (defun sage-shell:send-blank-line-readline ()
   (with-current-buffer sage-shell:process-buffer
     (let ((comint-input-sender
            (lambda (proc _str) (comint-simple-send proc "")))
           (win (get-buffer-window sage-shell:process-buffer)))
-      (if (and (windowp win) (window-live-p win))
-          (with-selected-window win
-            (sage-shell:comint-send-input))
+      (sage-shell:with-selected-window-if-possible win
         (sage-shell:comint-send-input)))))
 
 (defun sage-shell:at-top-level-p ()
