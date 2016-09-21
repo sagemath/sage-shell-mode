@@ -1269,6 +1269,7 @@ function asks which process is to be restarted."
 
 (defalias 'sage-shell:load-file 'sage-shell-edit:load-file)
 (defalias 'sage-shell:attach-file 'sage-shell-edit:attach-file)
+(defalias 'sage-shell-help:send-current-line 'sage-shell:send-doctest)
 
 (defun sage-shell:send-magic-cmd-base (magic-command objname &optional async)
   "If `async' is nil, return the result as string, otherwise
@@ -2868,7 +2869,7 @@ python-mode"
    nil `((,sage-shell-help:fontlock-keyword-regexp 1 font-lock-keyword-face))))
 
 (sage-shell:define-keys sage-shell:help-mode-map
-  "C-c C-j" 'sage-shell-help:send-current-line
+  "C-c C-j" 'sage-shell:send-doctest
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer)
 
 (defvar sage-shell-help:symbol-not-found-regexp
@@ -3036,21 +3037,6 @@ python-mode"
                    (setq sage-shell-help:help-contents-list-index 0)
                    ;; make forward or backward button
                    (sage-shell-help:make-forward-back-button))))))))
-
-(defun sage-shell-help:send-current-line ()
-  "In the help buffer, if current line contains a string 'sage:',
-send current line to Sage process buffer."
-  (interactive)
-  (let ((line (save-excursion
-                (beginning-of-line)
-                (when (re-search-forward
-                       (rx "sage: " (group (1+ nonl))) nil
-                       (line-end-position))
-                  (match-string-no-properties 1)))))
-    (sage-shell:awhen line
-      (sage-shell-edit:exec-command-base :command it :insert-command-p t
-                                         :display-function 'display-buffer))))
-
 
 ;;; make err link
 (defvar sage-shell:make-err-link--line-regexp
