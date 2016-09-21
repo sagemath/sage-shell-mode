@@ -885,6 +885,12 @@ succesive lines in history."
               (add-to-list 'sage-shell:redirect-filter-finished-hook
                            (lambda () ,@body))))))
 
+(defmacro sage-shell:push-to-redirect-finished-filter (&rest body)
+  (declare (indent 0))
+  `(with-current-buffer sage-shell:process-buffer
+     (push (lambda () ,@body)
+           sage-shell:redirect-filter-finished-hook)))
+
 (cl-defun sage-shell:run-cell-raw-output (cell &key callback
                                                process-buffer
                                                output-buffer
@@ -1673,7 +1679,11 @@ Match group 1 will be replaced with devel/sage-branch")
               (add-to-list 'sage-shell:output-filter-finished-hook
                            (lambda () ,@body))))))
 
-
+(defmacro sage-shell:push-to-output-finished-filter (&rest body)
+  (declare (indent 0))
+  `(with-current-buffer sage-shell:process-buffer
+     (push (lambda () ,@body)
+           sage-shell:output-filter-finished-hook)))
 
 (defun sage-shell:run-hook-once (hook)
   (let ((hook-saved (symbol-value hook)))
