@@ -474,6 +474,14 @@ returned from the function, otherwise, this returns it self. "
                    collect
                    `(setq ,var ,f))))
 
+(defmacro sage-shell:with-selected-window-if-possible (win &rest forms)
+  (declare (indent 1))
+  `(save-selected-window
+     (when (and (windowp ,win)
+                (window-live-p ,win))
+       (select-window win))
+     ,@forms))
+
 (require 'compile)
 (require 'ansi-color)
 
@@ -2040,9 +2048,7 @@ return string for output."
       (sage-shell:with-current-buffer-safe (and string oprocbuf)
         (let ((win (get-buffer-window (process-buffer process))))
           (unless sage-shell:output-finished-p
-            (save-selected-window
-              (when (and (windowp win) (window-live-p win))
-                (select-window win))
+            (sage-shell:with-selected-window-if-possible win
               (setq string (sage-shell:-psh-to-pending-out string))
               (sage-shell:output-filter-no-rdct process string)))
           (when sage-shell:output-finished-p
@@ -4219,9 +4225,7 @@ inserted in the process buffer before executing the command."
     (let ((win (get-buffer-window sage-shell:process-buffer))
           (args (list command insert-command-p before-sentence
                       push-to-input-history-p)))
-      (if (and (windowp win) (window-live-p win))
-          (with-selected-window win
-            (apply 'sage-shell-edit:exec-cmd-internal args))
+      (sage-shell:with-selected-window-if-possible win
         (apply 'sage-shell-edit:exec-cmd-internal args)))
     (when post-message
       (sage-shell:after-output-finished
@@ -4230,12 +4234,10 @@ inserted in the process buffer before executing the command."
     (when display-function
       (sage-shell:after-output-finished
         (let ((win (funcall display-function sage-shell:process-buffer)))
-          (when (and (windowp win)
-                     (window-live-p win))
-            (with-selected-window win
-              (goto-char
-               (process-mark
-                (get-buffer-process sage-shell:process-buffer))))))))
+          (sage-shell:with-selected-window-if-possible win
+            (goto-char
+             (process-mark
+              (get-buffer-process sage-shell:process-buffer)))))))
     (sage-shell:after-output-finished
       (with-current-buffer sage-shell:process-buffer
         (sage-shell:change-mode-line-process nil))))
