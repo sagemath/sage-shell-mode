@@ -4184,7 +4184,8 @@ whose key is in KEYS."
 (cl-defun sage-shell-edit:exec-command-base
     (&key command pre-message post-message switch-p
           (display-function nil) (insert-command-p t) (before-sentence nil)
-          (push-to-input-history-p nil))
+          (push-to-input-history-p nil)
+          callback)
   "If `insert-command-p' is non-nil, then it inserts `command' in
 the process buffer. If `before-sentence' is non-nil, it will be
 inserted in the process buffer before executing the command."
@@ -4195,12 +4196,14 @@ inserted in the process buffer before executing the command."
     (sage-shell-edit:-exec-command-base
      command pre-message post-message switch-p
      display-function insert-command-p before-sentence
-     push-to-input-history-p)))
+     push-to-input-history-p
+     callback)))
 
 (defun sage-shell-edit:-exec-command-base
     (command pre-message post-message switch-p
              display-function insert-command-p before-sentence
-             push-to-input-history-p)
+             push-to-input-history-p
+             callback)
 
   (with-current-buffer sage-shell:process-buffer
     (sage-shell:change-mode-line-process t)
@@ -4211,7 +4214,7 @@ inserted in the process buffer before executing the command."
   (sage-shell:as-soon-as (sage-shell:output-finished-p)
     (let ((win (get-buffer-window sage-shell:process-buffer))
           (args (list command insert-command-p before-sentence
-                      push-to-input-history-p)))
+                      push-to-input-history-p callback)))
       (sage-shell:with-selected-window-if-possible win
         (apply 'sage-shell-edit:exec-cmd-internal args)))
     (when post-message
@@ -4227,11 +4230,14 @@ inserted in the process buffer before executing the command."
               (get-buffer-process sage-shell:process-buffer)))))))
     (sage-shell:after-output-finished
       (with-current-buffer sage-shell:process-buffer
-        (sage-shell:change-mode-line-process nil))))
+        (sage-shell:change-mode-line-process nil)))
+    (when (functionp callback)
+      (with-current-buffer sage-shell:process-buffer
+        (push callback sage-shell:output-filter-finished-hook))))
   (when switch-p (pop-to-buffer sage-shell:process-buffer)))
 
 (defun sage-shell-edit:exec-cmd-internal
-    (command insert-command-p before-sentence push-to-input-history-p)
+    (command insert-command-p before-sentence push-to-input-history-p _callback)
   (let* ((proc (get-buffer-process sage-shell:process-buffer))
          (pmark (process-mark proc)))
     (with-current-buffer sage-shell:process-buffer
