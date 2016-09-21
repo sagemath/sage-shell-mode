@@ -458,10 +458,14 @@ def print_short_doc_and_def(name, base_name=None):
 def run_cell_and_print_state(code, msg_id_start, msg_id_end):
     print(msg_id_start)
     res = ip.run_cell(code)
-    if res.success:
-        print(0)
+    if hasattr(res, 'success'):
+        if res.success:
+            print(0)
+        else:
+            print(1)
     else:
-        print(1)
+        # For old Sages. It always succeeds.
+        print(0)
     print(msg_id_end)
 
 
