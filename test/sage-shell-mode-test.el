@@ -234,7 +234,7 @@ foo=bar(1, 2), baz=(1, 2")))
       proc-buf)))
 
 (when (executable-find "sage")
-
+  (setq sage-shell:use-prompt-toolkit t)
   (let ((proc-buf (sage-shell-test--start-sage-sync)))
 
     (let* ((rand-str (md5 (current-time-string)))
