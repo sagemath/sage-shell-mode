@@ -1634,7 +1634,7 @@ Match group 1 will be replaced with devel/sage-branch")
   "Return non nil if LINE contains a sentence with the python
   syntax. If returned value is non-nil and non-number, then whole
   line is regarded as python sentence. If a number, then it
-  indicates the index in LINE where comment starts."
+  indicates the point where comment starts."
   (cond
    ((string-match-p (rx line-start "Pasting code; enter") line) nil)
    ((string-match-p "'\\|\"" line) nil)
@@ -1661,12 +1661,12 @@ Match group 1 will be replaced with devel/sage-branch")
                      (cond ((not p)
                             (put-text-property
                              (line-beginning-position)
-                             (1+ (line-beginning-position))
+                             (min (point-max)
+                                  (1+ (line-beginning-position)))
                              'syntax-table (cons 11 nil)))
                            ((numberp p)
-                            (setq p (+ p (line-beginning-position)))
                             (put-text-property
-                             p (1+ p) 'syntax-table
+                             p (min (point-max) (1+ p)) 'syntax-table
                              (cons 11 nil))))))
                  (forward-line 1))))))
 
