@@ -25,13 +25,13 @@ Note that '^' to match at the beginning of the line should not be added to
 Strange behaviour might arise if `sage-shell-blocks:delimiter' matches multiple lines
 at a time."
   :type 'string
-  :group 'sage)
+  :group 'sage-shell)
 
 (defcustom sage-shell-blocks:title-decorate " ---- "
   "When printing titles of blocks, put this decoration around the
 title for easy recognition"
   :type 'string
-  :group 'sage)
+  :group 'sage-shell)
 
 ;;
 ;; Functionality for Sage source files
