@@ -243,11 +243,13 @@ $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
 
 
 (eval-and-compile
-  (unless (fboundp 'setq-local)
-    (defmacro setq-local (var val)
-      "Set variable VAR to value VAL in current buffer."
-      ;; Can't use backquote here, it's too early in the bootstrap.
-      (list 'set (list 'make-local-variable (list 'quote var)) val))))
+  (cond ((fboundp 'setq-local)
+         (defmacro sage-shell:setq-local (var val)
+           (list 'setq-local var val)))
+        (t (defmacro sage-shell:setq-local (var val)
+             "Set variable VAR to value VAL in current buffer."
+             ;; Can't use backquote here, it's too early in the bootstrap.
+             (list 'set (list 'make-local-variable (list 'quote var)) val)))))
 
 ;;; Anaphoric macros
 (defmacro sage-shell:aand (&rest args)
@@ -2442,10 +2444,11 @@ sage-shell:-prompt-regexp-no-eol."
       ;; Set up for redirection
       (setq sage-shell:redirect-last-point nil)
       (setq sage-shell:-pending-outputs nil)
-      (setq-local sage-shell:-redirection-msg-id
-                  (if raw
-                      ""
-                    (sage-shell:-new-rdct-msg-id)))
+      (sage-shell:setq-local
+       sage-shell:-redirection-msg-id
+       (if raw
+           ""
+         (sage-shell:-new-rdct-msg-id)))
       (let ((mode-line-process mode-line-process))
         (comint-redirect-setup
          output-buffer
@@ -4508,11 +4511,12 @@ prompt."
 
 (defun sage-shell:-send--lines-internal (lines)
   (with-current-buffer sage-shell:process-buffer
-    (setq-local sage-shell:output-finished-regexp
-                (rx-to-string
-                 `(and line-start
-                       (or ,sage-shell:output-finished-regexp-rx
-                           (and ":" line-end))))))
+    (sage-shell:setq-local
+     sage-shell:output-finished-regexp
+     (rx-to-string
+      `(and line-start
+            (or ,sage-shell:output-finished-regexp-rx
+                (and ":" line-end))))))
   (sage-shell-edit:exec-command-base
    :command (car lines)
    :insert-command-p t
@@ -4523,9 +4527,10 @@ prompt."
      (cond ((cdr lines)
             (sage-shell:-send--lines-internal (cdr lines)))
            (t (with-current-buffer sage-shell:process-buffer
-                (setq-local sage-shell:output-finished-regexp
-                            (default-value
-                              'sage-shell:output-finished-regexp))))))))
+                (sage-shell:setq-local
+                 sage-shell:output-finished-regexp
+                 (default-value
+                   'sage-shell:output-finished-regexp))))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
