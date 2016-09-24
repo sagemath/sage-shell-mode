@@ -1874,12 +1874,6 @@ Return value is not deifned."
            (sage-shell:-insert-and-handle-char seqs))
           (t (dolist (a seqs)
                (cond ((listp a)
-                      (unless sage-shell:use-prompt-toolkit
-                        (message
-                         (concat
-                          "To use sage-shell-mode properly, "
-                          "please set `sage-shell:use-prompt-toolkit' to t."
-                          " And restart the SageMath process.")))
                       (let ((args (cadr a)))
                         (apply (assoc-default
                                 (car a)
