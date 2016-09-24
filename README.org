@@ -18,17 +18,18 @@
   [[https://github.com/stakemori/anything-sage][anything-sage]] and [[https://github.com/stakemori/ob-sagemath][ob-sagemath]].
 
 ** Table of Contents                                                    :TOC:
-     - [[#requriements][Requirements]]
-     - [[#installation-and-setup][Installation and Setup]]
-     - [[#aliases][Aliases]]
-     - [[#basic-usage][Basic Usage]]
-     - [[#input-history][Input history]]
-     - [[#sagetex][SageTeX]]
-     - [[#customization][Customization]]
-     - [[#extensions][Extensions]]
-     - [[#screenshots][Screenshots]]
-     - [[#workaround-for-flycheck][Workaround for flycheck]]
-     - [[#license][License]]
+   - [[#requirements][Requirements]]
+   - [[#installation-and-setup][Installation and Setup]]
+   - [[#aliases][Aliases]]
+   - [[#basic-usage][Basic Usage]]
+   - [[#input-history][Input History]]
+   - [[#emulating-worksheets-code-blocks][Emulating Worksheets: code blocks]]
+   - [[#sagetex][SageTeX]]
+   - [[#customization][Customization]]
+   - [[#extensions][Extensions]]
+   - [[#screenshots][Screenshots]]
+   - [[#workaround-for-flycheck][Workaround for Flycheck]]
+   - [[#license][License]]
 
 ** Requirements
 
