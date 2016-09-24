@@ -289,6 +289,66 @@ sage: G.charpoly??
   The file name in the above line is the path for storing the inputs and you can
   change it to what you prefer.
 
+** Emulating Worksheets: code blocks
+
+Worksheets is a popular paradigm for structuring experiments in computer algebra systems, seen in Jupyter, the Sage Notebook, Maple and many other softwares.
+=sage-shell-mode= supports a lightweight type of this workflow using "code blocks".
+
+Essentially, you structure your source file in logical blocks of code, representing both your library code and your experiments.
+For instance:
+
+#+BEGIN_SRC python
+### Implement the new algorithm
+def my_helper(a):
+    return a*2
+
+def my_new_algorithm(x, y):
+    return my_helper(x) + my_helper(y)
+
+
+### Check the new algorithm on small input
+print my_new_algorithm(1, 2)
+
+### Check the new algorithm on big input
+print my_new_algorithm(100, 300)
+
+### Check that my algorithm is commutative using random input
+def my_random_number():
+    return randint(100, 200)
+
+a, b = random_input(), random_input()
+assert my_new_algorithm(a, b) == my_new_algorithm(b, a)
+
+#+END_SRC
+
+The blocks of code are logically delimited by lines starting with =###=.
+In this case =load(experiment.sage)= is not a good alternative to the way one works with the Jupyter Notebook: rather, you want to evaluate the code block by block.
+You also want to be able to modifying an earlier or later block, run that, and then return to the block in the middle, etc.
+
+=sage-shell-mode= comes with a small set of functions for accommodating this. In =sage-shell:sage-mode=, the following functions are provided:
+
+   | Key        | Command                        | Description                                                       |
+   |------------+--------------------------------+-------------------------------------------------------------------|
+   | C-M-{      | sage-shell-blocks:backward     | Move backward one block, i.e. to previous =###= delimiter.        |
+   | C-M-}      | sage-shell-blocks:forward      | Move forward one block, i.e. to next =###= delimiter.             |
+   | C-<return> | sage-shell-blocks:send-current | Send the block that the point is currently in to the Sage process |
+
+In the Sage process buffer, the following functions are provided:
+
+   | Key        | Command                     | Description                                                |
+   |------------+-----------------------------+------------------------------------------------------------|
+   | C-<return> | sage-shell-blocks:pull-next | Take the block from the last visited =sage-shell:sage-mode= buffer and send to the Sage process. |
+
+As an example, if the point is in the body of =my_new_algorithm=, then =C-<return>= (or =M-x sage-shell-blocks:send-current=) would send the definitions of =my_helper= and =my_new_algorithm= to the Sage shell. Furthermore, it would print the "title" of the block:
+
+#+BEGIN_SRC python
+sage: load('/tmp/sage_shell_mode3946wC1/sage_shell_mode_temp.sage')
+--- Implement the new algorithm ---
+sage:
+#+END_SRC
+
+The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:delimiter=.
+
 ** SageTeX
 
 =sage-shell-mode= can be conveniently used when writing Sage-powered LaTeX files
