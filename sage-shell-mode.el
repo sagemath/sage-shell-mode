@@ -196,6 +196,12 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
+(defcustom sage-shell:check-ipython-version-on-startup t
+  "Non `nil' means check if `sage-shell:use-prompt-toolkit' is correctly set when starting the Sage process.
+The checking is done asyncally."
+  :type 'boolean
+  :group 'sage-shell)
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -1060,7 +1066,9 @@ When sync is nill this return a lambda function to get the result."
          (default-sentinel (process-sentinel proc)))
     (set-process-sentinel
      proc
-     (sage-shell:-process-sentinel-generator default-sentinel))))
+     (sage-shell:-process-sentinel-generator default-sentinel)))
+  (when sage-shell:check-ipython-version-on-startup
+    (sage-shell:check-ipython-version)))
 
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
