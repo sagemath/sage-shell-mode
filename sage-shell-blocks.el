@@ -31,6 +31,7 @@
 ;; A block is defined by a line beginning with `sage-shell-blocks:delimiter'.
 
 ;;; Code:
+(require 'sage-shell-mode)
 (defcustom sage-shell-blocks:delimiter "###"
   "Any line matching the regular expression `sage-shell-blocks:delimiter' at the
   beginning of the line is considered a start of a block.
@@ -51,6 +52,7 @@ title for easy recognition"
 ;;
 ;; Functionality for Sage source files
 ;;
+;;;###autoload
 (defun sage-shell-blocks:backward (arg)
   "Move backwards to the last beginning of a block."
   (interactive "p")
@@ -60,6 +62,7 @@ title for easy recognition"
 		(search-backward-regexp (concat "^" sage-shell-blocks:delimiter) nil 'move))
       (setq arg (- arg 1)))))
 
+;;;###autoload
 (defun sage-shell-blocks:forward (arg)
   "Move forwards to the next beginning of a block."
   (interactive "p")
@@ -78,6 +81,7 @@ title for easy recognition"
       (when (= arg 0)
 	(goto-char (match-beginning 0))))))
 
+;;;###autoload
 (defun sage-shell-blocks:send-current ()
   "Send the block that the point is currently in to the inferior shell.
 Move to end of block sent."
@@ -124,6 +128,7 @@ The following are added to `sage-shell-mode':
 
 ;; Functionality for the inferior shell
 ;;
+;;;###autoload
 (defun sage-shell-blocks:pull-next ()
   "Evaluate the next block of the last visited file in Sage mode."
   (interactive)
