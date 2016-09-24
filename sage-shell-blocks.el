@@ -111,21 +111,6 @@ Move to end of block sent."
 	    (insert (concat "\nprint(\"" sage-shell-blocks:title-decorate title sage-shell-blocks:title-decorate "\")")))))
       (sage-shell-edit:send-region (point-min) (point-max)))))
 
-(defun sage-shell-blocks:default-keybindings ()
-  "Bind default keys for working with Sage blocks.
-
-The following are added to `sage-shell:sage-mode':
-  C-M-{      `sage-shell-blocks:backward'
-  C-M-}      `sage-shell-blocks:forward'
-  C-<return> `sage-shell-blocks:send-current'
-
-The following are added to `sage-shell-mode':
-  C-<return> `sage-shell-blocks:pull-next'"
-  (define-key sage-shell:sage-mode-map (kbd "C-<return>") 'sage-shell-blocks:send-current)
-  (define-key sage-shell:sage-mode-map (kbd "C-M-{")      'sage-shell-blocks:backward)
-  (define-key sage-shell:sage-mode-map (kbd "C-M-}")      'sage-shell-blocks:forward)
-  (define-key sage-shell-mode-map (kbd "C-<return>")      'sage-shell-blocks:pull-next))
-
 ;; Functionality for the inferior shell
 ;;
 ;;;###autoload

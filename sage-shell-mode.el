@@ -5120,6 +5120,22 @@ exisiting Sage process."
 (define-derived-mode sage-shell-sagetex:error-mode special-mode "SageTeX-Error"
   "Error mode for SageTeX")
 
+(defun sage-shell-blocks:default-keybindings ()
+  "Bind default keys for working with Sage blocks.
+
+The following are added to `sage-shell:sage-mode':
+  C-M-{      `sage-shell-blocks:backward'
+  C-M-}      `sage-shell-blocks:forward'
+  C-<return> `sage-shell-blocks:send-current'
+
+The following are added to `sage-shell-mode':
+  C-<return> `sage-shell-blocks:pull-next'"
+  (define-key sage-shell:sage-mode-map (kbd "C-<return>") 'sage-shell-blocks:send-current)
+  (define-key sage-shell:sage-mode-map (kbd "C-M-{")      'sage-shell-blocks:backward)
+  (define-key sage-shell:sage-mode-map (kbd "C-M-}")      'sage-shell-blocks:forward)
+  (define-key sage-shell-mode-map (kbd "C-<return>")      'sage-shell-blocks:pull-next))
+(sage-shell-blocks:default-keybindings)
+
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
 (provide 'sage-shell-mode)
