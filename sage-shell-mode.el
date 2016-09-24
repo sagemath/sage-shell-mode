@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 - 2016 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/stakemori/sage-shell-mode
-;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1") (emacs "24"))
+;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1") (emacs "24.1"))
 ;; Keywords: Sage, math
 ;; Version: 0.2.0
 
@@ -243,11 +243,13 @@ $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
 
 
 (eval-and-compile
-  (unless (fboundp 'setq-local)
-    (defmacro setq-local (var val)
-      "Set variable VAR to value VAL in current buffer."
-      ;; Can't use backquote here, it's too early in the bootstrap.
-      (list 'set (list 'make-local-variable (list 'quote var)) val))))
+  (cond ((fboundp 'setq-local)
+         (defmacro sage-shell:setq-local (var val)
+           (list 'setq-local var val)))
+        (t (defmacro sage-shell:setq-local (var val)
+             "Set variable VAR to value VAL in current buffer."
+             ;; Can't use backquote here, it's too early in the bootstrap.
+             (list 'set (list 'make-local-variable (list 'quote var)) val)))))
 
 ;;; Anaphoric macros
 (defmacro sage-shell:aand (&rest args)
@@ -1195,9 +1197,7 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
           (sage-shell-mode))))
     ;; Tell the process the window size for Ipython5's newprompt
     (when sage-shell:use-prompt-toolkit
-      (sage-shell:-adjust-window-size)
-      (add-hook 'window-configuration-change-hook
-                #'sage-shell:-adjust-window-size nil t))
+      (sage-shell:-adjust-window-size))
     buf))
 
 ;;;###autoload
@@ -1726,7 +1726,8 @@ Match group 1 will be replaced with devel/sage-branch")
 
 (defun sage-shell:-window-size (window)
   (let ((width (cond ((fboundp 'window-max-chars-per-line)
-                      (window-max-chars-per-line window))
+                      ;; To silence warning of flycheck-package
+                      (funcall #'window-max-chars-per-line window))
                      (t (sage-shell:-window-max-chars-per-line
                          window)))))
     (cons width (window-body-height window))))
@@ -2058,10 +2059,9 @@ return string for output."
     (let ((oprocbuf (process-buffer process)))
       (sage-shell:with-current-buffer-safe (and string oprocbuf)
         (let ((win (get-buffer-window (process-buffer process))))
-          (unless sage-shell:output-finished-p
-            (sage-shell:with-selected-window-if-possible win
-              (setq string (sage-shell:-psh-to-pending-out string))
-              (sage-shell:output-filter-no-rdct process string)))
+          (sage-shell:with-selected-window-if-possible win
+            (setq string (sage-shell:-psh-to-pending-out string))
+            (sage-shell:output-filter-no-rdct process string))
           (when sage-shell:output-finished-p
             (when sage-shell:scroll-to-the-bottom
               (comint-postoutput-scroll-to-bottom string))
@@ -2442,10 +2442,11 @@ sage-shell:-prompt-regexp-no-eol."
       ;; Set up for redirection
       (setq sage-shell:redirect-last-point nil)
       (setq sage-shell:-pending-outputs nil)
-      (setq-local sage-shell:-redirection-msg-id
-                  (if raw
-                      ""
-                    (sage-shell:-new-rdct-msg-id)))
+      (sage-shell:setq-local
+       sage-shell:-redirection-msg-id
+       (if raw
+           ""
+         (sage-shell:-new-rdct-msg-id)))
       (let ((mode-line-process mode-line-process))
         (comint-redirect-setup
          output-buffer
@@ -4508,11 +4509,12 @@ prompt."
 
 (defun sage-shell:-send--lines-internal (lines)
   (with-current-buffer sage-shell:process-buffer
-    (setq-local sage-shell:output-finished-regexp
-                (rx-to-string
-                 `(and line-start
-                       (or ,sage-shell:output-finished-regexp-rx
-                           (and ":" line-end))))))
+    (sage-shell:setq-local
+     sage-shell:output-finished-regexp
+     (rx-to-string
+      `(and line-start
+            (or ,sage-shell:output-finished-regexp-rx
+                (and ":" line-end))))))
   (sage-shell-edit:exec-command-base
    :command (car lines)
    :insert-command-p t
@@ -4523,9 +4525,10 @@ prompt."
      (cond ((cdr lines)
             (sage-shell:-send--lines-internal (cdr lines)))
            (t (with-current-buffer sage-shell:process-buffer
-                (setq-local sage-shell:output-finished-regexp
-                            (default-value
-                              'sage-shell:output-finished-regexp))))))))
+                (sage-shell:setq-local
+                 sage-shell:output-finished-regexp
+                 (default-value
+                   'sage-shell:output-finished-regexp))))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
@@ -5119,6 +5122,22 @@ exisiting Sage process."
 
 (define-derived-mode sage-shell-sagetex:error-mode special-mode "SageTeX-Error"
   "Error mode for SageTeX")
+
+(defun sage-shell-blocks:default-keybindings ()
+  "Bind default keys for working with Sage blocks.
+
+The following are added to `sage-shell:sage-mode':
+  C-M-{      `sage-shell-blocks:backward'
+  C-M-}      `sage-shell-blocks:forward'
+  C-<return> `sage-shell-blocks:send-current'
+
+The following are added to `sage-shell-mode':
+  C-<return> `sage-shell-blocks:pull-next'"
+  (define-key sage-shell:sage-mode-map (kbd "C-<return>") 'sage-shell-blocks:send-current)
+  (define-key sage-shell:sage-mode-map (kbd "C-M-{")      'sage-shell-blocks:backward)
+  (define-key sage-shell:sage-mode-map (kbd "C-M-}")      'sage-shell-blocks:forward)
+  (define-key sage-shell-mode-map (kbd "C-<return>")      'sage-shell-blocks:pull-next))
+(sage-shell-blocks:default-keybindings)
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 

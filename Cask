@@ -5,5 +5,6 @@
 (package-file "sage-shell-mode.el")
 (depends-on "cl-lib")
 (depends-on "deferred")
+(depends-on "sage-shell-mode")
 (development
  (depends-on "ert"))

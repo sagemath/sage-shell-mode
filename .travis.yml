@@ -10,7 +10,7 @@ env:
   - EMACS=emacs EVM_EMACS=emacs-24.3-travis
   - EMACS=emacs EVM_EMACS=emacs-24.4-travis
   - EMACS=emacs EVM_EMACS=emacs-24.5-travis
-  - EMACS=emacs EVM_EMACS=emacs-25-pre-travis
+  - EMACS=emacs EVM_EMACS=emacs-25.1-travis
 
 script:
   - emacs --version
