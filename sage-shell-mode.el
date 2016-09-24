@@ -1229,6 +1229,33 @@ function asks which process is to be restarted."
                 t t)
       (process-send-eof proc))))
 
+(defun sage-shell:check-ipython-version ()
+  "Check IPython version and check if sage-shell:use-prompt-toolkit is correctly set."
+  (interactive)
+  (message "Checking IPython version...")
+  (deferred:$
+    (deferred:process
+      (sage-shell:sage-executable)
+      "-c" "import IPython; print IPython.version_info[0]")
+    (deferred:nextc it
+      (lambda (x)
+        (message (concat "Checking IPython version... Done."
+                         " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'."))
+        (let ((version (string-to-number (sage-shell:trim-right x)))
+              (msg nil))
+          (cond ((and (< version 5) sage-shell:use-prompt-toolkit)
+                 (setq msg
+                       (concat
+                        "You should set `sage-shell:use-prompt-toolkit' to nil.\n"
+                        "Set it to nil and restart the SageMath process.")))
+                ((and (>= version 5) (null sage-shell:use-prompt-toolkit))
+                 (setq msg
+                       (concat
+                        "You should set `sage-shell:use-prompt-toolkit' to t.\n"
+                        "Set it to t and restart the SageMath process."))))
+          (when msg
+            (display-message-or-buffer msg)))))))
+
 (defun sage-shell-tab-command ()
   (interactive)
   (cond
