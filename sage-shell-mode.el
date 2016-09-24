@@ -2061,10 +2061,9 @@ return string for output."
     (let ((oprocbuf (process-buffer process)))
       (sage-shell:with-current-buffer-safe (and string oprocbuf)
         (let ((win (get-buffer-window (process-buffer process))))
-          (unless sage-shell:output-finished-p
-            (sage-shell:with-selected-window-if-possible win
-              (setq string (sage-shell:-psh-to-pending-out string))
-              (sage-shell:output-filter-no-rdct process string)))
+          (sage-shell:with-selected-window-if-possible win
+            (setq string (sage-shell:-psh-to-pending-out string))
+            (sage-shell:output-filter-no-rdct process string))
           (when sage-shell:output-finished-p
             (when sage-shell:scroll-to-the-bottom
               (comint-postoutput-scroll-to-bottom string))
