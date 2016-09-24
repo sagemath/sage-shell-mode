@@ -1950,17 +1950,13 @@ Return value is not deifned."
                       (line-number-at-pos))))
     (1+ (- (line-number-at-pos) start-line))))
 
-(defun sage-shell:-inside-cpaste-p ()
-  (save-excursion
-    (forward-line -1)
-    (looking-at-p (rx (or (and line-start ":")
-                          (and line-start "Pasting code; enter"))))))
-
 (defun sage-shell:-report-cursor-pos (proc &rest args)
   (let ((arg (car args)))
     (cond ((equal arg 6)
            (sage-shell:after-output-finished
-             (unless (sage-shell:-inside-cpaste-p)
+             (when (save-excursion
+                     (forward-line 0)
+                     (looking-at sage-shell:-prompt-regexp-no-eol))
                (let ((row (cond ((= (line-end-position) (point-max))
                                  (process-get proc 'sage-shell:win-height))
                                 (t (sage-shell:-current-row)))))
