@@ -1728,7 +1728,8 @@ Match group 1 will be replaced with devel/sage-branch")
 
 (defun sage-shell:-window-size (window)
   (let ((width (cond ((fboundp 'window-max-chars-per-line)
-                      (window-max-chars-per-line window))
+                      ;; To silence warning of flycheck-package
+                      (funcall #'window-max-chars-per-line window))
                      (t (sage-shell:-window-max-chars-per-line
                          window)))))
     (cons width (window-body-height window))))
