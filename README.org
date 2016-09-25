@@ -1,7 +1,7 @@
 * sage-shell-mode
   [[http://melpa.org/#/sage-shell-mode][file:http://melpa.org/packages/sage-shell-mode-badge.svg]]
   [[http://stable.melpa.org/#/sage-shell-mode][file:http://stable.melpa.org/packages/sage-shell-mode-badge.svg]]
-  [[https://travis-ci.org/stakemori/sage-shell-mode][https://travis-ci.org/stakemori/sage-shell-mode.svg]]
+  [[https://travis-ci.org/stakemori/sage-shell-mode][https://travis-ci.org/sagemath/sage-shell-mode.svg]]
 
 ** Overview
 
@@ -169,7 +169,7 @@ The buffer behaves like an Emacs shell:
 - =M-p= or =C-up= goes through earlier input.
 - Previous input and output is retained earlier in the buffer. You can move
   around just as usual and e.g. copy from it or search.
-- To exit, you can enter =quit= at the prompt, or simply kill the buffer.
+- To exit, you can enter =quit= at the prompt or type =C-d= (bound to =sage-shell:delchar-or-maybe-eof=) at a blank line.
 
 The buffer also behaves much like the Sage terminal:
 

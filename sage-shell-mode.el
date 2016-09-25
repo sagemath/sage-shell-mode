@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2012 - 2016 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
-;; URL: https://github.com/stakemori/sage-shell-mode
+;; URL: https://github.com/sagemath/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (deferred "0.4.0") (emacs "24.1"))
 ;; Keywords: Sage, math
 ;; Version: 0.2.0
@@ -38,15 +38,15 @@
 ;; (sage-shell:define-alias)
 ;; you can run Sage by M-x run-sage instead of M-x sage-shell:run-sage.
 
-;; Please visit https://github.com/stakemori/sage-shell-mode for more
+;; Please visit https://github.com/sagemath/sage-shell-mode for more
 ;; infomation.
 
 ;;; Code:
 ;; TODO
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
-;; 1. Fix sage-shell-edit:exec-command-base when the line is not empty.
-;; 2. Add support for simple prompt.
-;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
+;; 2. Fix sage-shell-edit:exec-command-base when the line is not empty.
+;; 3. Add support for simple prompt.
+;; 4. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
@@ -195,6 +195,12 @@ This string will be inserted to the temporary file before evaluating code."
   :type 'boolean
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
+
+(defcustom sage-shell:check-ipython-version-on-startup t
+  "Non `nil' means check if `sage-shell:use-prompt-toolkit' is correctly set when starting the Sage process.
+The checking is done asyncally."
+  :type 'boolean
+  :group 'sage-shell)
 
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
@@ -1060,7 +1066,9 @@ When sync is nill this return a lambda function to get the result."
          (default-sentinel (process-sentinel proc)))
     (set-process-sentinel
      proc
-     (sage-shell:-process-sentinel-generator default-sentinel))))
+     (sage-shell:-process-sentinel-generator default-sentinel)))
+  (when sage-shell:check-ipython-version-on-startup
+    (sage-shell:check-ipython-version)))
 
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
@@ -1228,6 +1236,33 @@ function asks which process is to be restarted."
                                   :switch-function 'display-buffer))
                 t t)
       (process-send-eof proc))))
+
+(defun sage-shell:check-ipython-version ()
+  "Check IPython version and check if sage-shell:use-prompt-toolkit is correctly set."
+  (interactive)
+  (message "Checking IPython version...")
+  (deferred:$
+    (deferred:process
+      (sage-shell:sage-executable)
+      "-c" "import IPython; print IPython.version_info[0]")
+    (deferred:nextc it
+      (lambda (x)
+        (message (concat "Checking IPython version... Done."
+                         " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'."))
+        (let ((version (string-to-number (sage-shell:trim-right x)))
+              (msg nil))
+          (cond ((and (< version 5) sage-shell:use-prompt-toolkit)
+                 (setq msg
+                       (concat
+                        "You should set `sage-shell:use-prompt-toolkit' to nil.\n"
+                        "Set it to nil and restart the SageMath process.")))
+                ((and (>= version 5) (null sage-shell:use-prompt-toolkit))
+                 (setq msg
+                       (concat
+                        "You should set `sage-shell:use-prompt-toolkit' to t.\n"
+                        "Set it to t and restart the SageMath process."))))
+          (when msg
+            (display-message-or-buffer msg)))))))
 
 (defun sage-shell-tab-command ()
   (interactive)
@@ -1839,12 +1874,6 @@ Return value is not deifned."
            (sage-shell:-insert-and-handle-char seqs))
           (t (dolist (a seqs)
                (cond ((listp a)
-                      (unless sage-shell:use-prompt-toolkit
-                        (message
-                         (concat
-                          "To use sage-shell-mode properly, "
-                          "please set `sage-shell:use-prompt-toolkit' to t."
-                          " And restart the SageMath process.")))
                       (let ((args (cadr a)))
                         (apply (assoc-default
                                 (car a)
