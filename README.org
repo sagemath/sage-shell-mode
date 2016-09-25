@@ -1,7 +1,7 @@
 * sage-shell-mode
   [[http://melpa.org/#/sage-shell-mode][file:http://melpa.org/packages/sage-shell-mode-badge.svg]]
   [[http://stable.melpa.org/#/sage-shell-mode][file:http://stable.melpa.org/packages/sage-shell-mode-badge.svg]]
-  [[https://travis-ci.org/stakemori/sage-shell-mode][https://travis-ci.org/stakemori/sage-shell-mode.svg]]
+  [[https://travis-ci.org/stakemori/sage-shell-mode][https://travis-ci.org/sagemath/sage-shell-mode.svg]]
 
 ** Overview
 
