@@ -44,9 +44,9 @@
 ;;; Code:
 ;; TODO
 ;; 1. Disabel auto indent (cf. IPython's issue #9888).
-;; 1. Fix sage-shell-edit:exec-command-base when the line is not empty.
-;; 2. Add support for simple prompt.
-;; 3. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
+;; 2. Fix sage-shell-edit:exec-command-base when the line is not empty.
+;; 3. Add support for simple prompt.
+;; 4. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
