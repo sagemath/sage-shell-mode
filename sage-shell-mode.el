@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2012 - 2016 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
-;; URL: https://github.com/stakemori/sage-shell-mode
+;; URL: https://github.com/sagemath/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (deferred "0.3.1") (emacs "24.1"))
 ;; Keywords: Sage, math
 ;; Version: 0.2.0
@@ -38,7 +38,7 @@
 ;; (sage-shell:define-alias)
 ;; you can run Sage by M-x run-sage instead of M-x sage-shell:run-sage.
 
-;; Please visit https://github.com/stakemori/sage-shell-mode for more
+;; Please visit https://github.com/sagemath/sage-shell-mode for more
 ;; infomation.
 
 ;;; Code:
