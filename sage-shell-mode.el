@@ -4956,7 +4956,7 @@ Returns the tracked buffer."
         (setq sage-shell-pdb:tracked-buffer file-buffer)
       (setq file-buffer (find-file-noselect file-name))
       (when (not (sage-shell:in file-buffer sage-shell-pdb:buffers-to-kill))
-        (add-to-list 'sage-shell-pdb:buffers-to-kill file-buffer)))
+        (push file-buffer sage-shell-pdb:buffers-to-kill)))
     file-buffer))
 
 (defun sage-shell-pdb:comint-output-filter-function ()
