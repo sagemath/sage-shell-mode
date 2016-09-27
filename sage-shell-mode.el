@@ -4493,7 +4493,7 @@ inserted in the process buffer before executing the command."
 (defun sage-shell:-doctest-lines ()
   "If the current line start with a sage: prompt, return lines for doctest."
   (save-excursion
-    (beginning-of-line)
+    (forward-line 0)
     (when (looking-at sage-shell:-test-prompt-regexp)
       (let* ((inhibit-field-text-motion t)
              (lines (list (buffer-substring-no-properties
