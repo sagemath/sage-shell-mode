@@ -4536,10 +4536,7 @@ the end of the docstring."
             (or
              (re-search-forward sage-shell:-test-prompt-regexp nil t)
              (forward-line 1)))))
-        ;; To silence byte-compile warning
-        ;; TODO: delete fboundp
-        (arg (when (fboundp 'sage-shell:send-all-doctests)
-               (sage-shell:send-all-doctests)))
+        (arg (sage-shell:send-all-doctests))
         ((derived-mode-p 'python-mode)
          (sage-shell:-send-current-doctest
           (lambda ()
@@ -4550,46 +4547,43 @@ the end of the docstring."
                                      nil t)
                   (forward-line 1))))))))
 
-(let ((mark (make-marker)))
-  (defun sage-shell:send-all-doctests ()
-    "Evaluate all doctests inside current docstring."
-    (interactive)
-    (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
-    (let* ((ppss (syntax-ppss))
-           (in-string (nth 3 ppss))
-           (string-start (nth 8 ppss))
-           (string-end nil)
-           (buf (current-buffer)))
-      (unless in-string
-        (error "Not inside a docstring."))
-      (with-current-buffer sage-shell:process-buffer
-        (setq sage-shell:-report-cursor-pos-p nil))
-      (goto-char string-start)
-      (forward-sexp)
-      (setq string-end (point))
-      (goto-char string-start)
-      (set-marker mark (point))
-      ;; To silence byte-compile warning
-      ;; TODO: delete fboundp
-      (when (fboundp 'sage-shell:-send-current-doctest-rec)
-        (sage-shell:-send-current-doctest-rec
-         string-end buf))))
+;; TODO use indefinite extent and delete this global variable
+;; Drop Emacs 24.1 and 24.2 support
+(defvar sage-shell:-doctest-marker (make-marker))
 
-  (defun sage-shell:-send-current-doctest-rec (bd buf)
-    (with-current-buffer buf
-      (goto-char mark)
-      (cond ((and (<= (point) bd)
-                  (re-search-forward sage-shell:-test-prompt-regexp
-                                     bd t))
-             (set-marker mark (point))
-             (sage-shell:-send-current-doctest
-              (lambda ()
-                ;; To silence byte-compile warning
-                ;; TODO: delete fboundp
-                (when (fboundp 'sage-shell:-send-current-doctest-rec)
-                  (sage-shell:-send-current-doctest-rec bd buf)))))
-            (t (with-current-buffer sage-shell:process-buffer
-                 (setq sage-shell:-report-cursor-pos-p t)))))))
+(defun sage-shell:send-all-doctests ()
+  "Evaluate all doctests inside current docstring."
+  (interactive)
+  (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
+  (let* ((ppss (syntax-ppss))
+         (in-string (nth 3 ppss))
+         (string-start (nth 8 ppss))
+         (string-end nil)
+         (buf (current-buffer)))
+    (unless in-string
+      (error "Not inside a docstring."))
+    (with-current-buffer sage-shell:process-buffer
+      (setq sage-shell:-report-cursor-pos-p nil))
+    (goto-char string-start)
+    (forward-sexp)
+    (setq string-end (point))
+    (goto-char string-start)
+    (set-marker sage-shell:-doctest-marker (point))
+    (sage-shell:-send-current-doctest-rec
+     string-end buf)))
+
+(defun sage-shell:-send-current-doctest-rec (bd buf)
+  (with-current-buffer buf
+    (goto-char sage-shell:-doctest-marker)
+    (cond ((and (<= (point) bd)
+                (re-search-forward sage-shell:-test-prompt-regexp
+                                   bd t))
+           (set-marker sage-shell:-doctest-marker (point))
+           (sage-shell:-send-current-doctest
+            (lambda ()
+              (sage-shell:-send-current-doctest-rec bd buf))))
+          (t (with-current-buffer sage-shell:process-buffer
+               (setq sage-shell:-report-cursor-pos-p t))))))
 
 (defun sage-shell:-send-current-doctest (&optional callback)
   (sage-shell-edit:set-sage-proc-buf-internal)
