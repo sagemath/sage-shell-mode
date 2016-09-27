@@ -4576,7 +4576,8 @@ the end of the docstring."
 
 (defun sage-shell:-send-current-doctest (&optional callback)
   (sage-shell-edit:set-sage-proc-buf-internal)
-  (let ((lines (sage-shell:-doctest-lines)))
+  (let ((lines (sage-shell:-doctest-lines))
+        (buf (current-buffer)))
     (cond
      ((null lines))
      ((null (cdr lines))
@@ -4585,11 +4586,15 @@ the end of the docstring."
        :insert-command-p t
        :display-function 'display-buffer
        :push-to-input-history-p t
-       :callback callback))
+       :callback (with-current-buffer buf
+                   (funcall callback))))
      (t
       (let ((lines (sage-shell:-cpaste-lines lines)))
         (sage-shell:-send--lines-internal
-         lines callback))))))
+         lines
+         (lambda ()
+           (with-current-buffer buf
+             (funcall callback)))))))))
 
 (defun sage-shell:-send--lines-internal (lines &optional callback)
   (with-current-buffer sage-shell:process-buffer
