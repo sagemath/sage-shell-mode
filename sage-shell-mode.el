@@ -4830,7 +4830,8 @@ the end of the docstring."
   "C-M-x" 'sage-shell-edit:send-defun
   "C-c C-l" 'sage-shell-edit:load-file
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
-  "C-c C-j" 'sage-shell-edit:send-line*)
+  "C-c C-j" 'sage-shell-edit:send-line*
+  "C-c d"   'sage-shell:send-doctest)
 
 
 ;;; Alias
