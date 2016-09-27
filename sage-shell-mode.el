@@ -1979,6 +1979,9 @@ Return value is not deifned."
                       (line-number-at-pos))))
     (1+ (- (line-number-at-pos) start-line))))
 
+(defvar sage-shell:-report-cursor-pos-p t)
+(make-variable-buffer-local 'sage-shell:-report-cursor-pos-p)
+
 (defun sage-shell:-report-cursor-pos (proc &rest args)
   (let ((arg (car args)))
     (cond ((equal arg 6)
@@ -4533,7 +4536,10 @@ the end of the docstring."
             (or
              (re-search-forward sage-shell:-test-prompt-regexp nil t)
              (forward-line 1)))))
-        (arg (sage-shell:send-all-doctests))
+        ;; To silence byte-compile warning
+        ;; TODO: delete fboundp
+        (arg (when (fboundp 'sage-shell:send-all-doctests)
+               (sage-shell:send-all-doctests)))
         ((derived-mode-p 'python-mode)
          (sage-shell:-send-current-doctest
           (lambda ()
@@ -4543,9 +4549,6 @@ the end of the docstring."
               (or (re-search-forward sage-shell:-test-prompt-regexp
                                      nil t)
                   (forward-line 1))))))))
-
-(defvar sage-shell:-report-cursor-pos-p t)
-(make-variable-buffer-local 'sage-shell:-report-cursor-pos-p)
 
 (let ((mark (make-marker)))
   (defun sage-shell:send-all-doctests ()
@@ -4566,8 +4569,11 @@ the end of the docstring."
       (setq string-end (point))
       (goto-char string-start)
       (set-marker mark (point))
-      (sage-shell:-send-current-doctest-rec
-       string-end buf)))
+      ;; To silence byte-compile warning
+      ;; TODO: delete fboundp
+      (when (fboundp 'sage-shell:-send-current-doctest-rec)
+        (sage-shell:-send-current-doctest-rec
+         string-end buf))))
 
   (defun sage-shell:-send-current-doctest-rec (bd buf)
     (with-current-buffer buf
@@ -4578,7 +4584,10 @@ the end of the docstring."
              (set-marker mark (point))
              (sage-shell:-send-current-doctest
               (lambda ()
-                (sage-shell:-send-current-doctest-rec bd buf))))
+                ;; To silence byte-compile warning
+                ;; TODO: delete fboundp
+                (when (fboundp 'sage-shell:-send-current-doctest-rec)
+                  (sage-shell:-send-current-doctest-rec bd buf)))))
             (t (with-current-buffer sage-shell:process-buffer
                  (setq sage-shell:-report-cursor-pos-p t)))))))
 
