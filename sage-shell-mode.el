@@ -196,7 +196,7 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
-(defcustom sage-shell:check-ipython-version-on-startup t
+(defcustom sage-shell:check-ipython-version-on-startup nil
   "Non `nil' means check if `sage-shell:use-prompt-toolkit' is correctly set when starting the Sage process.
 The checking is done asyncally."
   :type 'boolean
@@ -1978,6 +1978,9 @@ Return value is not deifned."
                       (goto-char (window-start))
                       (line-number-at-pos))))
     (1+ (- (line-number-at-pos) start-line))))
+
+(defvar sage-shell:-report-cursor-pos-p t)
+(make-variable-buffer-local 'sage-shell:-report-cursor-pos-p)
 
 (defun sage-shell:-report-cursor-pos (proc &rest args)
   (let ((arg (car args)))
@@ -4544,43 +4547,43 @@ the end of the docstring."
                                      nil t)
                   (forward-line 1))))))))
 
-(defvar sage-shell:-report-cursor-pos-p t)
-(make-variable-buffer-local 'sage-shell:-report-cursor-pos-p)
+;; TODO use indefinite extent and delete this global variable
+;; Drop Emacs 24.1 and 24.2 support
+(defvar sage-shell:-doctest-marker (make-marker))
 
-(let ((mark (make-marker)))
-  (defun sage-shell:send-all-doctests ()
-    "Evaluate all doctests inside current docstring."
-    (interactive)
-    (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
-    (let* ((ppss (syntax-ppss))
-           (in-string (nth 3 ppss))
-           (string-start (nth 8 ppss))
-           (string-end nil)
-           (buf (current-buffer)))
-      (unless in-string
-        (error "Not inside a docstring."))
-      (with-current-buffer sage-shell:process-buffer
-        (setq sage-shell:-report-cursor-pos-p nil))
-      (goto-char string-start)
-      (forward-sexp)
-      (setq string-end (point))
-      (goto-char string-start)
-      (set-marker mark (point))
-      (sage-shell:-send-current-doctest-rec
-       string-end buf)))
+(defun sage-shell:send-all-doctests ()
+  "Evaluate all doctests inside current docstring."
+  (interactive)
+  (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
+  (let* ((ppss (syntax-ppss))
+         (in-string (nth 3 ppss))
+         (string-start (nth 8 ppss))
+         (string-end nil)
+         (buf (current-buffer)))
+    (unless in-string
+      (error "Not inside a docstring."))
+    (with-current-buffer sage-shell:process-buffer
+      (setq sage-shell:-report-cursor-pos-p nil))
+    (goto-char string-start)
+    (forward-sexp)
+    (setq string-end (point))
+    (goto-char string-start)
+    (set-marker sage-shell:-doctest-marker (point))
+    (sage-shell:-send-current-doctest-rec
+     string-end buf)))
 
-  (defun sage-shell:-send-current-doctest-rec (bd buf)
-    (with-current-buffer buf
-      (goto-char mark)
-      (cond ((and (<= (point) bd)
-                  (re-search-forward sage-shell:-test-prompt-regexp
-                                     bd t))
-             (set-marker mark (point))
-             (sage-shell:-send-current-doctest
-              (lambda ()
-                (sage-shell:-send-current-doctest-rec bd buf))))
-            (t (with-current-buffer sage-shell:process-buffer
-                 (setq sage-shell:-report-cursor-pos-p t)))))))
+(defun sage-shell:-send-current-doctest-rec (bd buf)
+  (with-current-buffer buf
+    (goto-char sage-shell:-doctest-marker)
+    (cond ((and (<= (point) bd)
+                (re-search-forward sage-shell:-test-prompt-regexp
+                                   bd t))
+           (set-marker sage-shell:-doctest-marker (point))
+           (sage-shell:-send-current-doctest
+            (lambda ()
+              (sage-shell:-send-current-doctest-rec bd buf))))
+          (t (with-current-buffer sage-shell:process-buffer
+               (setq sage-shell:-report-cursor-pos-p t))))))
 
 (defun sage-shell:-send-current-doctest (&optional callback)
   (sage-shell-edit:set-sage-proc-buf-internal)
