@@ -1983,16 +1983,19 @@ Return value is not deifned."
   (let ((arg (car args)))
     (cond ((equal arg 6)
            (sage-shell:after-output-finished
-             (when (save-excursion
-                     (forward-line 0)
-                     (looking-at sage-shell:-prompt-regexp-no-eol))
-               (let ((row (cond ((= (line-end-position) (point-max))
-                                 (process-get proc 'sage-shell:win-height))
-                                (t (sage-shell:-current-row)))))
-                 (process-send-string proc
-                                      (format "\e[%s;%sR"
-                                              row
-                                              (sage-shell:-current-column))))))))))
+             (with-current-buffer sage-shell:process-buffer
+               (when (and (save-excursion
+                            (forward-line 0)
+                            (looking-at sage-shell:-prompt-regexp-no-eol))
+                          sage-shell:-report-cursor-pos-p)
+                 (let ((row (cond ((= (line-end-position) (point-max))
+                                   (process-get proc 'sage-shell:win-height))
+                                  (t (sage-shell:-current-row)))))
+                   (process-send-string
+                    proc
+                    (format "\e[%s;%sR"
+                            row
+                            (sage-shell:-current-column)))))))))))
 
 (defun sage-shell:-delete-to-end-of-output (&optional pt)
   "Assuming current point is at output, delete output text from
@@ -4483,12 +4486,15 @@ inserted in the process buffer before executing the command."
                                      :display-function 'display-buffer
                                      :push-to-input-history-p t))
 
+(defvar sage-shell:-test-prompt-regexp
+  (rx line-start (? (or "-" "+")) (0+ (or space punct))
+      (1+ (or "sage: " ">>> "))))
+
 (defun sage-shell:-doctest-lines ()
   "If the current line start with a sage: prompt, return lines for doctest."
   (save-excursion
     (beginning-of-line)
-    (skip-chars-forward " 	")
-    (when (looking-at (rx (1+ "sage: ")))
+    (when (looking-at sage-shell:-test-prompt-regexp)
       (let* ((inhibit-field-text-motion t)
              (lines (list (buffer-substring-no-properties
                            (match-end 0)
@@ -4510,9 +4516,65 @@ inserted in the process buffer before executing the command."
 
 (defun sage-shell:send-doctest ()
   (interactive)
-  "If the current line start with a Sage prompt 'sage: ' then, this function
-evaluates the code block at the current line and moves cursor to the next
-prompt."
+  "If looking at a sage: prompt, send the current doctest lines to the Sage process.
+With prefix argument, send all doctests (at sage: prompts) until
+the end of the docstring."
+  ;; Some code are copied from sage-test.el provided by sage-mode
+  (save-excursion
+    (beginning-of-line)
+    (unless (looking-at sage-shell:-test-prompt-regexp)
+      (error "Not at a sage: prompt"))
+    ;; Send current lines
+    (sage-shell:-send-current-doctest))
+  (save-restriction
+    (unless (derived-mode-p 'sage-shell:hel-mode)
+      (narrow-to-defun))
+    (end-of-line)
+    (unless (re-search-forward
+             sage-shell:-test-prompt-regexp
+             (point-max) t)
+      (forward-line 1))
+    (forward-line 0)))
+
+(defvar sage-shell:-report-cursor-pos-p t)
+(make-variable-buffer-local 'sage-shell:-report-cursor-pos-p)
+
+(let ((mark (make-marker)))
+  (defun sage-shell:send-all-doctests ()
+    "Evaluate all doctests inside current docstring."
+    (interactive)
+    (sage-shell:set-process-buffer)
+    (let* ((ppss (syntax-ppss))
+           (in-string (nth 3 ppss))
+           (string-start (nth 8 ppss))
+           (string-end nil)
+           (buf (current-buffer)))
+      (unless in-string
+        (error "Not inside a docstring."))
+      (with-current-buffer sage-shell:process-buffer
+        (setq sage-shell:-report-cursor-pos-p nil))
+      (goto-char string-start)
+      (forward-sexp)
+      (setq string-end (point))
+      (goto-char string-start)
+      (set-marker mark (point))
+      (sage-shell:-send-current-doctest-rec
+       string-end buf)))
+
+  (defun sage-shell:-send-current-doctest-rec (bd buf)
+    (with-current-buffer buf
+      (goto-char mark)
+      (cond ((and (<= (point) bd)
+                  (re-search-forward sage-shell:-test-prompt-regexp
+                                     bd t))
+             (set-marker mark (point))
+             (sage-shell:-send-current-doctest
+              (lambda ()
+                (sage-shell:-send-current-doctest-rec bd buf))))
+            (t (with-current-buffer sage-shell:process-buffer
+                 (setq sage-shell:-report-cursor-pos-p t)))))))
+
+(defun sage-shell:-send-current-doctest (&optional callback)
   (sage-shell-edit:set-sage-proc-buf-internal)
   (let ((lines (sage-shell:-doctest-lines)))
     (cond
@@ -4522,17 +4584,14 @@ prompt."
        :command (car lines)
        :insert-command-p t
        :display-function 'display-buffer
-       :push-to-input-history-p t))
+       :push-to-input-history-p t
+       :callback callback))
      (t
       (let ((lines (sage-shell:-cpaste-lines lines)))
-        (sage-shell:-send--lines-internal lines))))
-    (when lines
-      (forward-line (length lines)))
-    (when (re-search-forward (rx line-start (0+ whitespace) "sage: ")
-                             nil t)
-      (forward-char (- (length "sage: "))))))
+        (sage-shell:-send--lines-internal
+         lines callback))))))
 
-(defun sage-shell:-send--lines-internal (lines)
+(defun sage-shell:-send--lines-internal (lines &optional callback)
   (with-current-buffer sage-shell:process-buffer
     (sage-shell:setq-local
      sage-shell:output-finished-regexp
@@ -4548,12 +4607,15 @@ prompt."
    :callback
    (lambda ()
      (cond ((cdr lines)
-            (sage-shell:-send--lines-internal (cdr lines)))
+            (sage-shell:-send--lines-internal
+             (cdr lines) callback))
            (t (with-current-buffer sage-shell:process-buffer
                 (sage-shell:setq-local
                  sage-shell:output-finished-regexp
                  (default-value
-                   'sage-shell:output-finished-regexp))))))))
+                   'sage-shell:output-finished-regexp))
+                (when (functionp callback)
+                  (funcall callback))))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
