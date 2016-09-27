@@ -4514,27 +4514,35 @@ inserted in the process buffer before executing the command."
                  (forward-line 1)
                  finally return (nreverse lines))))))
 
-(defun sage-shell:send-doctest ()
-  (interactive)
+(defun sage-shell:send-doctest (arg)
+  (interactive "P")
   "If looking at a sage: prompt, send the current doctest lines to the Sage process.
 With prefix argument, send all doctests (at sage: prompts) until
 the end of the docstring."
+  (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
   ;; Some code are copied from sage-test.el provided by sage-mode
-  (save-excursion
-    (beginning-of-line)
-    (unless (looking-at sage-shell:-test-prompt-regexp)
-      (error "Not at a sage: prompt"))
-    ;; Send current lines
-    (sage-shell:-send-current-doctest))
-  (save-restriction
-    (unless (derived-mode-p 'sage-shell:hel-mode)
-      (narrow-to-defun))
-    (end-of-line)
-    (unless (re-search-forward
-             sage-shell:-test-prompt-regexp
-             (point-max) t)
-      (forward-line 1))
-    (forward-line 0)))
+  (unless arg
+    (save-excursion
+      (forward-line 0)
+      (unless (looking-at sage-shell:-test-prompt-regexp)
+        (error "Not at a sage: prompt"))))
+  (cond ((derived-mode-p 'sage-shell:help-mode)
+         (sage-shell:-send-current-doctest
+          (lambda ()
+            (end-of-line)
+            (or
+             (re-search-forward sage-shell:-test-prompt-regexp nil t)
+             (forward-line 1)))))
+        (arg (sage-shell:send-all-doctests))
+        ((derived-mode-p 'python-mode)
+         (sage-shell:-send-current-doctest
+          (lambda ()
+            (save-restriction
+              (narrow-to-defun)
+              (end-of-line)
+              (or (re-search-forward sage-shell:-test-prompt-regexp
+                                     nil t)
+                  (forward-line 1))))))))
 
 (defvar sage-shell:-report-cursor-pos-p t)
 (make-variable-buffer-local 'sage-shell:-report-cursor-pos-p)
@@ -4543,7 +4551,7 @@ the end of the docstring."
   (defun sage-shell:send-all-doctests ()
     "Evaluate all doctests inside current docstring."
     (interactive)
-    (sage-shell:set-process-buffer)
+    (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
     (let* ((ppss (syntax-ppss))
            (in-string (nth 3 ppss))
            (string-start (nth 8 ppss))
