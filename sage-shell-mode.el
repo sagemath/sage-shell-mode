@@ -4608,8 +4608,10 @@ Othewise return nil."
        :insert-command-p t
        :display-function 'display-buffer
        :push-to-input-history-p t
-       :callback (with-current-buffer buf
-                   (funcall callback))))
+       :callback (when callback
+                   (lambda ()
+                     (with-current-buffer buf
+                       (funcall callback))))))
      (t
       (let ((lines (sage-shell:-cpaste-lines lines)))
         (sage-shell:-send--lines-internal
