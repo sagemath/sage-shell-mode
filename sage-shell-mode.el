@@ -4847,7 +4847,7 @@ Othewise return nil."
   "C-c C-l" 'sage-shell-edit:load-file
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer
   "C-c C-j" 'sage-shell-edit:send-line*
-  "C-c d"   'sage-shell:send-doctest)
+  "C-c C-d"   'sage-shell:send-doctest)
 
 
 ;;; Alias
