@@ -4540,12 +4540,28 @@ the end of the docstring."
         ((derived-mode-p 'python-mode)
          (sage-shell:-send-current-doctest
           (lambda ()
-            (save-restriction
-              (narrow-to-defun)
+            (let ((s-start-end (sage-shell:-beg-end-of-docstring)))
               (end-of-line)
-              (or (re-search-forward sage-shell:-test-prompt-regexp
-                                     nil t)
+              (or (and s-start-end
+                       (re-search-forward sage-shell:-test-prompt-regexp
+                                          (cdr s-start-end) t))
                   (forward-line 1))))))))
+
+(defun sage-shell:-beg-end-of-docstring ()
+  "Return cons of the string beg and the string end if the point is in a string.
+Othewise return nil."
+  (let* ((ppss (syntax-ppss))
+         (in-string (nth 3 ppss))
+         (string-start (nth 8 ppss))
+         (string-end nil))
+    (when in-string
+      (save-excursion
+        (goto-char string-start)
+        (ignore-errors
+          (forward-sexp)
+          (setq string-end (point)))
+        (when (and string-start string-end)
+          (cons string-start string-end))))))
 
 ;; TODO use indefinite extent and delete this global variable
 ;; Drop Emacs 24.1 and 24.2 support
@@ -4555,22 +4571,18 @@ the end of the docstring."
   "Evaluate all doctests inside current docstring."
   (interactive)
   (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
-  (let* ((ppss (syntax-ppss))
-         (in-string (nth 3 ppss))
-         (string-start (nth 8 ppss))
-         (string-end nil)
-         (buf (current-buffer)))
-    (unless in-string
+  (let* ((s-start-end (sage-shell:-beg-end-of-docstring))
+         (buf (current-buffer))
+         (string-start (car s-start-end))
+         (string-end (cdr s-start-end)))
+    (unless s-start-end
       (error "Not inside a docstring."))
     (with-current-buffer sage-shell:process-buffer
       (setq sage-shell:-report-cursor-pos-p nil))
-    (goto-char string-start)
-    (forward-sexp)
-    (setq string-end (point))
+
     (goto-char string-start)
     (set-marker sage-shell:-doctest-marker (point))
-    (sage-shell:-send-current-doctest-rec
-     string-end buf)))
+    (sage-shell:-send-current-doctest-rec string-end buf)))
 
 (defun sage-shell:-send-current-doctest-rec (bd buf)
   (with-current-buffer buf
