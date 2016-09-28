@@ -4586,7 +4586,6 @@ the end of the docstring."
                (setq sage-shell:-report-cursor-pos-p t))))))
 
 (defun sage-shell:-send-current-doctest (&optional callback)
-  (sage-shell-edit:set-sage-proc-buf-internal)
   (let ((lines (sage-shell:-doctest-lines))
         (buf (current-buffer)))
     (cond
