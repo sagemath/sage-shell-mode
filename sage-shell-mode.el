@@ -1068,7 +1068,8 @@ When sync is nill this return a lambda function to get the result."
      proc
      (sage-shell:-process-sentinel-generator default-sentinel)))
   (when sage-shell:check-ipython-version-on-startup
-    (sage-shell:check-ipython-version)))
+    (sage-shell:check-ipython-version
+     " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'.")))
 
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
@@ -1237,7 +1238,7 @@ function asks which process is to be restarted."
                 t t)
       (process-send-eof proc))))
 
-(defun sage-shell:check-ipython-version ()
+(defun sage-shell:check-ipython-version (&optional startup-msg)
   "Check IPython version and check if sage-shell:use-prompt-toolkit is correctly set."
   (interactive)
   (message "Checking IPython version...")
@@ -1247,8 +1248,9 @@ function asks which process is to be restarted."
       "-c" "import IPython; print IPython.version_info[0]")
     (deferred:nextc it
       (lambda (x)
-        (message (concat "Checking IPython version... Done."
-                         " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'."))
+        (message (concat
+                  "Checking IPython version... Done."
+                  startup-msg))
         (let ((version (string-to-number (sage-shell:trim-right x)))
               (msg nil))
           (cond ((and (< version 5) sage-shell:use-prompt-toolkit)
