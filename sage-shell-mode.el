@@ -2694,9 +2694,13 @@ lines beg end"
         (sage-shell:send-line-to-indenting-buffer-and-indent line))
       (cond (sage-shell:use-prompt-toolkit
              (let* ((proc (get-buffer-process sage-shell:process-buffer))
-                    (proc-pos (marker-position (process-mark proc)))
-                    (line-end (progn (goto-char proc-pos)
-                                     (line-end-position))))
+                    (proc-pos (copy-marker
+                               (marker-position (process-mark proc))
+                               t))
+                    (line-end (copy-marker
+                               (progn (goto-char proc-pos)
+                                      (line-end-position))
+                               t)))
                (add-hook 'sage-shell:-pre-output-filter-hook
                          (lambda () (let ((inhibit-redisplay t))
                                   (delete-region proc-pos line-end))))
