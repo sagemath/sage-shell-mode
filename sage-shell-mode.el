@@ -196,7 +196,7 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
-(defcustom sage-shell:check-ipython-version-on-startup nil
+(defcustom sage-shell:check-ipython-version-on-startup t
   "Non `nil' means check if `sage-shell:use-prompt-toolkit' is correctly set when starting the Sage process.
 The checking is done asyncally."
   :type 'boolean
@@ -1068,7 +1068,8 @@ When sync is nill this return a lambda function to get the result."
      proc
      (sage-shell:-process-sentinel-generator default-sentinel)))
   (when sage-shell:check-ipython-version-on-startup
-    (sage-shell:check-ipython-version)))
+    (sage-shell:check-ipython-version
+     " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'.")))
 
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
@@ -1237,7 +1238,7 @@ function asks which process is to be restarted."
                 t t)
       (process-send-eof proc))))
 
-(defun sage-shell:check-ipython-version ()
+(defun sage-shell:check-ipython-version (&optional startup-msg)
   "Check IPython version and check if sage-shell:use-prompt-toolkit is correctly set."
   (interactive)
   (message "Checking IPython version...")
@@ -1247,8 +1248,9 @@ function asks which process is to be restarted."
       "-c" "import IPython; print IPython.version_info[0]")
     (deferred:nextc it
       (lambda (x)
-        (message (concat "Checking IPython version... Done."
-                         " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'."))
+        (message (concat
+                  "Checking IPython version... Done."
+                  startup-msg))
         (let ((version (string-to-number (sage-shell:trim-right x)))
               (msg nil))
           (cond ((and (< version 5) sage-shell:use-prompt-toolkit)
@@ -2694,9 +2696,13 @@ lines beg end"
         (sage-shell:send-line-to-indenting-buffer-and-indent line))
       (cond (sage-shell:use-prompt-toolkit
              (let* ((proc (get-buffer-process sage-shell:process-buffer))
-                    (proc-pos (marker-position (process-mark proc)))
-                    (line-end (progn (goto-char proc-pos)
-                                     (line-end-position))))
+                    (proc-pos (copy-marker
+                               (marker-position (process-mark proc))
+                               t))
+                    (line-end (copy-marker
+                               (progn (goto-char proc-pos)
+                                      (line-end-position))
+                               t)))
                (add-hook 'sage-shell:-pre-output-filter-hook
                          (lambda () (let ((inhibit-redisplay t))
                                   (delete-region proc-pos line-end))))
