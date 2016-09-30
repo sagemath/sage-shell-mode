@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 - 2016 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/sagemath/sage-shell-mode
-;; Package-Requires: ((cl-lib "0.5") (deferred "0.4.0") (emacs "24.1"))
+;; Package-Requires: ((cl-lib "0.5") (emacs "24.1") (let-alist "1.0.4") (deferred "0.4.0"))
 ;; Keywords: Sage, math
 ;; Version: 0.2.1
 
@@ -490,6 +490,14 @@ returned from the function, otherwise, this returns it self. "
        (select-window win))
      ,@forms))
 
+;;; Copied from pdf-tools
+(cl-deftype sage-shell-list-of (type)
+  `(satisfies
+    (lambda (l)
+      (and (listp l)
+           (cl-every (lambda (x)
+                       (cl-typep x ',type))
+                     l)))))
 (require 'compile)
 (require 'ansi-color)
 
@@ -873,6 +881,10 @@ succesive lines in history."
                                     output-buffer
                                     process-buffer
                                     sync)
+  (cl-check-type callback (or null function))
+  (cl-check-type process-buffer (or null string buffer))
+  (cl-check-type output-buffer (or null string buffer))
+  (cl-check-type cell string)
   (let ((evaluator (sage-shell:py-mod-func "run_cell_and_print_state"))
         (callback (when (functionp callback)
                     (lambda (output)
@@ -913,6 +925,11 @@ If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
 If EVALUATOR is non-nil, it should be a Python function with two arguments
 which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
+  (cl-check-type cell string)
+  (cl-check-type callback (or null function))
+  (cl-check-type process-buffer (or null string buffer))
+  (cl-check-type output-buffer (or null string buffer))
+  (cl-check-type evaluator (or null string))
   (unless (and (bufferp sage-shell:process-buffer)
                (buffer-live-p sage-shell:process-buffer)
                (get-buffer-process sage-shell:process-buffer))
@@ -3418,40 +3435,59 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 
 
 ;;; sage-shell-cpl
-(defvar sage-shell-cpl:current-state
-  (list
-   ;; name of the interface (string)
-   (cons 'interface nil)
 
-   ;; nil or the point of the beggining of completion
-   (cons 'prefix nil)
+(defconst sage-shell-cpl-state-keys
+  '(
+    ;; name of the interface (string)
+    interface
+    ;; nil or the point of the beggining of completion
+    prefix
+    ;; nil or the base name of the variable name
+    var-base-name
+    ;; nil or string.
+    module-name
+    ;; nil or the function name. Used by eldoc
+    in-function-call
+    ;; nil or integer. Used by eldoc
+    in-function-call-end
+    ;; nil or the base name of the function in function call.
+    ;; Used by eldoc
+    in-function-call-base-name
+    ;; In some cases, we need different kinds of candidates.
+    ;; For example, candidates which follow "gap." should contain
+    ;; gap commands and attributes of a variable gap.
+    ;; An element of tyjpes should be equal to one of
+    ;; "interface", "attributes", "modules", "vars-in-module", "in-function-call".
 
-   ;; nil or the base name of the variable name
-   (cons 'var-base-name nil)
+    ;; When "modules" in in type and module-name is nil, then candidates shoud
+    ;; contain top level modules in sys.path.  If module-name is non-nil, it
+    ;; should contain sub-modules in module-name.
+    types))
 
-   ;; nil or string.
-   (cons 'module-name nil)
+(defvar sage-shell-cpl:current-state nil)
 
-   ;; nil or the function name. Used by eldoc
-   (cons 'in-function-call nil)
-
-   ;; nil or integer. Used by eldoc
-   (cons 'in-function-call-end nil)
-
-   ;; nil or the base name of the function in function call.
-   ;; Used by eldoc
-   (cons 'in-function-call-base-name nil)
-
-   ;; In some cases, we need different kinds of candidates.
-   ;; For example, candidates which follow "gap." should contain
-   ;; gap commands and attributes of a variable gap.
-   ;; An element of tyjpes should be equal to one of
-   ;; "interface", "attributes", "modules", "vars-in-module", "in-function-call".
-
-   ;; When "modules" in in type and module-name is nil, then candidates shoud
-   ;; contain top level modules in sys.path.  If module-name is non-nil, it
-   ;; should contain sub-modules in module-name.
-   (cons 'types nil)))
+(defun sage-shell-cpl-statep (l)
+  (and (listp l)
+       (cl-every (lambda (x)
+                   (and (listp x)
+                        (memq (car x) sage-shell-cpl-state-keys)))
+                 l)
+       (stringp (assoc-default 'interface l))
+       (let-alist l
+         (and (cl-every (lambda (x) (or (null x) (integerp x)))
+                        (list .in-function-call-end
+                              .prefix))
+              (cl-every (lambda (x) (or (null x) (stringp x)))
+                        (list .var-base-name
+                              .module-name
+                              .in-function-call
+                              .in-function-call-base-name))
+              (listp .types)
+              (cl-every (lambda (x) (member x '("interface" "attributes"
+                                            "modules"
+                                            "vars-in-module"
+                                            "in-function-call")))
+                        .types)))))
 
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
@@ -3639,6 +3675,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
               (list types state)))
           (sage-shell:push-elmts state
             'types types)
+          (cl-check-type state sage-shell-cpl-state)
           ;; Returns state.
           state)))))
 
@@ -3811,6 +3848,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 meaning and `sage-shell-cpl:-last-sexp' will be set when the
 redirection is finished.
 This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
+  (cl-check-type compl-state sage-shell-cpl-state)
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:with-current-buffer-safe sage-shell:process-buffer
@@ -3853,6 +3891,7 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
               sage-shell-cpl:-last-sexp))))))
 
 (defun sage-shell-cpl:-cpl-init-callback (s compl-state)
+  (cl-check-type s sage-shell:output-stct)
   (cond ((sage-shell:output-stct-success s)
          (let ((output (sage-shell:output-stct-output s)))
            (unless (string-match (rx "))\n" buffer-end) output)
@@ -4238,6 +4277,12 @@ whose key is in KEYS."
   "If `insert-command-p' is non-nil, then it inserts `command' in
 the process buffer. If `before-sentence' is non-nil, it will be
 inserted in the process buffer before executing the command."
+  (cl-check-type command string)
+  (cl-check-type pre-message (or null string))
+  (cl-check-type post-message (or null string))
+  (cl-check-type display-function (or null function))
+  (cl-check-type callback (or null function))
+
   ;; set sage process buffer
   (sage-shell-edit:set-sage-proc-buf-internal)
 
@@ -4627,6 +4672,8 @@ Othewise return nil."
              (funcall callback)))))))))
 
 (defun sage-shell:-send--lines-internal (lines &optional callback)
+  (cl-check-type lines (sage-shell-list-of string))
+  (cl-check-type callback (or null function))
   (with-current-buffer sage-shell:process-buffer
     (sage-shell:setq-local
      sage-shell:output-finished-regexp
@@ -4657,7 +4704,8 @@ Othewise return nil."
           (display-function sage-shell-edit:display-function)
           (insert-command-p t) (before-sentence nil)
           (gerund "Loading"))
-
+  (cl-check-type command (or null string))
+  (cl-check-type file-name (or null string))
   (let ((buf (cl-loop for b in (buffer-list)
                       for bfn = (buffer-file-name b)
                       if (and bfn (equal (expand-file-name bfn)
@@ -4797,6 +4845,7 @@ Othewise return nil."
 
     (sage-shell:push-elmts state
       'types types)
+    (cl-check-type state sage-shell-cpl-state)
     ;; Returns state.
     state))
 
