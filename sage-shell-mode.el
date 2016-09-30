@@ -196,7 +196,7 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
-(defcustom sage-shell:check-ipython-version-on-startup nil
+(defcustom sage-shell:check-ipython-version-on-startup t
   "Non `nil' means check if `sage-shell:use-prompt-toolkit' is correctly set when starting the Sage process.
 The checking is done asyncally."
   :type 'boolean

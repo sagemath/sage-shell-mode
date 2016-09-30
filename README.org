@@ -63,6 +63,8 @@
       (setq sage-shell:use-prompt-toolkit t)
      #+END_SRC
 
+     By default, =sage-shell-mode= checks if =sage-shell:use-prompt-toolkit= is correctly set when you start Sage process. You can disable this checking by setting =sage-shell:check-ipython-version-on-startup= to =nil=.
+
   1. You can now run Sage inside Emacs by =M-x sage-shell:run-sage=, if Emacs
      can find the executable file of Sage.
 
