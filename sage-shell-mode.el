@@ -50,7 +50,8 @@
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
-(eval-and-compile (require 'cl-lib))
+(eval-and-compile (require 'cl-lib)
+                  (require 'let-alist))
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
@@ -490,23 +491,36 @@ returned from the function, otherwise, this returns it self. "
        (select-window win))
      ,@forms))
 
-;;; Copied from pdf-tools
+;; cl-every raise warnings in Emacs 24.1 and 24.2
+(defsubst sage-shell-every (f l)
+  (cl-loop for x in l always (funcall f x)))
+
+;; Copied from pdf-tools
 (cl-deftype sage-shell-list-of (type)
-  `(satisfies
-    (lambda (l)
-      (and (listp l)
-           (cl-every (lambda (x)
-                       (cl-typep x ',type))
-                     l)))))
+  (if (version< emacs-version "24.5")
+      t
+    `(satisfies
+      (lambda (l)
+        (and (listp l)
+             (sage-shell-every
+              (lambda (x)
+                ;; Calling cl-typep raises warning in Emacs 24.
+                (with-no-warnings
+                  (cl-typep x ',type)))
+              l))))))
 
 (cl-deftype sage-shell-alist-of (key-type val-type)
-  `(satisfies
-    (lambda (l)
-      (and (listp l)
-           (cl-every (lambda (x)
-                       (and (cl-typep (car x) ',key-type)
-                            (cl-typep (cdr x) ',val-type)))
-                     l)))))
+  (if (version< emacs-version "24.5")
+      t
+    `(satisfies
+      (lambda (l)
+        (and (listp l)
+             (sage-shell-every
+              (lambda (x)
+                (with-no-warnings
+                  (and (cl-typep (car x) ',key-type)
+                       (cl-typep (cdr x) ',val-type))))
+              l))))))
 
 
 ;;; sage-shell
@@ -1859,8 +1873,8 @@ Match group 1 will be replaced with devel/sage-branch")
    `(and
      "[" (group (0+ (or num ";")))
      (group
-      (or ,@(cl-loop for (c . _) in sage-shell:-ansi-escpace-handler-alist
-                     collect (char-to-string c)))))))
+      (or ,@(cl-loop for x in sage-shell:-ansi-escpace-handler-alist
+                     collect (char-to-string (car x))))))))
 
 (defun sage-shell:-decompose-ansi-escape-seq (str)
   (setq str (sage-shell:-ansi-escape-filter-out str))
@@ -3489,26 +3503,28 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 
 (defun sage-shell-cpl-statep (l)
   (and (listp l)
-       (cl-every (lambda (x)
-                   (and (listp x)
-                        (memq (car x) sage-shell-cpl-state-keys)))
-                 l)
+       (sage-shell-every (lambda (x)
+                           (and (listp x)
+                                (memq (car x) sage-shell-cpl-state-keys)))
+                         l)
        (stringp (assoc-default 'interface l))
        (let-alist l
-         (and (cl-every (lambda (x) (or (null x) (integerp x)))
-                        (list .in-function-call-end
-                              .prefix))
-              (cl-every (lambda (x) (or (null x) (stringp x)))
-                        (list .var-base-name
-                              .module-name
-                              .in-function-call
-                              .in-function-call-base-name))
+         (and (sage-shell-every (lambda (x) (or (null x) (integerp x)))
+                                (list .in-function-call-end
+                                      .prefix))
+              (sage-shell-every (lambda (x) (or (null x) (stringp x)))
+                                (list .var-base-name
+                                      .module-name
+                                      .in-function-call
+                                      .in-function-call-base-name))
               (listp .types)
-              (cl-every (lambda (x) (member x '("interface" "attributes"
-                                            "modules"
-                                            "vars-in-module"
-                                            "in-function-call")))
-                        .types)))))
+              (sage-shell-every (lambda (x) (member x '("interface" "attributes"
+                                                    "modules"
+                                                    "vars-in-module"
+                                                    "in-function-call")))
+                                .types)))))
+;; For old Emacs (Emacs 24.3 or older)
+(defalias 'sage-shell-cpl-state-p #'sage-shell-cpl-statep)
 
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
@@ -4265,8 +4281,8 @@ whose key is in KEYS."
          ((consp (cdr proc-alist))
           (when select-p
             (let* ((buffer-names
-                    (cl-loop for (_proc-name . proc) in proc-alist
-                             collect (buffer-name (process-buffer proc))))
+                    (cl-loop for x in proc-alist
+                             collect (buffer-name (process-buffer (cdr x)))))
                    (buffer-name
                     (completing-read
                      select-msg
