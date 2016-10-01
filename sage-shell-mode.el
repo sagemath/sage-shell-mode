@@ -495,32 +495,33 @@ returned from the function, otherwise, this returns it self. "
 (defsubst sage-shell-every (f l)
   (cl-loop for x in l always (funcall f x)))
 
+(defmacro sage-shell-when-emacs25-or-later (&rest body)
+  (declare (indent 0))
+  (unless (version< emacs-version "25.1")
+    `(progn ,@body)))
+
 ;; Copied from pdf-tools
 (cl-deftype sage-shell-list-of (type)
-  (if (version< emacs-version "24.5")
-      t
-    `(satisfies
-      (lambda (l)
-        (and (listp l)
-             (sage-shell-every
-              (lambda (x)
-                ;; Calling cl-typep raises warning in Emacs 24.
-                (with-no-warnings
-                  (cl-typep x ',type)))
-              l))))))
+  `(satisfies
+    (lambda (l)
+      (and (listp l)
+           (sage-shell-every
+            (lambda (x)
+              ;; Calling cl-typep raises warning in Emacs 24.
+              (with-no-warnings
+                (cl-typep x ',type)))
+            l)))))
 
 (cl-deftype sage-shell-alist-of (key-type val-type)
-  (if (version< emacs-version "24.5")
-      t
-    `(satisfies
-      (lambda (l)
-        (and (listp l)
-             (sage-shell-every
-              (lambda (x)
-                (with-no-warnings
-                  (and (cl-typep (car x) ',key-type)
-                       (cl-typep (cdr x) ',val-type))))
-              l))))))
+  `(satisfies
+    (lambda (l)
+      (and (listp l)
+           (sage-shell-every
+            (lambda (x)
+              (with-no-warnings
+                (and (cl-typep (car x) ',key-type)
+                     (cl-typep (cdr x) ',val-type))))
+            l)))))
 
 
 ;;; sage-shell
@@ -952,7 +953,8 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
   (cl-check-type process-buffer (or null string buffer))
   (cl-check-type output-buffer (or null string buffer))
   (cl-check-type evaluator (or null string))
-  (cl-check-type evaluator-key-args (sage-shell-alist-of string string))
+  (sage-shell-when-emacs25-or-later
+    (cl-check-type evaluator-key-args (sage-shell-alist-of string string)))
   (unless (and (bufferp sage-shell:process-buffer)
                (buffer-live-p sage-shell:process-buffer)
                (get-buffer-process sage-shell:process-buffer))
@@ -4709,7 +4711,8 @@ Othewise return nil."
              (funcall callback)))))))))
 
 (defun sage-shell:-send--lines-internal (lines &optional callback)
-  (cl-check-type lines (sage-shell-list-of string))
+  (sage-shell-when-emacs25-or-later
+    (cl-check-type lines (sage-shell-list-of string)))
   (cl-check-type callback (or null function))
   (when lines
     (with-current-buffer sage-shell:process-buffer
