@@ -498,8 +498,6 @@ returned from the function, otherwise, this returns it self. "
            (cl-every (lambda (x)
                        (cl-typep x ',type))
                      l)))))
-(require 'compile)
-(require 'ansi-color)
 
 
 ;;; sage-shell
@@ -999,7 +997,8 @@ When sync is nill this return a lambda function to get the result."
   (concat msg-id "end"))
 
 (defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
-  (if raw (format "%s\n" raw-cmd)
+  (if raw
+      (format "%s\n" raw-cmd)
     (let ((evaluator
            (or evaluator (sage-shell:py-mod-func "run_cell_and_print_msg_id"))))
       (format "%s(\"%s\", '%s', '%s')\n"
