@@ -499,6 +499,15 @@ returned from the function, otherwise, this returns it self. "
                        (cl-typep x ',type))
                      l)))))
 
+(cl-deftype sage-shell-alist-of (key-type val-type)
+  `(satisfies
+    (lambda (l)
+      (and (listp l)
+           (cl-every (lambda (x)
+                       (and (cl-typep (car x) ',key-type)
+                            (cl-typep (cdr x) ',val-type)))
+                     l)))))
+
 
 ;;; sage-shell
 (defvar sage-shell-interfaces:other-interfaces
@@ -915,6 +924,7 @@ succesive lines in history."
                                                sync
                                                raw
                                                evaluator
+                                               evaluator-key-args
                                                to-string)
   "CELL is a string which will be sent to the proces buffer,
 When non-nil, CALLBACK should be a function and will be called if the
@@ -928,6 +938,7 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
   (cl-check-type process-buffer (or null string buffer))
   (cl-check-type output-buffer (or null string buffer))
   (cl-check-type evaluator (or null string))
+  (cl-check-type evaluator-key-args (sage-shell-alist-of string string))
   (unless (and (bufferp sage-shell:process-buffer)
                (buffer-live-p sage-shell:process-buffer)
                (get-buffer-process sage-shell:process-buffer))
@@ -952,7 +963,8 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
     (with-current-buffer proc-buf
       (sage-shell:redirect-setup out-buf proc-buf raw)
       (process-send-string
-       proc-buf (sage-shell:-make-exec-cmd cell raw evaluator))
+       proc-buf (sage-shell:-make-exec-cmd
+                 cell raw evaluator evaluator-key-args))
       (when sync
         (sage-shell:wait-for-redirection-to-complete)))
 
@@ -996,18 +1008,28 @@ When sync is nill this return a lambda function to get the result."
 (defun sage-shell:-rdct-msg-id-end (msg-id)
   (concat msg-id "end"))
 
-(defun sage-shell:-make-exec-cmd (raw-cmd raw &optional evaluator)
+(defun sage-shell:-make-exec-cmd (raw-cmd
+                                  raw
+                                  &optional
+                                  evaluator
+                                  evaluator-key-args)
   (if raw
       (format "%s\n" raw-cmd)
     (let ((evaluator
            (or evaluator (sage-shell:py-mod-func "run_cell_and_print_msg_id"))))
-      (format "%s(\"%s\", '%s', '%s')\n"
+      (format "%s(\"%s\", '%s', '%s'%s)\n"
               evaluator
               (sage-shell:escepe-string raw-cmd)
               (sage-shell:-rdct-msg-id-start
                sage-shell:-redirection-msg-id)
               (sage-shell:-rdct-msg-id-end
-               sage-shell:-redirection-msg-id)))))
+               sage-shell:-redirection-msg-id)
+              (sage-shell:aif evaluator-key-args
+                  (concat ", "
+                          (mapconcat
+                           (lambda (x) (format "%s=%s" (car x) (cdr x)))
+                           it ", "))
+                "")))))
 
 (defun sage-shell:send-command-to-string (command &optional process-buffer raw)
   "Send process to command and return output as string."
