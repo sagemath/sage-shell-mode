@@ -4674,30 +4674,31 @@ Othewise return nil."
 (defun sage-shell:-send--lines-internal (lines &optional callback)
   (cl-check-type lines (sage-shell-list-of string))
   (cl-check-type callback (or null function))
-  (with-current-buffer sage-shell:process-buffer
-    (sage-shell:setq-local
-     sage-shell:output-finished-regexp
-     (rx-to-string
-      `(and line-start
-            (or ,sage-shell:output-finished-regexp-rx
-                (and ":" line-end))))))
-  (sage-shell-edit:exec-command-base
-   :command (car lines)
-   :insert-command-p t
-   :display-function 'display-buffer
-   :push-to-input-history-p t
-   :callback
-   (lambda ()
-     (cond ((cdr lines)
-            (sage-shell:-send--lines-internal
-             (cdr lines) callback))
-           (t (with-current-buffer sage-shell:process-buffer
-                (sage-shell:setq-local
-                 sage-shell:output-finished-regexp
-                 (default-value
-                   'sage-shell:output-finished-regexp))
-                (when (functionp callback)
-                  (funcall callback))))))))
+  (when lines
+    (with-current-buffer sage-shell:process-buffer
+      (sage-shell:setq-local
+       sage-shell:output-finished-regexp
+       (rx-to-string
+        `(and line-start
+              (or ,sage-shell:output-finished-regexp-rx
+                  (and ":" line-end))))))
+    (sage-shell-edit:exec-command-base
+     :command (car lines)
+     :insert-command-p t
+     :display-function 'display-buffer
+     :push-to-input-history-p t
+     :callback
+     (lambda ()
+       (cond ((cdr lines)
+              (sage-shell:-send--lines-internal
+               (cdr lines) callback))
+             (t (with-current-buffer sage-shell:process-buffer
+                  (sage-shell:setq-local
+                   sage-shell:output-finished-regexp
+                   (default-value
+                     'sage-shell:output-finished-regexp))
+                  (when (functionp callback)
+                    (funcall callback)))))))))
 
 (cl-defun sage-shell-edit:load-file-base
     (&key command file-name switch-p
