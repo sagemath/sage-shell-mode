@@ -767,6 +767,9 @@ to a process buffer.")
 (defun sage-shell:interrupt-subjob ()
   "Interrupt the current subjob."
   (interactive)
+  (unless comint-redirect-completed
+    (sage-shell:redirect-cleanup)
+    (setq comint-redirect-completed t))
   (sage-shell:prepare-for-send)
   (if sage-shell:use-prompt-toolkit
       (progn
@@ -785,10 +788,7 @@ to a process buffer.")
                                   (point) (point-max))))
                         (when (string= "" (sage-shell:trim-right str))
                           (delete-region (point) (point-max))))))))
-    (comint-interrupt-subjob))
-  (unless comint-redirect-completed
-    (sage-shell:redirect-cleanup)
-    (setq comint-redirect-completed t)))
+    (comint-interrupt-subjob)))
 
 (sage-shell:define-keys sage-shell-mode-map
   "TAB" 'sage-shell-tab-command
