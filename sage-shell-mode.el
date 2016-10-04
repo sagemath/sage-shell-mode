@@ -784,10 +784,7 @@ to a process buffer.")
           ;; Delete whitespaces
           (add-hook 'sage-shell:-post-output-filter-hook
                     (lambda ()
-                      (let ((str (buffer-substring-no-properties
-                                  (point) (point-max))))
-                        (when (string= "" (sage-shell:trim-right str))
-                          (delete-region (point) (point-max))))))))
+                      (delete-region (point) (point-max))))))
     (comint-interrupt-subjob)))
 
 (sage-shell:define-keys sage-shell-mode-map
