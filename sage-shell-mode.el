@@ -50,7 +50,8 @@
 
 ;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
-(eval-and-compile (require 'cl-lib))
+(eval-and-compile (require 'cl-lib)
+                  (require 'let-alist))
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
@@ -490,23 +491,37 @@ returned from the function, otherwise, this returns it self. "
        (select-window win))
      ,@forms))
 
-;;; Copied from pdf-tools
+;; cl-every raise warnings in Emacs 24.1 and 24.2
+(defsubst sage-shell-every (f l)
+  (cl-loop for x in l always (funcall f x)))
+
+(defmacro sage-shell-when-emacs25-or-later (&rest body)
+  (declare (indent 0))
+  (unless (version< emacs-version "25.1")
+    `(progn ,@body)))
+
+;; Copied from pdf-tools
 (cl-deftype sage-shell-list-of (type)
   `(satisfies
     (lambda (l)
       (and (listp l)
-           (cl-every (lambda (x)
-                       (cl-typep x ',type))
-                     l)))))
+           (sage-shell-every
+            (lambda (x)
+              ;; Calling cl-typep raises warning in Emacs 24.
+              (with-no-warnings
+                (cl-typep x ',type)))
+            l)))))
 
 (cl-deftype sage-shell-alist-of (key-type val-type)
   `(satisfies
     (lambda (l)
       (and (listp l)
-           (cl-every (lambda (x)
-                       (and (cl-typep (car x) ',key-type)
-                            (cl-typep (cdr x) ',val-type)))
-                     l)))))
+           (sage-shell-every
+            (lambda (x)
+              (with-no-warnings
+                (and (cl-typep (car x) ',key-type)
+                     (cl-typep (cdr x) ',val-type))))
+            l)))))
 
 
 ;;; sage-shell
@@ -752,6 +767,9 @@ to a process buffer.")
 (defun sage-shell:interrupt-subjob ()
   "Interrupt the current subjob."
   (interactive)
+  (unless comint-redirect-completed
+    (sage-shell:redirect-cleanup)
+    (setq comint-redirect-completed t))
   (sage-shell:prepare-for-send)
   (if sage-shell:use-prompt-toolkit
       (progn
@@ -770,10 +788,7 @@ to a process buffer.")
                                   (point) (point-max))))
                         (when (string= "" (sage-shell:trim-right str))
                           (delete-region (point) (point-max))))))))
-    (comint-interrupt-subjob))
-  (unless comint-redirect-completed
-    (sage-shell:redirect-cleanup)
-    (setq comint-redirect-completed t)))
+    (comint-interrupt-subjob)))
 
 (sage-shell:define-keys sage-shell-mode-map
   "TAB" 'sage-shell-tab-command
@@ -938,7 +953,8 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
   (cl-check-type process-buffer (or null string buffer))
   (cl-check-type output-buffer (or null string buffer))
   (cl-check-type evaluator (or null string))
-  (cl-check-type evaluator-key-args (sage-shell-alist-of string string))
+  (sage-shell-when-emacs25-or-later
+    (cl-check-type evaluator-key-args (sage-shell-alist-of string string)))
   (unless (and (bufferp sage-shell:process-buffer)
                (buffer-live-p sage-shell:process-buffer)
                (get-buffer-process sage-shell:process-buffer))
@@ -1859,8 +1875,8 @@ Match group 1 will be replaced with devel/sage-branch")
    `(and
      "[" (group (0+ (or num ";")))
      (group
-      (or ,@(cl-loop for (c . _) in sage-shell:-ansi-escpace-handler-alist
-                     collect (char-to-string c)))))))
+      (or ,@(cl-loop for x in sage-shell:-ansi-escpace-handler-alist
+                     collect (char-to-string (car x))))))))
 
 (defun sage-shell:-decompose-ansi-escape-seq (str)
   (setq str (sage-shell:-ansi-escape-filter-out str))
@@ -3489,26 +3505,28 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 
 (defun sage-shell-cpl-statep (l)
   (and (listp l)
-       (cl-every (lambda (x)
-                   (and (listp x)
-                        (memq (car x) sage-shell-cpl-state-keys)))
-                 l)
+       (sage-shell-every (lambda (x)
+                           (and (listp x)
+                                (memq (car x) sage-shell-cpl-state-keys)))
+                         l)
        (stringp (assoc-default 'interface l))
        (let-alist l
-         (and (cl-every (lambda (x) (or (null x) (integerp x)))
-                        (list .in-function-call-end
-                              .prefix))
-              (cl-every (lambda (x) (or (null x) (stringp x)))
-                        (list .var-base-name
-                              .module-name
-                              .in-function-call
-                              .in-function-call-base-name))
+         (and (sage-shell-every (lambda (x) (or (null x) (integerp x)))
+                                (list .in-function-call-end
+                                      .prefix))
+              (sage-shell-every (lambda (x) (or (null x) (stringp x)))
+                                (list .var-base-name
+                                      .module-name
+                                      .in-function-call
+                                      .in-function-call-base-name))
               (listp .types)
-              (cl-every (lambda (x) (member x '("interface" "attributes"
-                                            "modules"
-                                            "vars-in-module"
-                                            "in-function-call")))
-                        .types)))))
+              (sage-shell-every (lambda (x) (member x '("interface" "attributes"
+                                                    "modules"
+                                                    "vars-in-module"
+                                                    "in-function-call")))
+                                .types)))))
+;; For old Emacs (Emacs 24.3 or older)
+(defalias 'sage-shell-cpl-state-p #'sage-shell-cpl-statep)
 
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
@@ -4265,8 +4283,8 @@ whose key is in KEYS."
          ((consp (cdr proc-alist))
           (when select-p
             (let* ((buffer-names
-                    (cl-loop for (_proc-name . proc) in proc-alist
-                             collect (buffer-name (process-buffer proc))))
+                    (cl-loop for x in proc-alist
+                             collect (buffer-name (process-buffer (cdr x)))))
                    (buffer-name
                     (completing-read
                      select-msg
@@ -4693,7 +4711,8 @@ Othewise return nil."
              (funcall callback)))))))))
 
 (defun sage-shell:-send--lines-internal (lines &optional callback)
-  (cl-check-type lines (sage-shell-list-of string))
+  (sage-shell-when-emacs25-or-later
+    (cl-check-type lines (sage-shell-list-of string)))
   (cl-check-type callback (or null function))
   (when lines
     (with-current-buffer sage-shell:process-buffer
