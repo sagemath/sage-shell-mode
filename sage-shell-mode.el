@@ -1179,7 +1179,12 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
               (concat s1 "/"))))
     (setq sage-shell:check--sage-root-ok t))
   (when sage-shell-sagetex:add-to-texinputs-p
-    (sage-shell-sagetex:add-to-texinputs)))
+    (sage-shell-sagetex:add-to-texinputs))
+  (let ((win (get-buffer-window buffer)))
+    (when win
+      (with-selected-window win
+        (goto-char (process-mark (get-buffer-process
+                                  buffer)))))))
 
 (defun sage-shell:check--sage-root ()
   (or sage-shell:check--sage-root-ok
