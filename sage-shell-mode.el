@@ -3886,12 +3886,14 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 
 (cl-defun sage-shell-cpl:completion-init
     (sync &key (output-buffer (sage-shell:output-buffer))
-          (compl-state sage-shell-cpl:current-state))
+          (compl-state sage-shell-cpl:current-state)
+          (callback nil))
   "If SYNC is non-nil, return a sexp. If not return value has no
 meaning and `sage-shell-cpl:-last-sexp' will be set when the
 redirection is finished.
 This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
   (cl-check-type compl-state sage-shell-cpl-state)
+  (cl-check-type callback (or null function))
   ;; when current line is not in a block and current interface is 'sage'
   (setq sage-shell-cpl:-last-sexp nil)
   (when (and (sage-shell:with-current-buffer-safe sage-shell:process-buffer
@@ -3929,7 +3931,9 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
            :sync sync
            :callback
            (lambda (s)
-             (sage-shell-cpl:-cpl-init-callback s compl-state)))
+             (sage-shell-cpl:-cpl-init-callback s compl-state)
+             (when (functionp callback)
+               (funcall callback s))))
           (if sync
               sage-shell-cpl:-last-sexp))))))
 
