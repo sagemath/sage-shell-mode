@@ -57,6 +57,7 @@
 (require 'eldoc)
 
 (require 'sage-shell-compat)
+(sage-shell-compat--define-aliases)
 
 ;;; Global variables for users
 (defgroup sage-shell
@@ -5359,8 +5360,6 @@ The following are added to `sage-shell-mode':
 (sage-shell-blocks-default-keybindings)
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
-
-(sage-shell-compat--define-aliases)
 
 
 (provide 'sage-shell-mode)
