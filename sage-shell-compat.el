@@ -18,6 +18,7 @@
 
 ;;; Commentary:
 ;; Code for backward compatibility.
+;;; Code
 (require 'cl-lib)
 
 (defvar sage-shell-compat-var-aliases
