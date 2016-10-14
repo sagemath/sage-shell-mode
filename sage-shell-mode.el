@@ -5173,10 +5173,6 @@ Returns the tracked buffer."
   (sage-shell-sagetex--load-current-file
    'sage-shell-sagetex-load-file))
 
-
-;;;###autoload
-(defalias 'sage-shell-sagetex-load-file 'sage-shell-sagetex-load-file)
-
 (defvar sage-shell-sagetex-latex-command-func
   'sage-shell-sagetex-post-command
   "This varable should be a function with one argument (the file
