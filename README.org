@@ -99,7 +99,7 @@
 
       ;; Turn on eldoc-mode in Sage terminal and in Sage source files
       (add-hook 'sage-shell-mode-hook #'eldoc-mode)
-      (add-hook 'sage-shell:sage-mode-hook #'eldoc-mode)
+      (add-hook 'sage-shell-sage-mode-hook #'eldoc-mode)
 
       ;; If you have Sage 7.4 or later, uncomment the following line.
       ;; (setq sage-shell-use-prompt-toolkit t)
@@ -476,7 +476,7 @@ using [[https://github.com/dandrake/sagetex][SageTeX]].
   #+BEGIN_SRC elisp
 
     (dolist (ckr '(python-pylint python-flake8))
-      (flycheck-add-mode ckr 'sage-shell:sage-mode))
+      (flycheck-add-mode ckr 'sage-shell-sage-mode))
 
     (defun sage-shell-flycheck-turn-on ()
       "Enable flycheck-mode only in a file ended with py."
@@ -484,7 +484,7 @@ using [[https://github.com/dandrake/sagetex][SageTeX]].
               (and bfn (string-match (rx ".py" eol) bfn)))
         (flycheck-mode 1)))
 
-    (add-hook 'python-mode-hook 'sage-shell:flycheck-turn-on)
+    (add-hook 'python-mode-hook 'sage-shell-flycheck-turn-on)
   #+END_SRC
 
 ** License
