@@ -195,7 +195,7 @@ use =pcomplete= by adding the following to your Emacs init file:
 #+END_SRC
 
 You can also use =auto-complete=, =anything= or =helm= for
-completion.  This requires installing those extensions, see [[Extensions]].
+completion.  This requires installing those extensions, see [[#extensions][Extensions]].
 
 **** =?= Help
 
@@ -257,7 +257,7 @@ sage: G.charpoly??
     # -*- mode: sage-shell:sage -*-
    #+END_SRC
 
-   If you've activated [[Aliases]] you can instead use the following magic comment:
+   If you've activated [[#aliases][Aliases]] you can instead use the following magic comment:
 
    #+BEGIN_SRC python
     # -*- mode: sage -*-
