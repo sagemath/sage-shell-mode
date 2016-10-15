@@ -4,7 +4,7 @@
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/sagemath/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24.1") (let-alist "1.0.4") (deferred "0.4.0"))
-;; Keywords: Sage, math
+;; Keywords: languages, processes
 ;; Version: 0.2.1
 
 ;;; License
