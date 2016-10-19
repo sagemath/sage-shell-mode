@@ -2976,6 +2976,7 @@ python-mode"
    nil `((,sage-shell-help:fontlock-keyword-regexp 1 font-lock-keyword-face))))
 
 (sage-shell:define-keys sage-shell:help-mode-map
+  "C-c C-d" 'sage-shell:send-doctest
   "C-c C-j" 'sage-shell:send-doctest
   "C-c C-z" 'sage-shell-edit:pop-to-process-buffer)
 
