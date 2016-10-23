@@ -304,9 +304,11 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
 
     outputs = ip.ev("_oh")
     if reversed_ord:
-        key_func = lambda x: -x[0]
+        def key_func(x):
+            return -x[0]
     else:
-        key_func = lambda x: x
+        def key_func(x):
+            return x
     outputs = sorted(list(outputs.items()), key=key_func)
     outputs = [(k, show_func(format_func(v))) for k, v in outputs]
     inputs = ip.ev("_ih")
@@ -319,14 +321,10 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
             print("Out[{k}]: {out}".format(k=k, out=v))
             print(delim)
 
-_func_call_reg = re.compile("[()]")
-
 
 def _is_safe_str(s):
-    if _func_call_reg.search(s) is None:
-        return True
-    else:
-        return False
+    _func_call_reg = re.compile("[()]")
+    return _func_call_reg.search(s) is None
 
 
 def print_info(name):
