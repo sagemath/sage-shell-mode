@@ -2954,7 +2954,10 @@ python-mode"
                               "Init definition"
                               "Init docstring"
                               "Signature"
-                              "Init signature")
+                              "Init signature"
+                              "OPTIONAL"
+                              "REFERENCES"
+                              "Bases")
                       ":")
                  (and bol (or "NAME"
                               "FILE"
