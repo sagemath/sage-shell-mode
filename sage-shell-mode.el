@@ -5398,9 +5398,6 @@ The following are added to `sage-shell-mode':
   (local-set-key (kbd "C-c C-d") 'sage-shell:send-doctest)
   (local-set-key (kbd "C-C C-z") 'sage-shell-edit:pop-to-process-buffer))
 
-(define-derived-mode sage-shell-info-mode Info-mode "SageInfo"
-  "Sage doc")
-
 (defun sage-shell-info (&optional file-or-node)
   "Similar to M-x info, but highlights keywords and define some key-bindings."
   (interactive)
