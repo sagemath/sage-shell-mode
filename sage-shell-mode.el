@@ -5394,6 +5394,7 @@ The following are added to `sage-shell-mode':
    nil
    '((sage-shell--info-matcher-keywords 1 font-lock-keyword-face)
      (sage-shell--info-matcher-funcs 1 font-lock-function-name-face)))
+  (use-local-map (copy-keymap Info-mode-map))
   (local-set-key (kbd "C-c C-d") 'sage-shell:send-doctest)
   (local-set-key (kbd "C-C C-z") 'sage-shell-edit:pop-to-process-buffer))
 
