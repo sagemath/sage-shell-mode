@@ -473,3 +473,8 @@ def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
     # If input is "foo.bar?", the next input may not be empty.
     ip.set_next_input("")
     print(msg_id_end)
+
+
+def print_module_doc(mod):
+    if hasattr(mod, "__doc__"):
+        print(mod.__doc__)

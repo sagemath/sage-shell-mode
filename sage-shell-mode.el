@@ -5366,47 +5366,6 @@ The following are added to `sage-shell-mode':
   (define-key sage-shell-mode-map (kbd "C-<return>")      'sage-shell-blocks:pull-next))
 (sage-shell-blocks:default-keybindings)
 
-
-(defsubst sage-shell--sage-info-p ()
-  (and Info-current-file
-       (string-match-p (concat "^" (regexp-quote (sage-shell:sage-root)))
-                       Info-current-file)))
-
-(defun sage-shell--info-matcher-keywords (lim)
-  (when (sage-shell--sage-info-p)
-    (re-search-forward sage-shell-help:fontlock-keyword-regexp lim t)))
-
-(defun sage-shell--info-matcher-funcs (lim)
-  (when (sage-shell--sage-info-p)
-    (re-search-forward (rx (group
-                            (or "Function" "Class" "Method" "Class Method"
-                                "Static Method" "Attribute")
-                            ":"))
-                       lim t)))
-
-(defun sage-shell-info-send-doctest ()
-  (interactive)
-  (when (sage-shell--sage-info-p)
-    (sage-shell:send-doctest nil)))
-
-(defun sage-shell-info-init ()
-  (font-lock-add-keywords
-   nil
-   '((sage-shell--info-matcher-keywords 1 font-lock-keyword-face)
-     (sage-shell--info-matcher-funcs 1 font-lock-function-name-face)))
-  (use-local-map (copy-keymap Info-mode-map))
-  (local-set-key (kbd "C-c C-d") 'sage-shell:send-doctest)
-  (local-set-key (kbd "C-C C-z") 'sage-shell-edit:pop-to-process-buffer))
-
-(defun sage-shell-info (&optional file-or-node)
-  "Similar to M-x info, but highlights keywords and define some key-bindings."
-  (interactive)
-  (info file-or-node
-        (if (numberp current-prefix-arg)
-            (format "*SageInfo*<%s>" current-prefix-arg)
-          "*SageInfo*"))
-  (sage-shell-info-init))
-
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
 (provide 'sage-shell-mode)
