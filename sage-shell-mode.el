@@ -55,6 +55,7 @@
 (require 'deferred)
 (require 'pcomplete)
 (require 'eldoc)
+(require 'info)
 
 ;;; Global variables for users
 (defgroup sage-shell
@@ -4631,7 +4632,8 @@ the end of the docstring."
       (forward-line 0)
       (unless (looking-at sage-shell:-test-prompt-regexp)
         (error "Not at a sage: prompt"))))
-  (cond ((derived-mode-p 'sage-shell:help-mode)
+  (cond ((or (derived-mode-p 'sage-shell:help-mode)
+             (derived-mode-p 'Info-mode))
          (sage-shell:-send-current-doctest
           (lambda ()
             (end-of-line)
@@ -5363,6 +5365,49 @@ The following are added to `sage-shell-mode':
   (define-key sage-shell:sage-mode-map (kbd "C-M-}")      'sage-shell-blocks:forward)
   (define-key sage-shell-mode-map (kbd "C-<return>")      'sage-shell-blocks:pull-next))
 (sage-shell-blocks:default-keybindings)
+
+
+(defsubst sage-shell--sage-info-p ()
+  (and Info-current-file
+       (string-match-p (concat "^" (regexp-quote (sage-shell:sage-root)))
+                       Info-current-file)))
+
+(defun sage-shell--info-matcher-keywords (lim)
+  (when (sage-shell--sage-info-p)
+    (re-search-forward sage-shell-help:fontlock-keyword-regexp lim t)))
+
+(defun sage-shell--info-matcher-funcs (lim)
+  (when (sage-shell--sage-info-p)
+    (re-search-forward (rx (group
+                            (or "Function" "Class" "Method" "Class Method"
+                                "Static Method" "Attribute")
+                            ":"))
+                       lim t)))
+
+(defun sage-shell-info-send-doctest ()
+  (interactive)
+  (when (sage-shell--sage-info-p)
+    (sage-shell:send-doctest nil)))
+
+(defun sage-shell-info-init ()
+  (font-lock-add-keywords
+   nil
+   '((sage-shell--info-matcher-keywords 1 font-lock-keyword-face)
+     (sage-shell--info-matcher-funcs 1 font-lock-function-name-face)))
+  (local-set-key (kbd "C-c C-d") 'sage-shell:send-doctest)
+  (local-set-key (kbd "C-C C-z") 'sage-shell-edit:pop-to-process-buffer))
+
+(define-derived-mode sage-shell-info-mode Info-mode "SageInfo"
+  "Sage doc")
+
+(defun sage-shell-info (&optional file-or-node)
+  "Similar to M-x info, but highlights keywords and define some key-bindings."
+  (interactive)
+  (info file-or-node
+        (if (numberp current-prefix-arg)
+            (format "*SageInfo*<%s>" current-prefix-arg)
+          "*SageInfo*"))
+  (sage-shell-info-init))
 
 ;; (package-generate-autoloads "sage-shell" default-directory)
 
