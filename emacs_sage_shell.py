@@ -478,3 +478,9 @@ def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
 def print_module_doc(mod):
     if hasattr(mod, "__doc__"):
         print(mod.__doc__)
+
+
+def read_file_and_run_contents(file_name):
+    with open(file_name, "r") as fp:
+        contents = fp.read()
+    ip.run_cell(contents)

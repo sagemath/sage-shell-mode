@@ -4446,7 +4446,8 @@ inserted in the process buffer before executing the command."
                    (goto-char orig-start)
                    (- (point) (line-beginning-position)))))
     (with-temp-buffer
-      (insert sage-shell-edit:temp-file-header)
+      (when sage-shell-edit:temp-file-header
+        (insert sage-shell-edit:temp-file-header))
       (insert (make-string offset (string-to-char " ")))
       (save-excursion
         (insert buf-str))
@@ -4511,14 +4512,30 @@ inserted in the process buffer before executing the command."
                             :end '(line-end-position)
                             :name "line")))))
 
+(defun sage-shell-edit--send-obj-command (beg end)
+  (let ((contents (buffer-substring-no-properties beg end))
+        (temp-file nil))
+    (setq temp-file
+          (cond ((string-match-p (rx bol "%%cython") contents)
+                 ;; ip.run_cell doesn't work well with %%cython
+                 ;; if there are comments.
+                 (let ((sage-shell-edit:temp-file-header nil))
+                   (sage-shell-edit:make-temp-file-from-region
+                    beg end)))
+                (t (sage-shell-edit:make-temp-file-from-region
+                    beg end))))
+    (if (string-match-p (rx bol (1+ "%") alnum) contents)
+        (format "%s('%s')"
+                (sage-shell:py-mod-func "read_file_and_run_contents") temp-file)
+      (format "load('%s')" temp-file))))
+
 (cl-defmacro sage-shell-edit:send-obj-base
     (&key type switch-p (display-function 'sage-shell-edit:display-function))
   (declare (debug t))
   (let* ((plst (assoc-default type sage-shell-edit:exec-command-base-alist))
-         (command `(format "load('%s')"
-                           (sage-shell-edit:make-temp-file-from-region
-                            ,(plist-get plst :beg)
-                            ,(plist-get plst :end)))))
+         (beg (plist-get plst :beg))
+         (end (plist-get plst :end))
+         (command `(sage-shell-edit--send-obj-command ,beg ,end)))
     `(save-excursion
        (sage-shell-edit:exec-command-base
         :command ,command
