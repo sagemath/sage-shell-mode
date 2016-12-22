@@ -695,7 +695,7 @@ to a process buffer.")
     (modify-syntax-entry ?` "$" table)
     table))
 
-(defvar sage-shell:delete-temp-dir-when-kill-emacs t)
+(defvar sage-shell:delete-temp-dir-p t)
 
 (define-derived-mode sage-shell-mode comint-mode
   "Sage-repl" "Execute Sage commands interactively."
@@ -764,7 +764,7 @@ to a process buffer.")
             #'sage-shell:-after-send-eof-func nil t)
   (add-hook 'kill-buffer-hook
             #'sage-shell:-kill-buffer-func nil t)
-  (when sage-shell:delete-temp-dir-when-kill-emacs
+  (when sage-shell:delete-temp-dir-p
     (add-hook 'kill-buffer-hook
               #'sage-shell-edit:delete-temp-dir)))
 
