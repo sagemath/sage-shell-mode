@@ -761,7 +761,10 @@ to a process buffer.")
   (add-hook 'sage-shell:process-exit-hook
             #'sage-shell:-after-send-eof-func nil t)
   (add-hook 'kill-buffer-hook
-            #'sage-shell:-kill-buffer-func nil t))
+            #'sage-shell:-kill-buffer-func nil t)
+  (when sage-shell:delete-temp-dir-when-kill-emacs
+    (add-hook 'kill-buffer-hook
+              #'sage-shell-edit:delete-temp-dir)))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
@@ -4415,6 +4418,7 @@ inserted in the process buffer before executing the command."
   (make-temp-file "sage_shell_mode" 'directory))
 
 (defvar sage-shell-edit:temp-directory nil)
+(make-variable-buffer-local 'sage-shell-edit:temp-directory)
 
 (defun sage-shell-edit:delete-temp-dir ()
   (when (and (stringp sage-shell-edit:temp-directory)
@@ -4425,19 +4429,24 @@ inserted in the process buffer before executing the command."
 
 (defvar sage-shell:delete-temp-dir-when-kill-emacs t)
 
-(when sage-shell:delete-temp-dir-when-kill-emacs
-  (add-hook 'kill-emacs-hook 'sage-shell-edit:delete-temp-dir))
+(defun sage-shell-edit--set-and-make-temp-dir ()
+  (unless sage-shell:process-buffer
+    (sage-shell-edit:set-sage-proc-buf-internal))
+  (with-current-buffer sage-shell:process-buffer
+    ;; In case temp dir is removed,
+    (unless (and
+             (stringp sage-shell-edit:temp-directory)
+             (file-exists-p sage-shell-edit:temp-directory)
+             (file-writable-p sage-shell-edit:temp-directory))
+      (setq sage-shell-edit:temp-directory
+            (sage-shell-edit:make-temp-dir)))))
 
 (defun sage-shell-edit:temp-file (ext)
-  ;; In case temp dir is removed,
-  (unless (and (stringp sage-shell-edit:temp-directory)
-               (file-exists-p sage-shell-edit:temp-directory)
-               (file-writable-p sage-shell-edit:temp-directory))
-    (setq sage-shell-edit:temp-directory
-          (sage-shell-edit:make-temp-dir)))
+  (sage-shell-edit--set-and-make-temp-dir)
   (expand-file-name
    (concat sage-shell-edit:temp-file-base-name "." ext)
-   sage-shell-edit:temp-directory))
+   (buffer-local-value 'sage-shell-edit:temp-directory
+                       sage-shell:process-buffer)))
 
 (defun sage-shell-edit:write-region-to-file (start end file)
   (let* ((orig-start (min start end))
