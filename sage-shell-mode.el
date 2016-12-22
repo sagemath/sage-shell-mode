@@ -695,6 +695,8 @@ to a process buffer.")
     (modify-syntax-entry ?` "$" table)
     table))
 
+(defvar sage-shell:delete-temp-dir-when-kill-emacs t)
+
 (define-derived-mode sage-shell-mode comint-mode
   "Sage-repl" "Execute Sage commands interactively."
 
@@ -4432,8 +4434,6 @@ inserted in the process buffer before executing the command."
                       (file-name-directory sage-shell-edit:temp-directory))
              (file-exists-p sage-shell-edit:temp-directory))
     (delete-directory sage-shell-edit:temp-directory t)))
-
-(defvar sage-shell:delete-temp-dir-when-kill-emacs t)
 
 (defun sage-shell-edit--set-and-make-temp-dir ()
   (unless sage-shell:process-buffer
