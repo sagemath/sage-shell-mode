@@ -899,6 +899,9 @@ succesive lines in history."
      :output output)))
 
 
+(defun sage-shell--error-callback (res)
+  (unless (sage-shell:output-stct-success res)
+    (error (sage-shell:output-stct-output res))))
 
 (cl-defun sage-shell:run-cell (cell &key callback
                                     output-buffer
@@ -2284,6 +2287,9 @@ return string for output."
       (let ((pmark (progn (goto-char (process-mark proc))
                           (forward-line 0)
                           (point-marker))))
+        (dolist (ov (overlays-in pt pmark))
+          (when (overlay-get ov 'sage-shell-view)
+            (delete-overlay ov)))
         (delete-region pt pmark)
         (goto-char (process-mark proc))
         (setq replacement (buffer-substring pmark (point)))
