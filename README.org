@@ -24,6 +24,7 @@
    - [[#basic-usage][Basic Usage]]
    - [[#input-history][Input History]]
    - [[#emulating-worksheets-code-blocks][Emulating Worksheets: code blocks]]
+   - [[#typesetting-outputs-a-port-of-sage-view][Typesetting outputs (a port of =sage-view=)]]
    - [[#sagetex][SageTeX]]
    - [[#customization][Customization]]
    - [[#extensions][Extensions]]
@@ -350,6 +351,17 @@ sage:
 
 The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:delimiter=.
 
+** Typesetting outputs (a port of =sage-view=)
+   This feature is a port of [[https://bitbucket.org/gvol/sage-mode/src/44eb95cb6b27a05af68e11253649ddf8ae364a5b/emacs/sage-view.el?at=default&fileviewer=file-view-default][sage-view]].
+   To typeset results in =sage-shell-mode= buffer, add the following code to your Emacs init file:
+
+    #+BEGIN_SRC elisp
+      (add-hook 'sage-shell-after-prompt-hook #'sage-shell-view)
+    #+END_SRC
+
+    You can change the size of LaTeX images by changing =sage-shell-view-default-resolution=.
+    For further customization, run =M-x customize-group RET sage-shell-view RET=.
+
 ** SageTeX
 
 =sage-shell-mode= can be conveniently used when writing Sage-powered LaTeX files
@@ -432,8 +444,10 @@ using [[https://github.com/dandrake/sagetex][SageTeX]].
 
 ** Customization
 
-  To customize =sage-shell-mode=, =M-x customize-group RET sage-shell=
-  or =M-x customize-group RET sage-shell-sagetex=.
+  To customize =sage-shell-mode=, =M-x customize-group RET sage-shell=,
+  =M-x customize-group RET sage-shell-sagetex= or
+  =M-x customize-group RET sage-shell-view=.
+
 
 ** Extensions
 
