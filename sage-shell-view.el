@@ -1,4 +1,4 @@
-;;; sage-view.el --- Typeset Sage output on the fly -*- lexical-binding: t -*-
+;;; sage-shell-view.el --- Typeset Sage output on the fly -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2008 ~ 2016  Matthias Meulien, Nick Alexander,
 ;; 2016 ~ Sho Takemori <stakemorii@gmail.com>
