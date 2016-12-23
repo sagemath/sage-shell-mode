@@ -93,10 +93,8 @@ Each of these can be enabled or disabled later by calling
                  (const :tag "Both" t))
   :group 'sage-shell-view)
 
-(defcustom sage-shell-view-latex-head
-  "\\documentclass{article}
-% packages sage uses
-\\usepackage{amstext}
+(defcustom sage-shell-view-latex-preamble
+  "\\usepackage{amstext}
 \\usepackage{amsmath}
 \\usepackage{amssymb}
 \\usepackage{amsfonts}
@@ -124,26 +122,20 @@ Each of these can be enabled or disabled later by calling
 \\newcommand{\\RIF}{\\Bold{I} \\Bold{R}}
 \\newcommand{\\RLF}{\\Bold{R}}
 \\newcommand{\\CFF}{\\Bold{CFF}}
-% \\Bold is included in the output everytime since it's part of sage_configurable_latex_macros
-%\\newcommand{\\Bold}[1]{\\mathbf{#1}}
-\\begin{document}
-\\begin{preview}
-\\begin{math}\n"
-  "String to be inserted at the top of a LaTeX document.
-
-This should be similar to sage.misc.latex.LATEX_HEADER but also
-include a \\begin{document}, a \\begin{preview} and the macros
-from sage.misc.latex_macros.sage_latex_macros(), except those in
-sage_configurable_latex_macros, since those are included as part
-of every output."
+"
+  "The default LaTeX preamble."
   :type 'string
   :group 'sage-shell-view)
 
-(defcustom sage-shell-view-latex-tail
-  "\n\\end{math}
-\\end{preview}
-\\end{document}\n"
-  "String to be inserted at the end of a LaTeX document."
+(defcustom sage-shell-latex-foreground-color nil
+  "Foreground color used in LaTeX image as string.
+If the value is `nil', then this variable is ignored."
+  :type 'string
+  :group 'sage-shell-view)
+
+(defcustom sage-shell-latex-background-color nil
+  "Background color used in LaTeX image as string.
+If the value is `nil', then this variable is ignored."
   :type 'string
   :group 'sage-shell-view)
 
@@ -174,6 +166,40 @@ of every output."
   "*Factor used when zooming."
   :type 'number
   :group 'sage-shell-view)
+
+(defun sage-shell-view-color-to-rgb (str)
+  "Convert color name STR to rgb values understood by TeX."
+  (mapcar (lambda (x) (/ x 65535.0)) (color-values str)))
+
+(defun sage-shell-view-latex-str (math-expr)
+  "LaTeX string to be inserted a tmp file."
+  (format
+   "\\documentclass{article}
+\\usepackage{xcolor}
+\\pagecolor[rgb]{%s}
+%s
+\\begin{document}
+\\definecolor{mycolor}{rgb}{%s}
+\\begin{preview}
+\\begin{math}
+\\color{mycolor}
+%s
+\\end{math}
+\\end{preview}
+\\end{document}
+"
+   (mapconcat #'number-to-string
+              (sage-shell-view-color-to-rgb
+               (or sage-shell-latex-background-color
+                   (frame-parameter nil 'background-color)))
+              ",")
+   sage-shell-view-latex-preamble
+   (mapconcat #'number-to-string
+              (sage-shell-view-color-to-rgb
+               (or sage-shell-latex-foreground-color
+                   (frame-parameter nil 'foreground-color)))
+              ",")
+   math-expr))
 
 (defun sage-shell-view-dir-name ()
   (sage-shell-edit--set-and-make-temp-dir)
@@ -408,9 +434,8 @@ image."
                 (make-temp-name "sage-shell-view_") (sage-shell-view-dir-name)))
          (file (concat base ".tex")))
     (with-temp-file file
-      (insert sage-shell-view-latex-head)
-      (insert (overlay-get ov 'math))
-      (insert sage-shell-view-latex-tail)
+      (insert (sage-shell-view-latex-str
+               (overlay-get ov 'math)))
       ;; The LaTeX created by Sage for MathJax (in some cases) isn't valid.
       ;; This is our attempt to work around it.
       (goto-char (point-min))
