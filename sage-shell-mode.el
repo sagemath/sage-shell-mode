@@ -765,7 +765,7 @@ to a process buffer.")
   (add-hook 'kill-buffer-hook
             #'sage-shell:-kill-buffer-func nil t)
   (when sage-shell:delete-temp-dir-p
-    (add-hook 'kill-buffer-hook
+    (add-hook 'sage-shell:process-exit-hook
               #'sage-shell-edit:delete-temp-dir)))
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
