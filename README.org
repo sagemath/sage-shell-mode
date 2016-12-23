@@ -24,6 +24,7 @@
    - [[#basic-usage][Basic Usage]]
    - [[#input-history][Input History]]
    - [[#emulating-worksheets-code-blocks][Emulating Worksheets: code blocks]]
+   - [[#typesetting-outputs-a-port-of-sage-view][Typesetting outputs (a port of =sage-view=)]]
    - [[#sagetex][SageTeX]]
    - [[#customization][Customization]]
    - [[#extensions][Extensions]]
