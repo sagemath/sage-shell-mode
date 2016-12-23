@@ -360,7 +360,7 @@ The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:deli
     #+END_SRC
 
     You can change the size of LaTeX images by changing =sage-shell-view-default-resolution=.
-    For further customization, =M-x customize-group RET sage-shell-view RET=.
+    For further customization, run =M-x customize-group RET sage-shell-view RET=.
 
 ** SageTeX
 
