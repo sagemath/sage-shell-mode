@@ -318,97 +318,6 @@ Make sure that there is a valid image associated with OV with
           (sage-shell-view-save-image ov)))))
    ev))
 
-
-(defun sage-shell-view-latex->pdf (ov)
-  "Start conversion of the LATEX document associated to OV to PDF.
-
-See also `sage-shell-view-process-overlay'."
-  (let* ((latex (concat (overlay-get ov 'file-sans-extension) ".tex"))
-         (options (append
-                   (list (concat "--output-directory=" (sage-shell-view-dir-name))
-                         (concat "-interaction=" "nonstopmode")
-                         (concat "-output-format=" "pdf")
-                         latex)))
-         (proc (apply 'start-process
-                      (append (list "latex->pdf" nil "latex") options))))
-    (process-put proc 'overlay ov)
-    (set-process-sentinel proc 'sage-shell-view-latex->pdf-sentinel)))
-
-(defun sage-shell-view-pdf->png (ov)
-  "Start conversion of the PDF file associated to OV to PNG.
-
-See also `sage-shell-view-process-overlay'."
-  (let* ((base (overlay-get ov 'file-sans-extension))
-         (png (concat base ".png"))
-         (pdf (concat base ".pdf"))
-         (level (int-to-string sage-shell-view-anti-aliasing-level))
-         (scale (or (overlay-get ov 'scale) sage-shell-view-scale))
-         (options (append
-                   sage-shell-view-gs-options
-                   (list (concat "-dTextAlphaBits=" level)
-                         (concat "-dGraphicsAlphaBits=" level)
-                         (concat "-sOutputFile=" png)
-                         (concat "-r" (sage-shell-view-compute-resolution scale))
-                         pdf)))
-         (proc (apply 'start-process
-                      (append
-                       (list "pdf->png" "*sage-shell-view*" sage-shell-view-gs-command)
-                       options))))
-    (process-put proc 'overlay ov)
-    (set-process-sentinel proc 'sage-shell-view-pdf->png-sentinel)))
-
-(defvar sage-shell-view-conversion-failed-map
-  (let ((map (make-sparse-keymap))
-        (l (lambda () (interactive)
-             (dolist (ov (overlays-at (point)))
-               (if (overlay-get ov 'file-sans-extension)
-                   (find-file (concat (overlay-get ov 'file-sans-extension) ".log")))))))
-    (define-key map "RET" l)
-    (define-key map [return] l)
-    (define-key map [mouse-1]
-      (lambda (event) (interactive "e")
-        (dolist (ov (overlays-at (posn-point (event-end event))))
-          (if (overlay-get ov 'file-sans-extension)
-              (find-file (concat (overlay-get ov 'file-sans-extension) ".log"))))))
-    (define-key map [mouse-3]
-      (lambda (event) (interactive "e")
-        (dolist (ov (overlays-at (posn-point (event-end event))))
-          (if (overlay-get ov 'file-sans-extension)
-              (sage-shell-view-context-menu ov event)))))
-    map)
-  "Keymap for overlays in which the conversion has failed.")
-
-(defun sage-shell-view-latex->pdf-sentinel (proc event)
-  "If PROC (supposed to be a conversion process from LATEX to
-PDF) was successful, convert the PDF to PNG.
-
-See also `sage-shell-view-process-overlay'."
-  (let* ((ov (process-get proc 'overlay))
-         (base (overlay-get ov 'file-sans-extension)))
-    (if (string-match "finished" event)
-        (sage-shell-view-pdf->png ov)
-      (overlay-put ov 'keymap sage-shell-view-conversion-failed-map)
-      (overlay-put ov 'display
-                   (concat "Conversion failed (see " base ".log" ")")))))
-
-(defun sage-shell-view-pdf->png-sentinel (proc event)
-  "If PROC (supposed to be a conversion process from PDF to PNG)
-was successful, update the overlay associated to PROC.
-
-See also `sage-shell-view-process-overlay'."
-  (let* ((ov (process-get proc 'overlay))
-         (base (overlay-get ov 'file-sans-extension))
-         (png (concat base ".png"))
-         (image (when (and (string-match "finished" event)
-                           png (file-readable-p png))
-                  (append (list 'image :type 'png :file png :margin sage-shell-view-margin)))))
-    (if image
-        (overlay-put ov 'display image)
-      (overlay-put ov 'keymap sage-shell-view-conversion-failed-map)
-      (overlay-put ov 'display
-                   (concat "Conversion failed (see " base ".log" ")")))
-    (sit-for 0)))
-
 (defun sage-shell-view-compute-resolution (scale)
   (if (display-graphic-p)
       ;; In a terminal, display-mm-width returns nil and
@@ -431,9 +340,8 @@ starts. When it ends, `sage-shell-view-pdf->png-sentinel' is called: If
 the last conversion is successful, OV displays the resulting
 image."
   (let* ((base (expand-file-name
-                (make-temp-name "sage-shell-view_") (sage-shell-view-dir-name)))
-         (file (concat base ".tex")))
-    (with-temp-file file
+                (make-temp-name "sage-shell-view_") (sage-shell-view-dir-name))))
+    (with-temp-file (concat base ".tex")
       (insert (sage-shell-view-latex-str
                (overlay-get ov 'math)))
       ;; The LaTeX created by Sage for MathJax (in some cases) isn't valid.
@@ -441,9 +349,43 @@ image."
       (goto-char (point-min))
       (while (search-forward-regexp "\\verb!\\([^!]*\\)!"  nil t)
         (replace-match "\mathtt{\\1}")))
-    (overlay-put ov 'file-sans-extension base)
-    (sage-shell-view-latex->pdf ov)))
 
+    (overlay-put ov 'file-sans-extension base) ; for debug
+
+    (deferred:$
+      (apply #'deferred:process "latex" (sage-shell-view--latex-option base))
+
+      (deferred:nextc it
+        (lambda (_) (apply #'deferred:process
+                       sage-shell-view-gs-command
+                       (sage-shell-view--gs-option
+                        (overlay-get ov 'scale)
+                        base))))
+      (deferred:nextc it
+        (lambda (_)
+          (overlay-put ov 'display
+                       (list 'image :type 'png :file (concat base ".png")
+                             :margin sage-shell-view-margin)))))))
+
+(defun sage-shell-view--latex-option (base)
+  (list (concat "--output-directory=" (sage-shell-view-dir-name))
+        (concat "-interaction=" "nonstopmode")
+        (concat "-output-format=" "pdf")
+        (concat base ".tex")))
+
+(defun sage-shell-view--gs-option (scale base)
+  (let* ((png (concat base ".png"))
+         (pdf (concat base ".pdf"))
+         (level (int-to-string sage-shell-view-anti-aliasing-level))
+         (scale (or scale sage-shell-view-scale)))
+    (append
+     sage-shell-view-gs-options
+     (list (concat "-dTextAlphaBits=" level)
+           (concat "-dGraphicsAlphaBits=" level)
+           (concat "-sOutputFile=" png)
+           (concat "-r" (sage-shell-view-compute-resolution
+                         scale))
+           pdf))))
 
 (defvar sage-shell-view-inline-plots-enabled nil)
 (defvar sage-shell-view-inline-output-enabled nil)
