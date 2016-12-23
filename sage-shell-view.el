@@ -130,13 +130,15 @@ Each of these can be enabled or disabled later by calling
 (defcustom sage-shell-latex-foreground-color nil
   "Foreground color used in LaTeX image as string.
 If the value is `nil', then this variable is ignored."
-  :type 'string
+  :type '(choice (const :tag "Not Specified" nil)
+                 (string :tag "Color"))
   :group 'sage-shell-view)
 
 (defcustom sage-shell-latex-background-color nil
   "Background color used in LaTeX image as string.
 If the value is `nil', then this variable is ignored."
-  :type 'string
+  :type '(choice (const :tag "Not Specified" nil)
+                 (string :tag "Color"))
   :group 'sage-shell-view)
 
 (defcustom sage-shell-view-gs-options
