@@ -523,7 +523,6 @@ when `sage-shell-view' mode is enabled and sage is running."
    (lambda () (setq sage-shell-view-inline-output-enabled t)))
   (sage-shell-view-update-modeline))
 
-;;;###autoload
 (defun sage-shell-view-disable-inline-output ()
   "Disable inline output pretty-printing, i.e. do not typeset output from sage in the `sage-shell-mode' buffer.
 WARNING: this communicates with the sage process.  Only use this
@@ -547,7 +546,6 @@ when `sage-shell-view' mode is enabled and sage is running."
    (lambda () (setq sage-shell-view-inline-plots-enabled t)))
   (sage-shell-view-update-modeline))
 
-;;;###autoload
 (defun sage-shell-view-disable-inline-plots ()
   "Disable inline plotting, i.e. do not display plots in the `sage-shell-mode' buffer and instead spawn an external viewer.
 WARNING: this communicates with the sage process.  Only use this
