@@ -164,7 +164,7 @@ If the value is `nil', then this variable is ignored."
   :type 'number
   :group 'sage-shell-view)
 
-(defcustom sage-shell-view-default-resolution 120
+(defcustom sage-shell-view-default-resolution 130
   "Resultion used when converting from PDF to PNG.
 If it is `nil', then the function `sage-shell-view-compute-resolution'
 computes the resolution automatically."
