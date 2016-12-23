@@ -152,11 +152,6 @@ If the value is `nil', then this variable is ignored."
                  (const :tag "More anti-aliasing (slower, but prettier)." 4))
   :group 'sage-shell-view)
 
-(defcustom sage-shell-view-scale 1.4
-  "*Scale used when converting from PDF/PS to PNG."
-  :type 'number
-  :group 'sage-shell-view)
-
 (defcustom sage-shell-view-margin '(1 . 1)
   "*Margin (in pixels or (pixels-x . pixels-y)) added around displayed images."
   :type '(choice integer (cons integer integer))
@@ -166,6 +161,16 @@ If the value is `nil', then this variable is ignored."
   "*Factor used when zooming."
   :type 'number
   :group 'sage-shell-view)
+
+(defcustom sage-shell-view-default-resolution 120
+  "Resultion used when converting from PDF to PNG.
+If it is `nil', then the function `sage-shell-view-compute-resolution'
+computes the resolution automatically."
+  :type 'number
+  :group 'sage-shell-view)
+
+(defvar sage-shell-view-scale 1.0
+  "Scale used when converting from PDF/PS to PNG.")
 
 (defun sage-shell-view-color-to-rgb (str)
   "Convert color name STR to rgb values understood by TeX."
@@ -322,23 +327,16 @@ Make sure that there is a valid image associated with OV with
   (if (display-graphic-p)
       ;; In a terminal, display-mm-width returns nil and
       ;; display-pixel-width returns the number of characters.
-      (let ((w (* scale (/ (* 25.4 (display-pixel-width))
+      (let ((w (* scale (/ (* 25.4 1.4 (display-pixel-width))
                            (display-mm-width))))
-            (h (* scale (/ (* 25.4 (display-pixel-height))
+            (h (* scale (/ (* 25.4 1.4 (display-pixel-height))
                            (display-mm-height)))))
         (concat (int-to-string w) "x" (int-to-string h)))
     "72x72"))
 
 (defun sage-shell-view-process-overlay (ov)
   "Associate a LATEX document to OV and start conversion process
-from LATEX to PDF.
-
-The conversion process is done by `sage-shell-view-latex->pdf'. When it
-ends, `sage-shell-view-latex->pdf-sentinel' is called: If the
-conversion is successful, a conversion process from PDF to PNG
-starts. When it ends, `sage-shell-view-pdf->png-sentinel' is called: If
-the last conversion is successful, OV displays the resulting
-image."
+from LATEX to PDF."
   (let* ((base (expand-file-name
                 (make-temp-name "sage-shell-view_") (sage-shell-view-dir-name))))
     (with-temp-file (concat base ".tex")
@@ -350,17 +348,22 @@ image."
       (while (search-forward-regexp "\\verb!\\([^!]*\\)!"  nil t)
         (replace-match "\mathtt{\\1}")))
 
-    (overlay-put ov 'file-sans-extension base) ; for debug
+    (overlay-put ov 'file-sans-extension base)
 
     (deferred:$
       (apply #'deferred:process "latex" (sage-shell-view--latex-option base))
 
       (deferred:nextc it
-        (lambda (_) (apply #'deferred:process
-                       sage-shell-view-gs-command
-                       (sage-shell-view--gs-option
-                        (overlay-get ov 'scale)
-                        base))))
+        (lambda (_) (sage-shell-view--pdf-to-png ov))))))
+
+(defun sage-shell-view--pdf-to-png (ov)
+  (let ((base (overlay-get ov 'file-sans-extension)))
+    (deferred:$
+      (apply #'deferred:process
+             sage-shell-view-gs-command
+             (sage-shell-view--gs-option
+              (overlay-get ov 'scale)
+              base))
       (deferred:nextc it
         (lambda (_)
           (overlay-put ov 'display
@@ -383,8 +386,13 @@ image."
      (list (concat "-dTextAlphaBits=" level)
            (concat "-dGraphicsAlphaBits=" level)
            (concat "-sOutputFile=" png)
-           (concat "-r" (sage-shell-view-compute-resolution
-                         scale))
+           (format "-r%s" (if sage-shell-view-default-resolution
+                              (sage-shell:->>
+                               (* scale sage-shell-view-default-resolution)
+                               round
+                               int-to-string)
+                            (sage-shell-view-compute-resolution
+                             scale)))
            pdf))))
 
 (defvar sage-shell-view-inline-plots-enabled nil)
