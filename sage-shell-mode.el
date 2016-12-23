@@ -1163,6 +1163,9 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
 
 (defvar sage-shell:check--sage-root-ok nil)
 
+(defvar sage-shell-after-prompt-hook nil
+  "Hook run after the fisrt prompt is displayed.")
+
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:run-cell-raw-output
@@ -1175,6 +1178,7 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
       sage-shell:init-command-list))
    :process-buffer buffer :sync t :raw t)
   (setq sage-shell:init-finished-p t)
+  (run-hooks 'sage-shell-after-prompt-hook)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
     (setq sage-shell:sage-root--cached
