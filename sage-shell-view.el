@@ -635,7 +635,8 @@ WARNING: this communicates with the sage process.  Only use this when sage is ru
        (cond ((sage-shell:output-stct-success res)
               (funcall success-callback)
               (setq sage-shell-view-inline-plots-enabled plot
-                    sage-shell-view-inline-output-enabled text))
+                    sage-shell-view-inline-output-enabled text)
+              (sage-shell-view-update-modeline))
              (t (sage-shell--error-callback res)))))))
 
 (defvar sage-shell-view--init-completed-p nil)
