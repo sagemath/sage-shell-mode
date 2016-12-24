@@ -398,7 +398,9 @@ from LATEX to PDF."
            pdf))))
 
 (defvar sage-shell-view-inline-plots-enabled nil)
+(make-variable-buffer-local 'sage-shell-view-inline-plots-enabled)
 (defvar sage-shell-view-inline-output-enabled nil)
+(make-variable-buffer-local 'sage-shell-view-inline-output-enabled)
 
 (defun sage-shell-view-output-filter-process-inline-plots (_string)
   "Generate and place one overlay image for one inline plot,
@@ -517,22 +519,26 @@ Function to be inserted in `comint-output-filter-functions'."
 WARNING: this communicates with the sage process.  Only use this
 when `sage-shell-view' mode is enabled and sage is running."
   (interactive)
-  (sage-shell-view-set-backend
-   t
-   sage-shell-view-inline-plots-enabled
-   (lambda () (setq sage-shell-view-inline-output-enabled t)))
-  (sage-shell-view-update-modeline))
+  (sage-shell-edit:set-sage-proc-buf-internal nil)
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell-view-set-backend
+     t
+     sage-shell-view-inline-plots-enabled
+     (lambda () (setq sage-shell-view-inline-output-enabled t)))
+    (sage-shell-view-update-modeline)))
 
 (defun sage-shell-view-disable-inline-output ()
   "Disable inline output pretty-printing, i.e. do not typeset output from sage in the `sage-shell-mode' buffer.
 WARNING: this communicates with the sage process.  Only use this
 when `sage-shell-view' mode is enabled and sage is running."
   (interactive)
-  (sage-shell-view-set-backend
-   nil
-   sage-shell-view-inline-plots-enabled
-   (lambda () (setq sage-shell-view-inline-output-enabled nil)))
-  (sage-shell-view-update-modeline))
+  (sage-shell-edit:set-sage-proc-buf-internal nil)
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell-view-set-backend
+     nil
+     sage-shell-view-inline-plots-enabled
+     (lambda () (setq sage-shell-view-inline-output-enabled nil)))
+    (sage-shell-view-update-modeline)))
 
 ;;;###autoload
 (defun sage-shell-view-enable-inline-plots ()
