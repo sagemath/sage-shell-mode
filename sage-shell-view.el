@@ -602,8 +602,10 @@ PDF to PNG conversions." nil
       (progn
         (cond
          ((eq sage-shell-view-default-commands 'plots)
+          (setq sage-shell-view-inline-output-enabled nil)
           (sage-shell-view-enable-inline-plots))
          ((eq sage-shell-view-default-commands 'output)
+          (setq sage-shell-view-inline-plots-enabled nil)
           (sage-shell-view-enable-inline-output))
          (sage-shell-view-default-commands
           (sage-shell-view-enable-inline-plots)
