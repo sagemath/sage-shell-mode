@@ -541,16 +541,14 @@ Function to be inserted in `comint-output-filter-functions'."
 ;;;###autoload
 (defun sage-shell-view-enable-inline-output ()
   "Enable inline output pretty-printing, i.e. typeset output from sage in the `sage-shell-mode' buffer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'text t))
 
 (defun sage-shell-view-disable-inline-output ()
   "Disable inline output pretty-printing, i.e. do not typeset output from sage in the `sage-shell-mode' buffer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'text nil))
@@ -558,16 +556,14 @@ when `sage-shell-view' mode is enabled and sage is running."
 ;;;###autoload
 (defun sage-shell-view-enable-inline-plots ()
   "Enable inline plotting, i.e. display plots in the `sage-shell-mode' buffer and do not spawn an external viewer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'plot t))
 
 (defun sage-shell-view-disable-inline-plots ()
   "Disable inline plotting, i.e. do not display plots in the `sage-shell-mode' buffer and instead spawn an external viewer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'plot nil))
@@ -625,6 +621,8 @@ when `sage-shell-view' mode is enabled and sage is running."
   (cl-check-type success-callback function)
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-view--init)
+    (let ((sage-shell-view-default-commands nil))
+      (sage-shell-view 1))
     (sage-shell:run-cell
      (format "%s.%s(text=%s, plot=%s)"
              sage-shell-view--mod-name
