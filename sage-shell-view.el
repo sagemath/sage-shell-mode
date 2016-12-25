@@ -87,7 +87,8 @@ Otherwise, if non-nil will start both.
 
 Each of these can be enabled or disabled later by calling
 `sage-shell-view-enable-inline-plots', `sage-shell-view-disable-inline-plots',
-`sage-shell-view-enable-inline-output', or `sage-shell-view-disable-inline-output'."
+`sage-shell-view-enable-inline-output', `sage-shell-view-disable-inline-output',
+`sage-shell-view-toggle-inline-plots' or `sage-shell-view-toggle-inline-output'."
   :type '(choice (const :tag "Inline Plots" plots)
                  (const :tag "Typeset Output" output)
                  (const :tag "Both" t))
@@ -166,6 +167,7 @@ If the value is `nil', then this variable is ignored."
 
 (defcustom sage-shell-view-default-resolution 125
   "Resultion used when converting from PDF to PNG.
+This value is passed to the -r option of the command `sage-shell-view-gs-command'.
 If it is `nil', then the function `sage-shell-view-compute-resolution'
 computes the resolution automatically."
   :type 'number
