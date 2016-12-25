@@ -375,13 +375,13 @@ The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:deli
     | =sage-shell-view-toggle-inline-output=  | Toggle inline display of LaTeX outputs while SageMath process is running. |
     | =sage-shell-view-toggle-inline-plots=   | Toggle inline display of plots while SageMath process is running.         |
 
-    The following table shows some of customizable variable for =sage-shell-view-mode=.
+    The following table shows some of customizable variables for =sage-shell-view-mode=.
     For further customization, run =M-x customize-group RET sage-shell-view RET=.
 
     | Customizable variable                    | Description                                                                                                                                                                | Default value |
     | =sage-shell-view-default-commands=       | If equal to the symbol =plots= then will start inline plotting. If equal to the symbol =output= then will start typesetting output. Otherwise, if non-nil will start both. | =t=           |
     | =sage-shell-view-default-resolution=     | Resolution used when converting from PDF to PNG. This value is passed to the =-r= option of the ghostscript command.                                                       | 125           |
-    | =sage-shell-view-latex-foreground-color= | Foreground color used in LaTeX image as string (e.g. "black", "white", "#de935f") or =nil=. If it is =nil=, then the default background color will be used.                | =nil=         |
+    | =sage-shell-view-latex-foreground-color= | Foreground color used in LaTeX image as string (e.g. "black", "white", "#de935f") or =nil=. If it is =nil=, then the default foreground color will be used.      | =nil=         |
     | =sage-shell-view-latex-background-color= | Similar to =sage-shell-view-latex-foreground-color= for background color.                                                                                                  | =nil=         |
 
 ** SageTeX
