@@ -75,7 +75,7 @@
   "*Ghostscript command to convert from PDF to PNG.
 
 See also `sage-shell-view-gs-options', `sage-shell-view-anti-aliasing-level'
-and `sage-shell-view-scale'."
+and `sage-shell-view-default-resolution'"
   :type 'string
   :group 'sage-shell-view)
 
