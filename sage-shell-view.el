@@ -75,7 +75,7 @@
   "*Ghostscript command to convert from PDF to PNG.
 
 See also `sage-shell-view-gs-options', `sage-shell-view-anti-aliasing-level'
-and `sage-shell-view-scale'."
+and `sage-shell-view-default-resolution'"
   :type 'string
   :group 'sage-shell-view)
 
@@ -87,7 +87,8 @@ Otherwise, if non-nil will start both.
 
 Each of these can be enabled or disabled later by calling
 `sage-shell-view-enable-inline-plots', `sage-shell-view-disable-inline-plots',
-`sage-shell-view-enable-inline-output', or `sage-shell-view-disable-inline-output'."
+`sage-shell-view-enable-inline-output', `sage-shell-view-disable-inline-output',
+`sage-shell-view-toggle-inline-plots' or `sage-shell-view-toggle-inline-output'."
   :type '(choice (const :tag "Inline Plots" plots)
                  (const :tag "Typeset Output" output)
                  (const :tag "Both" t))
@@ -166,10 +167,16 @@ If the value is `nil', then this variable is ignored."
 
 (defcustom sage-shell-view-default-resolution 125
   "Resultion used when converting from PDF to PNG.
+This value is passed to the -r option of the command `sage-shell-view-gs-command'.
 If it is `nil', then the function `sage-shell-view-compute-resolution'
 computes the resolution automatically."
   :type 'number
   :group 'sage-shell-view)
+
+(defcustom sage-shell-view-lighter " sage-view"
+  "Lighter for `sage-shell-view' minor mode."
+  :group 'sage-shell-view
+  :type 'string)
 
 (defvar sage-shell-view-scale 1.0
   "Scale used when converting from PDF/PS to PNG.")
@@ -398,7 +405,9 @@ from LATEX to PDF."
            pdf))))
 
 (defvar sage-shell-view-inline-plots-enabled nil)
+(make-variable-buffer-local 'sage-shell-view-inline-plots-enabled)
 (defvar sage-shell-view-inline-output-enabled nil)
+(make-variable-buffer-local 'sage-shell-view-inline-output-enabled)
 
 (defun sage-shell-view-output-filter-process-inline-plots (_string)
   "Generate and place one overlay image for one inline plot,
@@ -483,18 +492,46 @@ See also `sage-shell-view-output-filter'."
       (overlay-put ov 'sage-shell-view t)
       (sage-shell-view-process-overlay ov))))
 
+;;;###autoload
+(define-minor-mode sage-shell-view-mode
+  "Toggle automatic typesetting of Sage output.
+
+Typesetting of math formulas is done by LATEX subprocesses and
+PDF to PNG conversions."
+  :lighter sage-shell-view-lighter
+  :global nil
+  :init-value nil
+  (cond (sage-shell-view-mode
+         (add-hook 'comint-output-filter-functions
+                   'sage-shell-view-output-filter nil t)
+         (cond
+          ((eq sage-shell-view-default-commands 'plots)
+           (sage-shell-view-enable-inline-plots))
+          ((eq sage-shell-view-default-commands 'output)
+           (sage-shell-view-enable-inline-output))
+          (sage-shell-view-default-commands
+           (sage-shell-view-enable-inline-plots)
+           (sage-shell-view-enable-inline-output))))
+        (t (remove-hook 'comint-output-filter-functions
+                        'sage-shell-view-output-filter t)
+           (sage-shell-view-set-backend nil nil))))
+
+;;;###autoload
+(defalias 'sage-shell-view 'sage-shell-view-mode)
+
 (defun sage-shell-view-output-filter (string)
   "Generate and place overlay images for inline output and inline plots.
 
 Function to be inserted in `comint-output-filter-functions'."
-  (save-excursion
-    (save-restriction
-      (narrow-to-region comint-last-input-end
-                        (process-mark (get-buffer-process (current-buffer))))
-      (when sage-shell-view-inline-plots-enabled
-        (sage-shell-view-output-filter-process-inline-plots string))
-      (when sage-shell-view-inline-output-enabled
-        (sage-shell-view-output-filter-process-inline-output string)))))
+  (when sage-shell-view-mode
+    (save-excursion
+      (save-restriction
+        (narrow-to-region comint-last-input-end
+                          (process-mark (get-buffer-process (current-buffer))))
+        (when sage-shell-view-inline-plots-enabled
+          (sage-shell-view-output-filter-process-inline-plots string))
+        (when sage-shell-view-inline-output-enabled
+          (sage-shell-view-output-filter-process-inline-output string))))))
 
 (defun sage-shell-view-update-modeline ()
   "Update modeline to include information about whether sage-shell-view is enabled."
@@ -514,69 +551,104 @@ Function to be inserted in `comint-output-filter-functions'."
 ;;;###autoload
 (defun sage-shell-view-enable-inline-output ()
   "Enable inline output pretty-printing, i.e. typeset output from sage in the `sage-shell-mode' buffer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
-  (sage-shell-view-set-backend
-   t
-   sage-shell-view-inline-plots-enabled
-   (lambda () (setq sage-shell-view-inline-output-enabled t)))
-  (sage-shell-view-update-modeline))
+  (sage-shell-view--set-inline-state
+   'text t))
 
 (defun sage-shell-view-disable-inline-output ()
   "Disable inline output pretty-printing, i.e. do not typeset output from sage in the `sage-shell-mode' buffer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
-  (sage-shell-view-set-backend
-   nil
-   sage-shell-view-inline-plots-enabled
-   (lambda () (setq sage-shell-view-inline-output-enabled nil)))
-  (sage-shell-view-update-modeline))
+  (sage-shell-view--set-inline-state
+   'text nil))
 
 ;;;###autoload
 (defun sage-shell-view-enable-inline-plots ()
   "Enable inline plotting, i.e. display plots in the `sage-shell-mode' buffer and do not spawn an external viewer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
-  (sage-shell-view-set-backend
-   sage-shell-view-inline-output-enabled
-   t
-   (lambda () (setq sage-shell-view-inline-plots-enabled t)))
-  (sage-shell-view-update-modeline))
+  (sage-shell-view--set-inline-state
+   'plot t))
 
 (defun sage-shell-view-disable-inline-plots ()
   "Disable inline plotting, i.e. do not display plots in the `sage-shell-mode' buffer and instead spawn an external viewer.
-WARNING: this communicates with the sage process.  Only use this
-when `sage-shell-view' mode is enabled and sage is running."
+WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
-  (sage-shell-view-set-backend
-   sage-shell-view-inline-output-enabled
-   nil
-   (lambda () (setq sage-shell-view-inline-plots-enabled nil)))
-  (sage-shell-view-update-modeline))
+  (sage-shell-view--set-inline-state
+   'plot nil))
+
+;;;###autoload
+(cl-defun sage-shell-view-toggle-inline-output (&optional (verbose t))
+  "Toggle inline typesetting of outputs in `sage-shell-mode' buffer."
+  (interactive)
+  (sage-shell-edit:set-sage-proc-buf-internal nil)
+  (sage-shell-view--set-inline-state
+   'text
+   (not (buffer-local-value 'sage-shell-view-inline-output-enabled
+                            sage-shell:process-buffer))
+   verbose))
+
+;;;###autoload
+(cl-defun sage-shell-view-toggle-inline-plots (&optional (verbose t))
+  "Toggle inline plotting of graphs in `sage-shell-mode' buffer."
+  (interactive)
+  (sage-shell-edit:set-sage-proc-buf-internal nil)
+  (sage-shell-view--set-inline-state
+   'plot
+   (not (buffer-local-value 'sage-shell-view-inline-plots-enabled
+                            sage-shell:process-buffer))
+   verbose))
+
+(defun sage-shell-view--set-inline-state (type enable-p &optional verbose)
+  "Enable/diable inline outputs/plots."
+  (sage-shell-edit:set-sage-proc-buf-internal nil)
+  (with-current-buffer sage-shell:process-buffer
+    (unless sage-shell-view-mode
+      (let ((sage-shell-view-default-commands nil))
+        (sage-shell-view-mode 1)))
+    (let ((current-state `((text . ,sage-shell-view-inline-output-enabled)
+                           (plot . ,sage-shell-view-inline-plots-enabled))))
+      (unless (assoc type current-state)
+        (error "TYPE should be text or plot."))
+      (setcdr (assoc type current-state) enable-p)
+      (let-alist current-state
+        (sage-shell-view-set-backend
+         .text .plot
+         (lambda () (when verbose
+                  (message "Inline %s %s."
+                           (let ((l '((text . "typesetting")
+                                      (plot . "plots"))))
+                             (assoc-default type l))
+                           (if enable-p
+                               "enabled"
+                             "disabled")))))))))
 
 (defconst sage-shell-view--mod-name "_emacs_sage_shell_view")
 
 (defun sage-shell-view--to-py-bool (a)
   (if a "True" "False"))
 
-(defun sage-shell-view-set-backend (text plot success-callback)
+(cl-defun sage-shell-view-set-backend (text plot &optional
+                                            (success-callback #'ignore))
   (cl-check-type success-callback function)
-  (sage-shell-view--init)
-  (sage-shell:run-cell
-   (format "%s.%s(text=%s, plot=%s)"
-           sage-shell-view--mod-name
-           "set_backend"
-           (sage-shell-view--to-py-bool text)
-           (sage-shell-view--to-py-bool plot))
-   :sync t
-   :callback
-   (lambda (res)
-     (if (sage-shell:output-stct-success res)
-         (funcall success-callback)
-       (sage-shell--error-callback res)))))
+  (with-current-buffer sage-shell:process-buffer
+    (sage-shell-view--init)
+    (sage-shell:run-cell
+     (format "%s.%s(text=%s, plot=%s)"
+             sage-shell-view--mod-name
+             "set_backend"
+             (sage-shell-view--to-py-bool text)
+             (sage-shell-view--to-py-bool plot))
+     :sync t
+     :callback
+     (lambda (res)
+       (cond ((sage-shell:output-stct-success res)
+              (funcall success-callback)
+              (setq sage-shell-view-inline-plots-enabled plot
+                    sage-shell-view-inline-output-enabled text)
+              (sage-shell-view-update-modeline))
+             (t (sage-shell--error-callback res)))))))
 
 (defvar sage-shell-view--init-completed-p nil)
 (make-variable-buffer-local 'sage-shell-view--init-completed-p)
@@ -589,32 +661,6 @@ when `sage-shell-view' mode is enabled and sage is running."
      :callback #'sage-shell--error-callback)
     (with-current-buffer sage-shell:process-buffer
       (setq sage-shell-view--init-completed-p t))))
-
-;;;###autoload
-(define-minor-mode sage-shell-view
-  "Toggle automatic typesetting of Sage output.
-
-Typesetting of math formulas is done by LATEX subprocesses and
-PDF to PNG conversions." nil
-  :group 'sage-shell-view
-  :lighter " sage-shell-view"
-  (if sage-shell-view
-      (progn
-        (cond
-         ((eq sage-shell-view-default-commands 'plots)
-          (sage-shell-view-enable-inline-plots))
-         ((eq sage-shell-view-default-commands 'output)
-          (sage-shell-view-enable-inline-output))
-         (sage-shell-view-default-commands
-          (sage-shell-view-enable-inline-plots)
-          (sage-shell-view-enable-inline-output)))
-        (add-hook 'comint-output-filter-functions
-                  'sage-shell-view-output-filter nil t))
-    (progn
-      (sage-shell-view-disable-inline-output)
-      (sage-shell-view-disable-inline-plots)
-      (remove-hook 'comint-output-filter-functions 'sage-shell-view-output-filter
-                   t))))
 
 (provide 'sage-shell-view)
 ;;; sage-shell-view.el ends here

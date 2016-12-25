@@ -24,7 +24,7 @@
    - [[#basic-usage][Basic Usage]]
    - [[#input-history][Input History]]
    - [[#emulating-worksheets-code-blocks][Emulating Worksheets: code blocks]]
-   - [[#typesetting-outputs-a-port-of-sage-view][Typesetting outputs (a port of =sage-view=)]]
+   - [[#inline-display-of-latex-outputs-and-plots-a-port-of-sage-view][Inline display of LaTeX outputs and plots (a port of =sage-view=)]]
    - [[#sagetex][SageTeX]]
    - [[#customization][Customization]]
    - [[#extensions][Extensions]]
@@ -351,15 +351,31 @@ sage:
 
 The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:delimiter=.
 
-** Typesetting outputs (a port of =sage-view=)
+** Inline display of LaTeX outputs and plots (a port of =sage-view=)
    This feature is a port of [[https://bitbucket.org/gvol/sage-mode/src/44eb95cb6b27a05af68e11253649ddf8ae364a5b/emacs/sage-view.el?at=default&fileviewer=file-view-default][sage-view]].
-   To typeset results in =sage-shell-mode= buffer, add the following code to your Emacs init file:
+   To enable inline display of LaTeX outputs and plots in =sage-shell-mode= buffer,
+   add the following code to your Emacs init file:
 
     #+BEGIN_SRC elisp
-      (add-hook 'sage-shell-after-prompt-hook #'sage-shell-view)
+      ;; If you want to enable inline display of LaTeX outputs only,
+      ;; uncomment the following line.
+      ;; (setq sage-shell-view-default-commands 'output)
+
+      ;; If you want to enable inline display of plots only,
+      ;; uncomment the following line.
+      ;; (setq sage-shell-view-default-commands 'plot)
+
+      (add-hook 'sage-shell-after-prompt-hook #'sage-shell-view-mode)
     #+END_SRC
 
-    You can change the size of LaTeX images by changing =sage-shell-view-default-resolution=.
+    You can use the following commands to enable/disable inline display of LaTeX outputs and plots.
+
+    | Command                                 | Description                                                               |
+    |-----------------------------------------+---------------------------------------------------------------------------|
+    | =sage-shell-view-toggle-inline-output=  | Toggle inline display of LaTeX outputs while SageMath process is running  |
+    | =sage-shell-view-toggle-inline-plots=   | Toggle inline display of plots while SageMath process is running          |
+
+    You can change the resolution of LaTeX images by adjusting =sage-shell-view-default-resolution=.
     For further customization, run =M-x customize-group RET sage-shell-view RET=.
 
 ** SageTeX

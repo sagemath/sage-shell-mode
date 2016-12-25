@@ -652,12 +652,14 @@ to a process buffer.")
     ["CONT"   comint-continue-subjob t]
     ["STOP"   comint-stop-subjob t]
     ["BREAK"  comint-interrupt-subjob t]))
+
 (defvar sage-shell:menu-spec
   `("Sage"
     ,sage-shell:in-out-menu-spec
-    ,sage-shell:singal-menu-spec))
-
-(defvar sage-shell:menu-defined-p nil)
+    ,sage-shell:singal-menu-spec
+    "----"
+    ["Toggle inline typesetting" sage-shell-view-toggle-inline-output]
+    ["Toggle inline plots" sage-shell-view-toggle-inline-plots]))
 
 (defvar sage-shell:output-finished-p nil)
 (make-variable-buffer-local 'sage-shell:output-finished-p)
@@ -746,11 +748,6 @@ to a process buffer.")
   (setq comint-input-ignoredups t)
   (add-hook 'completion-at-point-functions
             'sage-shell:completion-at-point-func nil t)
-  (unless sage-shell:menu-defined-p
-    (easy-menu-define sage-shell-menu
-      sage-shell-mode-map "sage-shell menu"
-      sage-shell:menu-spec)
-    (setq sage-shell:menu-defined-p t))
 
   ;; Run init functions after Sage loaded.
   (add-to-list 'sage-shell:output-filter-finished-hook
@@ -767,6 +764,10 @@ to a process buffer.")
   (when sage-shell:delete-temp-dir-p
     (add-hook 'sage-shell:process-exit-hook
               #'sage-shell-edit:delete-temp-dir)))
+
+(easy-menu-define sage-shell-menu
+  sage-shell-mode-map "sage-shell menu"
+  sage-shell:menu-spec)
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
