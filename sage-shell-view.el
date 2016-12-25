@@ -173,7 +173,7 @@ computes the resolution automatically."
   :type 'number
   :group 'sage-shell-view)
 
-(defcustom sage-shell-view-lighter " sage-shell-view"
+(defcustom sage-shell-view-lighter " sage-view"
   "Lighter for `sage-shell-view' minor mode."
   :group 'sage-shell-view
   :type 'string)
