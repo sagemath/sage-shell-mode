@@ -365,7 +365,7 @@ The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:deli
       ;; uncomment the following line.
       ;; (setq sage-shell-view-default-commands 'plot)
 
-      (add-hook 'sage-shell-after-prompt-hook #'sage-shell-view)
+      (add-hook 'sage-shell-after-prompt-hook #'sage-shell-view-mode)
     #+END_SRC
 
     You can use the following commands to enable/disable inline display of LaTeX outputs and plots.

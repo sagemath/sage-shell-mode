@@ -173,6 +173,11 @@ computes the resolution automatically."
   :type 'number
   :group 'sage-shell-view)
 
+(defcustom sage-shell-view-lighter " sage-shell-view"
+  "Lighter for `sage-shell-view' minor mode."
+  :group 'sage-shell-view
+  :type 'string)
+
 (defvar sage-shell-view-scale 1.0
   "Scale used when converting from PDF/PS to PNG.")
 
@@ -487,16 +492,16 @@ See also `sage-shell-view-output-filter'."
       (overlay-put ov 'sage-shell-view t)
       (sage-shell-view-process-overlay ov))))
 
-
 ;;;###autoload
-(define-minor-mode sage-shell-view
+(define-minor-mode sage-shell-view-mode
   "Toggle automatic typesetting of Sage output.
 
 Typesetting of math formulas is done by LATEX subprocesses and
-PDF to PNG conversions." nil
-  :group 'sage-shell-view
-  :lighter " sage-shell-view"
-  (cond (sage-shell-view
+PDF to PNG conversions."
+  :lighter sage-shell-view-lighter
+  :global nil
+  :init-value nil
+  (cond (sage-shell-view-mode
          (add-hook 'comint-output-filter-functions
                    'sage-shell-view-output-filter nil t)
          (cond
@@ -511,11 +516,14 @@ PDF to PNG conversions." nil
                         'sage-shell-view-output-filter t)
            (sage-shell-view-set-backend nil nil))))
 
+;;;###autoload
+(defalias 'sage-shell-view 'sage-shell-view-mode)
+
 (defun sage-shell-view-output-filter (string)
   "Generate and place overlay images for inline output and inline plots.
 
 Function to be inserted in `comint-output-filter-functions'."
-  (when sage-shell-view
+  (when sage-shell-view-mode
     (save-excursion
       (save-restriction
         (narrow-to-region comint-last-input-end
