@@ -596,6 +596,9 @@ WARNING: this communicates with the sage process.  Only use this when sage is ru
   "Enable/diable inline outputs/plots."
   (sage-shell-edit:set-sage-proc-buf-internal nil)
   (with-current-buffer sage-shell:process-buffer
+    (unless sage-shell-view-mode
+      (let ((sage-shell-view-default-commands nil))
+        (sage-shell-view-mode 1)))
     (let ((current-state `((text . ,sage-shell-view-inline-output-enabled)
                            (plot . ,sage-shell-view-inline-plots-enabled))))
       (unless (assoc type current-state)
@@ -623,8 +626,6 @@ WARNING: this communicates with the sage process.  Only use this when sage is ru
   (cl-check-type success-callback function)
   (with-current-buffer sage-shell:process-buffer
     (sage-shell-view--init)
-    (let ((sage-shell-view-default-commands nil))
-      (sage-shell-view 1))
     (sage-shell:run-cell
      (format "%s.%s(text=%s, plot=%s)"
              sage-shell-view--mod-name
