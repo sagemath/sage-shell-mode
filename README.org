@@ -374,10 +374,6 @@ The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:deli
     |-----------------------------------------+---------------------------------------------------------------------------|
     | =sage-shell-view-toggle-inline-output=  | Toggle inline display of LaTeX outputs while SageMath process is running  |
     | =sage-shell-view-toggle-inline-plots=   | Toggle inline display of plots while SageMath process is running          |
-    | =sage-shell-view-enable-inline-output=  | Enable inline display of LaTeX outputs while SageMath process is running  |
-    | =sage-shell-view-disable-inline-output= | Disable inline display of LaTeX outputs while SageMath process is running |
-    | =sage-shell-view-enable-inline-plots=   | Enable inline display of  plots while SageMath process is running         |
-    | =sage-shell-view-disable-inline-plots=  | Disable inline display of plots while SageMath process is running         |
 
     You can change the resolution of LaTeX images by adjusting =sage-shell-view-default-resolution=.
     For further customization, run =M-x customize-group RET sage-shell-view RET=.
