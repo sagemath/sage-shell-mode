@@ -24,7 +24,7 @@
    - [[#basic-usage][Basic Usage]]
    - [[#input-history][Input History]]
    - [[#emulating-worksheets-code-blocks][Emulating Worksheets: code blocks]]
-   - [[#typesetting-outputs-a-port-of-sage-view][Typesetting outputs (a port of =sage-view=)]]
+   - [[#inline-display-of-latex-outputs-and-plots-a-port-of-sage-view][Inline display of LaTeX outputs and plots (a port of =sage-view=)]]
    - [[#sagetex][SageTeX]]
    - [[#customization][Customization]]
    - [[#extensions][Extensions]]
@@ -370,14 +370,14 @@ The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:deli
 
     You can use the following commands to enable/disable inline display of LaTeX outputs and plots.
 
-| Command                                 | Description                                                               |
-|-----------------------------------------+---------------------------------------------------------------------------|
-| =sage-shell-view-toggle-inline-output=  | Toggle inline display of LaTeX outputs while SageMath process is running  |
-| =sage-shell-view-toggle-inline-plots=   | Toggle inline display of plots while SageMath process is running          |
-| =sage-shell-view-enable-inline-output=  | Enable inline display of LaTeX outputs while SageMath process is running  |
-| =sage-shell-view-disable-inline-output= | Disable inline display of LaTeX outputs while SageMath process is running |
-| =sage-shell-view-enable-inline-plots=   | Enable inline display of  plots while SageMath process is running         |
-| =sage-shell-view-disable-inline-plots=  | Disable inline display of plots while SageMath process is running         |
+    | Command                                 | Description                                                               |
+    |-----------------------------------------+---------------------------------------------------------------------------|
+    | =sage-shell-view-toggle-inline-output=  | Toggle inline display of LaTeX outputs while SageMath process is running  |
+    | =sage-shell-view-toggle-inline-plots=   | Toggle inline display of plots while SageMath process is running          |
+    | =sage-shell-view-enable-inline-output=  | Enable inline display of LaTeX outputs while SageMath process is running  |
+    | =sage-shell-view-disable-inline-output= | Disable inline display of LaTeX outputs while SageMath process is running |
+    | =sage-shell-view-enable-inline-plots=   | Enable inline display of  plots while SageMath process is running         |
+    | =sage-shell-view-disable-inline-plots=  | Disable inline display of plots while SageMath process is running         |
 
     You can change the resolution of LaTeX images by adjusting =sage-shell-view-default-resolution=.
     For further customization, run =M-x customize-group RET sage-shell-view RET=.
