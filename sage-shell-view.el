@@ -128,14 +128,14 @@ Each of these can be enabled or disabled later by calling
   :type 'string
   :group 'sage-shell-view)
 
-(defcustom sage-shell-latex-foreground-color nil
+(defcustom sage-shell-view-latex-foreground-color nil
   "Foreground color used in LaTeX image as string.
 If the value is `nil', then this variable is ignored."
   :type '(choice (const :tag "Not Specified" nil)
                  (string :tag "Color"))
   :group 'sage-shell-view)
 
-(defcustom sage-shell-latex-background-color nil
+(defcustom sage-shell-view-latex-background-color nil
   "Background color used in LaTeX image as string.
 If the value is `nil', then this variable is ignored."
   :type '(choice (const :tag "Not Specified" nil)
@@ -204,13 +204,13 @@ computes the resolution automatically."
 "
    (mapconcat #'number-to-string
               (sage-shell-view-color-to-rgb
-               (or sage-shell-latex-background-color
+               (or sage-shell-view-latex-background-color
                    (frame-parameter nil 'background-color)))
               ",")
    sage-shell-view-latex-preamble
    (mapconcat #'number-to-string
               (sage-shell-view-color-to-rgb
-               (or sage-shell-latex-foreground-color
+               (or sage-shell-view-latex-foreground-color
                    (frame-parameter nil 'foreground-color)))
               ",")
    math-expr))
