@@ -5,7 +5,7 @@
 ;; URL: https://github.com/sagemath/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24.1") (let-alist "1.0.4") (deferred "0.4.0"))
 ;; Keywords: Sage, math
-;; Version: 0.2.1
+;; Version: 0.3
 
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify
