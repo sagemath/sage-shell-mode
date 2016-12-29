@@ -343,7 +343,7 @@ def _is_safe_str(s):
 
 
 def print_info(name):
-    ip.run_cell("%s?" % (name,))
+    run_cell("%s?" % (name,))
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
@@ -468,9 +468,15 @@ def print_short_doc_and_def(name, base_name=None):
         pass
 
 
+def run_cell(code):
+    res = ip.run_cell(code)
+    ip.set_next_input("")
+    return res
+
+
 def run_cell_and_print_state(code, msg_id_start, msg_id_end):
     print(msg_id_start)
-    res = ip.run_cell(code)
+    res = run_cell(code)
     if hasattr(res, 'success'):
         if res.success:
             print(0)
@@ -484,9 +490,7 @@ def run_cell_and_print_state(code, msg_id_start, msg_id_end):
 
 def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
     print(msg_id_start)
-    ip.run_cell(code)
-    # If input is "foo.bar?", the next input may not be empty.
-    ip.set_next_input("")
+    run_cell(code)
     print(msg_id_end)
 
 
