@@ -521,3 +521,9 @@ aaaaaabc
       (insert "pass")
 
       (should (string= (sage-shell:-current-line 69) "pass")))))
+
+(ert-deftest sage-shell:nthcar-and-rest-test ()
+  (should (equal (sage-shell:nthcar-and-rest 2 '(1 2 3 4 5))
+                 '((1 2) . (3 4 5)))
+          (equal (sage-shell:nthcar-and-rest 10 '(1 2 3 4 5))
+                 '((1 2 3 4 5) . nil))))

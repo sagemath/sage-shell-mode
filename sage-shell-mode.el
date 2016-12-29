@@ -4039,7 +4039,7 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
                        (concat itf "\\.interact()"))
                  "\\|") "\\)")
                line)
-           do (return itf)))
+           return itf))
 
 (defun sage-shell-cpl:cmds-symbol (intf)
   (intern (format "sage-shell-cpl:%s-commands" intf)))
