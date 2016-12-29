@@ -9,12 +9,12 @@ message:
 
 test-compile:
 	$(CASK) exec $(EMACS) -Q -eval "(progn (setq byte-compile-delete-errors nil) (setq byte-compile-error-on-warn t) (add-to-list 'load-path \"$(PWD)\"))" \
-	-batch -f batch-byte-compile sage-shell-mode.el sage-shell-blocks.el
+	-batch -f batch-byte-compile sage-shell-mode.el sage-shell-blocks.el sage-shell-view.el
 
 test: clean test-compile
 	$(CASK) exec $(EMACS) -Q -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
 
 clean:
-	rm -f sage-shell-mode.elc sage-shell-blocks.elc
+	rm -f *.elc
 
 .PHONY: message test-compile test clean

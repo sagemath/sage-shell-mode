@@ -5,7 +5,7 @@
 ;; URL: https://github.com/sagemath/sage-shell-mode
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24.1") (let-alist "1.0.4") (deferred "0.4.0"))
 ;; Keywords: Sage, math
-;; Version: 0.2.1
+;; Version: 0.3
 
 ;;; License
 ;; This program is free software; you can redistribute it and/or modify
@@ -652,12 +652,14 @@ to a process buffer.")
     ["CONT"   comint-continue-subjob t]
     ["STOP"   comint-stop-subjob t]
     ["BREAK"  comint-interrupt-subjob t]))
+
 (defvar sage-shell:menu-spec
   `("Sage"
     ,sage-shell:in-out-menu-spec
-    ,sage-shell:singal-menu-spec))
-
-(defvar sage-shell:menu-defined-p nil)
+    ,sage-shell:singal-menu-spec
+    "----"
+    ["Toggle inline typesetting" sage-shell-view-toggle-inline-output]
+    ["Toggle inline plots" sage-shell-view-toggle-inline-plots]))
 
 (defvar sage-shell:output-finished-p nil)
 (make-variable-buffer-local 'sage-shell:output-finished-p)
@@ -694,6 +696,8 @@ to a process buffer.")
     (modify-syntax-entry ?' "\"" table)
     (modify-syntax-entry ?` "$" table)
     table))
+
+(defvar sage-shell:delete-temp-dir-p t)
 
 (define-derived-mode sage-shell-mode comint-mode
   "Sage-repl" "Execute Sage commands interactively."
@@ -744,11 +748,6 @@ to a process buffer.")
   (setq comint-input-ignoredups t)
   (add-hook 'completion-at-point-functions
             'sage-shell:completion-at-point-func nil t)
-  (unless sage-shell:menu-defined-p
-    (easy-menu-define sage-shell-menu
-      sage-shell-mode-map "sage-shell menu"
-      sage-shell:menu-spec)
-    (setq sage-shell:menu-defined-p t))
 
   ;; Run init functions after Sage loaded.
   (add-to-list 'sage-shell:output-filter-finished-hook
@@ -761,7 +760,14 @@ to a process buffer.")
   (add-hook 'sage-shell:process-exit-hook
             #'sage-shell:-after-send-eof-func nil t)
   (add-hook 'kill-buffer-hook
-            #'sage-shell:-kill-buffer-func nil t))
+            #'sage-shell:-kill-buffer-func nil t)
+  (when sage-shell:delete-temp-dir-p
+    (add-hook 'sage-shell:process-exit-hook
+              #'sage-shell-edit:delete-temp-dir)))
+
+(easy-menu-define sage-shell-menu
+  sage-shell-mode-map "sage-shell menu"
+  sage-shell:menu-spec)
 
 (defvar sage-shell-mode-hook nil "Hook run when entering Sage Shell mode.")
 
@@ -896,6 +902,9 @@ succesive lines in history."
      :output output)))
 
 
+(defun sage-shell--error-callback (res)
+  (unless (sage-shell:output-stct-success res)
+    (error (sage-shell:output-stct-output res))))
 
 (cl-defun sage-shell:run-cell (cell &key callback
                                     output-buffer
@@ -1155,6 +1164,9 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
 
 (defvar sage-shell:check--sage-root-ok nil)
 
+(defvar sage-shell-after-prompt-hook nil
+  "Hook run after the fisrt prompt is displayed.")
+
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
   (sage-shell:run-cell-raw-output
@@ -1167,6 +1179,7 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
       sage-shell:init-command-list))
    :process-buffer buffer :sync t :raw t)
   (setq sage-shell:init-finished-p t)
+  (run-hooks 'sage-shell-after-prompt-hook)
   (unless (sage-shell:check--sage-root)
     ;; Fix (sage-shell:sage-root)
     (setq sage-shell:sage-root--cached
@@ -2281,6 +2294,9 @@ return string for output."
       (let ((pmark (progn (goto-char (process-mark proc))
                           (forward-line 0)
                           (point-marker))))
+        (dolist (ov (overlays-in pt pmark))
+          (when (overlay-get ov 'sage-shell-view)
+            (delete-overlay ov)))
         (delete-region pt pmark)
         (goto-char (process-mark proc))
         (setq replacement (buffer-substring pmark (point)))
@@ -4415,6 +4431,7 @@ inserted in the process buffer before executing the command."
   (make-temp-file "sage_shell_mode" 'directory))
 
 (defvar sage-shell-edit:temp-directory nil)
+(make-variable-buffer-local 'sage-shell-edit:temp-directory)
 
 (defun sage-shell-edit:delete-temp-dir ()
   (when (and (stringp sage-shell-edit:temp-directory)
@@ -4423,21 +4440,24 @@ inserted in the process buffer before executing the command."
              (file-exists-p sage-shell-edit:temp-directory))
     (delete-directory sage-shell-edit:temp-directory t)))
 
-(defvar sage-shell:delete-temp-dir-when-kill-emacs t)
-
-(when sage-shell:delete-temp-dir-when-kill-emacs
-  (add-hook 'kill-emacs-hook 'sage-shell-edit:delete-temp-dir))
+(defun sage-shell-edit--set-and-make-temp-dir ()
+  (unless sage-shell:process-buffer
+    (sage-shell-edit:set-sage-proc-buf-internal))
+  (with-current-buffer sage-shell:process-buffer
+    ;; In case temp dir is removed,
+    (unless (and
+             (stringp sage-shell-edit:temp-directory)
+             (file-exists-p sage-shell-edit:temp-directory)
+             (file-writable-p sage-shell-edit:temp-directory))
+      (setq sage-shell-edit:temp-directory
+            (sage-shell-edit:make-temp-dir)))))
 
 (defun sage-shell-edit:temp-file (ext)
-  ;; In case temp dir is removed,
-  (unless (and (stringp sage-shell-edit:temp-directory)
-               (file-exists-p sage-shell-edit:temp-directory)
-               (file-writable-p sage-shell-edit:temp-directory))
-    (setq sage-shell-edit:temp-directory
-          (sage-shell-edit:make-temp-dir)))
+  (sage-shell-edit--set-and-make-temp-dir)
   (expand-file-name
    (concat sage-shell-edit:temp-file-base-name "." ext)
-   sage-shell-edit:temp-directory))
+   (buffer-local-value 'sage-shell-edit:temp-directory
+                       sage-shell:process-buffer)))
 
 (defun sage-shell-edit:write-region-to-file (start end file)
   (let* ((orig-start (min start end))
