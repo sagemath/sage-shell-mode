@@ -34,14 +34,14 @@
 
 ** Requirements
 
-   1. GNU Emacs 24.1 (or 24.4) or later.
+   1. GNU Emacs 24.3 (or 24.4) or later.
 
       For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4. In that
       case, you should set =sage-shell:use-prompt-toolkit= as explained in the
       following section. The technical reason is that Sage 7.4 uses IPython 5,
       where python-prompt-toolkit is used instead of GNU readline
 
-      For Sage 7.3 or earlier, Emacs 24.1 is sufficient.
+      For Sage 7.3 or earlier, Emacs 24.3 is sufficient.
 
    2. Local installation of [[http://www.sagemath.org/][Sage]].
 
