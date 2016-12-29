@@ -310,7 +310,7 @@ The name is made by appending a number to PREFIX, default
   (cl-loop for i from 0 to (1- m)
            for a on l
            collect (car a) into x
-           finally (return (cons x a))))
+           finally return (cons x a)))
 
 (defsubst sage-shell:group (l &optional n)
   (let ((r l)
@@ -2696,7 +2696,7 @@ lines beg end"
             (inhibit-read-only t))
         (cond ((listp line)
                (let ((lines (car line)))
-                 (delete-region (cadr line) (caddr line))
+                 (delete-region (cadr line) (cl-caddr line))
                  (sage-shell:-send--lines-internal
                   (sage-shell:-cpaste-lines lines))))
               (t (sage-shell:-send-input-one-line line)
@@ -3659,7 +3659,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
          (intf (unless att-beg
                  (or (sage-shell:in cur-intf itfcs)
                      (sage-shell:aif (sage-shell:-in-func-call-p)
-                         (let ((func-name (caddr it)))
+                         (let ((func-name (cl-caddr it)))
                            (when (and
                                   func-name
                                   ;; Inside string?
@@ -3746,7 +3746,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 (defun sage-shell-cpl:-push-in-func-call-state (in-func-call state)
   "Assume in-func-call is non-nil."
   (let ((in-func-call-end (cadr in-func-call))
-        (in-func-name (caddr in-func-call))
+        (in-func-name (cl-caddr in-func-call))
         (in-function-call-bn (save-excursion
                                (goto-char (goto-char (cadr in-func-call)))
                                (car (sage-shell-cpl:var-base-name-and-att-start
