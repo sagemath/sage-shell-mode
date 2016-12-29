@@ -953,7 +953,7 @@ When non-nil, CALLBACK should be a function and will be called if the
 evaluation completes. The output will be passed as its argument.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
 Otherwise return value of `sage-shell:-make-exec-cmd' is used.
-If EVALUATOR is non-nil, it should be a Python function with three arguments
+If EVALUATOR is non-nil, it should be a Python function
 which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
   (cl-check-type cell string)
   (cl-check-type callback (or null function))
