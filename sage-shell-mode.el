@@ -3094,7 +3094,7 @@ python-mode"
                          (save-excursion
                            (goto-char (point-max))
                            (newline)
-                           (case sym
+                           (cl-case sym
                              ('forward (insert-btn "[forward]" 1))
                              ('back (insert-btn "[back]" -1))
                              ('both (insert-btn "[back]" -1)
