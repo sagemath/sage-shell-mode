@@ -1,6 +1,6 @@
 ;;; sage-shell-blocks.el --- Support for structuring Sage code in sheets
 
-;; Copyright (C) 2013-2016 Johan Rosenkilde
+;; Copyright (C) 2013-2017 Johan Rosenkilde
 
 ;; Author: Johan Rosenkilde <jsrn@jsrn.dk>
 ;; URL: https://github.com/sagemath/sage-shell-mode
