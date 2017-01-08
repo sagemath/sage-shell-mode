@@ -72,6 +72,7 @@ class Memorize(object):
             self._cached[args] = res
             return res
 
+
 memorize = Memorize
 
 
@@ -112,6 +113,7 @@ def all_vars_in_module(compl_dct):
         return _all_vars_in_module(module_name)
     except:
         return []
+
 
 special_att_regexp = re.compile("__[a-zA-Z0-9_]+__")
 
@@ -201,6 +203,7 @@ def list_module_paths_in(p):
         return res
     else:
         return []
+
 
 mod_regexp = re.compile("^[A-Za-z0-9_.]+$")
 
@@ -345,6 +348,7 @@ def _is_safe_str(s):
 def print_info(name):
     run_cell("%s?" % (name,))
 
+
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
 
 
@@ -368,6 +372,7 @@ def sage_getdef(name, base_name=None):
     df = _sage_getdef(name, base_name=base_name)
     if df is not None:
         return "%s%s" % (name, df)
+
 
 _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
                "ALGORITHM"]
