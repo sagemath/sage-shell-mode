@@ -53,7 +53,7 @@ class BackendEmacs(BackendIPythonCommandline):
             return ({u'text/plain': msg}, {})
 
         elif isinstance(rich_output, OutputLatex):
-            text = "BEGIN_TEXT:" + plain_text.text.get() + ":END_TEXT\nBEGIN_LATEX:" + \
+            text = "BEGIN_TEXT:" + plain_text.text.get() + ":END_TEXTBEGIN_LATEX:" + \
                    rich_output.latex.get() + ":END_LATEX"
             return ({u'text/plain': text}, {})
         else:

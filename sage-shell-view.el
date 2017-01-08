@@ -449,7 +449,7 @@ that."
 (defvar sage-shell-view-output-regexp
   (rx "BEGIN_TEXT:"
       (group (minimal-match (0+ (or nonl "\n"))))
-      ":END_TEXT\nBEGIN_LATEX:"
+      ":END_TEXTBEGIN_LATEX:"
       (group (minimal-match (0+ (or nonl "\n"))))
       ":END_LATEX")
   "Regular expression matching typeset output from BackendEmacs.")
