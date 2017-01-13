@@ -233,9 +233,10 @@ computes the resolution automatically."
   "Internal function to zoom in on an overlay."
   (unless (numberp multiplier)
     (setq multiplier 1))
-  (let ((scale (or (overlay-get ov 'scale) sage-shell-view-scale)))
-    (overlay-put ov 'scale (+ scale (* multiplier sage-shell-view-scale-factor)))
-    (message "Overlay's scale set to %s" scale)
+  (let* ((scale (or (overlay-get ov 'scale) sage-shell-view-scale))
+         (new-scale (+ scale (* multiplier sage-shell-view-scale-factor))))
+    (overlay-put ov 'scale new-scale)
+    (message "Overlay's scale set to %s" new-scale)
     (sage-shell-view-process-overlay ov)))
 
 (defun sage-shell-view-zoom-out (ov &optional multiplier)
@@ -248,7 +249,7 @@ computes the resolution automatically."
     (when (< new-scale sage-shell-view-scale-factor)
       (setq new-scale sage-shell-view-scale-factor))
     (overlay-put ov 'scale new-scale)
-    (message "Overlay's scale set to %s" scale)
+    (message "Overlay's scale set to %s" new-scale)
     (sage-shell-view-process-overlay ov)))
 
 (defmacro sage-shell-view--when-overlay-active (ov &rest body)
