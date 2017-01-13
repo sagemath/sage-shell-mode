@@ -103,7 +103,8 @@ Each of these can be enabled or disabled later by calling
 \\usepackage{mathrsfs}
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
-% we need preview
+% we need preview and breqn
+\\usepackage{breqn}
 \\usepackage[active, tightpage, pdftex, displaymath]{preview}
 % macros sage uses
 \\newcommand{\\ZZ}{\\Bold{Z}}
@@ -123,6 +124,7 @@ Each of these can be enabled or disabled later by calling
 \\newcommand{\\RIF}{\\Bold{I} \\Bold{R}}
 \\newcommand{\\RLF}{\\Bold{R}}
 \\newcommand{\\CFF}{\\Bold{CFF}}
+\\setlength{\\mathindent}{0pt}
 "
   "The default LaTeX preamble."
   :type 'string
@@ -178,6 +180,17 @@ computes the resolution automatically."
   :group 'sage-shell-view
   :type 'string)
 
+(defcustom sage-shell-view-latex-documentclass "\\documentclass[fleqn]{article}"
+  "documentclass for LaTeX"
+  :group 'sage-shell-view
+  :type 'string)
+
+(defcustom sage-shell-view-latex-math-environment "dmath*"
+  "Math environment for LaTeX.
+Note that if this value is equal to \"math\", then some formulas may be truncated."
+  :group 'sage-shell-view
+  :type 'string)
+
 (defvar sage-shell-view-scale 1.0
   "Scale used when converting from PDF/PS to PNG.")
 
@@ -188,20 +201,21 @@ computes the resolution automatically."
 (defun sage-shell-view-latex-str (math-expr)
   "LaTeX string to be inserted a tmp file."
   (format
-   "\\documentclass{article}
+   "%s
 \\usepackage{xcolor}
 \\pagecolor[rgb]{%s}
 %s
 \\begin{document}
 \\definecolor{mycolor}{rgb}{%s}
 \\begin{preview}
-\\begin{math}
+\\begin{%s}
 \\color{mycolor}
 %s
-\\end{math}
+\\end{%s}
 \\end{preview}
 \\end{document}
 "
+   sage-shell-view-latex-documentclass
    (mapconcat #'number-to-string
               (sage-shell-view-color-to-rgb
                (or sage-shell-view-latex-background-color
@@ -213,7 +227,9 @@ computes the resolution automatically."
                (or sage-shell-view-latex-foreground-color
                    (frame-parameter nil 'foreground-color)))
               ",")
-   math-expr))
+   sage-shell-view-latex-math-environment
+   math-expr
+   sage-shell-view-latex-math-environment))
 
 (defun sage-shell-view-dir-name ()
   (sage-shell-edit--set-and-make-temp-dir)
