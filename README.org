@@ -352,7 +352,8 @@ sage:
 The delimiter =###= can be changed by =setq= the variable =sage-shell-blocs:delimiter=.
 
 ** Inline display of LaTeX outputs and plots (a port of =sage-view=)
-   This feature is a port of [[https://bitbucket.org/gvol/sage-mode/src/44eb95cb6b27a05af68e11253649ddf8ae364a5b/emacs/sage-view.el?at=default&fileviewer=file-view-default][sage-view]].
+   This feature is a port of [[https://bitbucket.org/gvol/sage-mode/src/44eb95cb6b27a05af68e11253649ddf8ae364a5b/emacs/sage-view.el?at=default&fileviewer=file-view-default][sage-view]]. This requires [[https://www.ctan.org/pkg/dvipng][dvipng]] and [[https://www.ctan.org/tex-archive/macros/latex/contrib/preview][preview.sty]].
+
    To enable inline display of LaTeX outputs and plots in =sage-shell-mode= buffer,
    add the following code to your Emacs init file:
 

@@ -68,14 +68,8 @@
   :group 'sage-shell
   :prefix "sage-shell-view-")
 
-(defcustom sage-shell-view-gs-command
-  (if (eq system-type 'windows-nt)
-      "GSWIN32C.EXE"
-    "gs")
-  "*Ghostscript command to convert from PDF to PNG.
-
-See also `sage-shell-view-gs-options', `sage-shell-view-anti-aliasing-level'
-and `sage-shell-view-default-resolution'"
+(defcustom sage-shell-view-dvipng-command "dvipng"
+  "*dvipng command to convert from DVI to PNG."
   :type 'string
   :group 'sage-shell-view)
 
@@ -104,7 +98,7 @@ Each of these can be enabled or disabled later by calling
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
 % we need preview
-\\usepackage[active, tightpage, pdftex, displaymath]{preview}
+\\usepackage[active, displaymath]{preview}
 % macros sage uses
 \\newcommand{\\ZZ}{\\Bold{Z}}
 \\newcommand{\\NN}{\\Bold{N}}
@@ -142,17 +136,9 @@ If the value is `nil', then this variable is ignored."
                  (string :tag "Color"))
   :group 'sage-shell-view)
 
-(defcustom sage-shell-view-gs-options
-  '("-sDEVICE=png16m" "-dBATCH" "-dSAFER" "-q" "-dNOPAUSE")
-  "*Options for Ghostscript when converting from PDF to PNG."
+(defcustom sage-shell-view-dvipng-options nil
+  "*Options for dvipng when converting from DVI to PNG."
   :type 'list
-  :group 'sage-shell-view)
-
-(defcustom sage-shell-view-anti-aliasing-level 4
-  "*Level of anti-aliasing used when converting from PDF to PNG. "
-  :type '(choice (const :tag "No anti-aliasing" 1)
-                 (const :tag "Some anti-aliasing" 2)
-                 (const :tag "More anti-aliasing (slower, but prettier)." 4))
   :group 'sage-shell-view)
 
 (defcustom sage-shell-view-margin '(1 . 1)
@@ -166,8 +152,8 @@ If the value is `nil', then this variable is ignored."
   :group 'sage-shell-view)
 
 (defcustom sage-shell-view-default-resolution 125
-  "Resolution used when converting from PDF to PNG.
-This value is passed to the -r option of the command `sage-shell-view-gs-command'.
+  "Resolution used when converting from DVI to PNG.
+This value is passed to the -D option of the command dvipng.
 If it is `nil', then the function `sage-shell-view-compute-resolution'
 computes the resolution automatically."
   :type 'number
@@ -208,23 +194,17 @@ computes the resolution automatically."
   "LaTeX string to be inserted a tmp file."
   (format
    "%s
-\\usepackage{xcolor}
-\\pagecolor[rgb]{%s}
 %s
 \\begin{document}
-\\definecolor{mycolor}{rgb}{%s}
 \\begin{preview}
 \\begin{%s}
-\\color{mycolor}
 %s
 \\end{%s}
 \\end{preview}
 \\end{document}
 "
    sage-shell-view-latex-documentclass
-   (mapconcat #'identity (sage-shell-view-rgb 'bg) ",")
    sage-shell-view-latex-preamble
-   (mapconcat #'identity (sage-shell-view-rgb 'fg) ",")
    sage-shell-view-latex-math-environment
    math-expr
    sage-shell-view-latex-math-environment))
@@ -378,16 +358,16 @@ from LATEX to PDF."
       (apply #'deferred:process "latex" (sage-shell-view--latex-option base))
 
       (deferred:nextc it
-        (lambda (_) (sage-shell-view--pdf-to-png ov))))))
+        (lambda (_) (sage-shell-view--dvi-to-png ov))))))
 
-(defun sage-shell-view--pdf-to-png (ov)
+(defun sage-shell-view--dvi-to-png (ov)
+  (unless (executable-find sage-shell-view-dvipng-command)
+    (error "dvipng not found. To use sage-shell-view mode, please install dvipng."))
   (let ((base (overlay-get ov 'file-sans-extension)))
     (deferred:$
       (apply #'deferred:process
-             sage-shell-view-gs-command
-             (sage-shell-view--gs-option
-              (overlay-get ov 'scale)
-              base))
+             sage-shell-view-dvipng-command
+             (sage-shell-view--dvipng-option (overlay-get ov 'scale) base))
       (deferred:nextc it
         (lambda (_)
           (overlay-put ov 'display
@@ -397,27 +377,29 @@ from LATEX to PDF."
 (defun sage-shell-view--latex-option (base)
   (list (concat "--output-directory=" (sage-shell-view-dir-name))
         (concat "-interaction=" "nonstopmode")
-        (concat "-output-format=" "pdf")
         (concat base ".tex")))
 
-(defun sage-shell-view--gs-option (scale base)
-  (let* ((png (concat base ".png"))
-         (pdf (concat base ".pdf"))
-         (level (int-to-string sage-shell-view-anti-aliasing-level))
-         (scale (or scale sage-shell-view-scale)))
-    (append
-     sage-shell-view-gs-options
-     (list (concat "-dTextAlphaBits=" level)
-           (concat "-dGraphicsAlphaBits=" level)
-           (concat "-sOutputFile=" png)
-           (format "-r%s" (if sage-shell-view-default-resolution
-                              (sage-shell:->>
-                               (* scale sage-shell-view-default-resolution)
-                               round
-                               int-to-string)
-                            (sage-shell-view-compute-resolution
-                             scale)))
-           pdf))))
+(defun sage-shell-view--dvipng-option (scale base)
+  (let ((png (shell-quote-argument (concat base ".png")))
+        (dvi (shell-quote-argument (concat base ".dvi")))
+        (scale (or scale sage-shell-view-scale)))
+    (append sage-shell-view-dvipng-options
+            (list
+             "-T tight"
+             (apply #'format "-fg rgb %s %s %s" (sage-shell-view-rgb 'fg))
+             (apply #'format "-bg rgb %s %s %s" (sage-shell-view-rgb 'bg))
+             "-D" (sage-shell-view--resultion scale)
+             "-o" png
+             dvi))))
+
+(defun sage-shell-view--resultion (scale)
+  (if sage-shell-view-default-resolution
+      (sage-shell:->>
+       (* scale sage-shell-view-default-resolution)
+       round
+       int-to-string)
+    (sage-shell-view-compute-resolution
+     scale)))
 
 (defvar sage-shell-view-inline-plots-enabled nil)
 (make-variable-buffer-local 'sage-shell-view-inline-plots-enabled)
