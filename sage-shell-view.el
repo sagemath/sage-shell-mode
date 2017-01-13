@@ -103,8 +103,7 @@ Each of these can be enabled or disabled later by calling
 \\usepackage{mathrsfs}
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
-% we need preview and breqn
-\\usepackage{breqn}
+% we need preview
 \\usepackage[active, tightpage, pdftex, displaymath]{preview}
 % macros sage uses
 \\newcommand{\\ZZ}{\\Bold{Z}}
@@ -124,7 +123,6 @@ Each of these can be enabled or disabled later by calling
 \\newcommand{\\RIF}{\\Bold{I} \\Bold{R}}
 \\newcommand{\\RLF}{\\Bold{R}}
 \\newcommand{\\CFF}{\\Bold{CFF}}
-\\setlength{\\mathindent}{0pt}
 "
   "The default LaTeX preamble."
   :type 'string
@@ -180,14 +178,13 @@ computes the resolution automatically."
   :group 'sage-shell-view
   :type 'string)
 
-(defcustom sage-shell-view-latex-documentclass "\\documentclass[fleqn]{article}"
+(defcustom sage-shell-view-latex-documentclass "\\documentclass{article}"
   "documentclass for LaTeX"
   :group 'sage-shell-view
   :type 'string)
 
-(defcustom sage-shell-view-latex-math-environment "dmath*"
-  "Math environment for LaTeX.
-Note that if this value is equal to \"math\", then some formulas may be truncated."
+(defcustom sage-shell-view-latex-math-environment "math"
+  "Math environment for LaTeX."
   :group 'sage-shell-view
   :type 'string)
 
