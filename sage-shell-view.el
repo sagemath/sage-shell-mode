@@ -193,7 +193,16 @@ computes the resolution automatically."
 
 (defun sage-shell-view-color-to-rgb (str)
   "Convert color name STR to rgb values understood by TeX."
-  (mapcar (lambda (x) (/ x 65535.0)) (color-values str)))
+  (mapcar (lambda (x) (format "%g" (/ x 65535.0))) (color-values str)))
+
+(defun sage-shell-view-rgb (fg-or-bg)
+  (let ((color-alst `((bg . ,sage-shell-view-latex-background-color)
+                      (fg . ,sage-shell-view-latex-foreground-color)))
+        (sym-alst `((bg . background-color)
+                    (fg . foreground-color))))
+    (sage-shell-view-color-to-rgb
+     (or (assoc-default fg-or-bg color-alst)
+         (frame-parameter nil (assoc-default fg-or-bg sym-alst))))))
 
 (defun sage-shell-view-latex-str (math-expr)
   "LaTeX string to be inserted a tmp file."
@@ -213,17 +222,9 @@ computes the resolution automatically."
 \\end{document}
 "
    sage-shell-view-latex-documentclass
-   (mapconcat #'number-to-string
-              (sage-shell-view-color-to-rgb
-               (or sage-shell-view-latex-background-color
-                   (frame-parameter nil 'background-color)))
-              ",")
+   (mapconcat #'identity (sage-shell-view-rgb 'bg) ",")
    sage-shell-view-latex-preamble
-   (mapconcat #'number-to-string
-              (sage-shell-view-color-to-rgb
-               (or sage-shell-view-latex-foreground-color
-                   (frame-parameter nil 'foreground-color)))
-              ",")
+   (mapconcat #'identity (sage-shell-view-rgb 'fg) ",")
    sage-shell-view-latex-math-environment
    math-expr
    sage-shell-view-latex-math-environment))
