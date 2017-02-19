@@ -5198,7 +5198,8 @@ Returns the tracked buffer."
 
 ;;;###autoload
 (defun sage-shell-sagetex:load-file (filename)
-  "Load a .sagetex.sage file to an existing Sage process."
+  "Load a .sagetex.sage file to an existing Sage process.
+If TeX-master is set, this function uses its variable."
   (interactive
    (list (sage-shell-sagetex:read-latex-file)))
   (let ((dflt (sage-shell-sagetex:tex-to-sagetex-file
@@ -5328,7 +5329,8 @@ file name.")
 (defun sage-shell-sagetex:compile-file (f)
   "This command runs LaTeX on the current file, loads the
 .sagetex.sage file to an existing Sage process and runs LaTeX
-again. See the documentation of
+again. If TeX-master is set, this function uses its variable.
+See the documentation of
 `sage-shell-sagetex:latex-command' and
 `sage-shell-sagetex:auctex-command-name' for the customization."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
@@ -5350,7 +5352,7 @@ again. See the documentation of
 ;;;###autoload
 (defun sage-shell-sagetex:run-latex-and-load-file (f)
   "This command runs LaTeX and loads a .sagetex.sage file to the
-exisiting Sage process."
+exisiting Sage process. If TeX-master is set, this function uses its variable."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
   (sage-shell-sagetex:-run-latex-and-do
    f sage-shell-sagetex:load-file))
