@@ -5362,16 +5362,25 @@ exisiting Sage process."
    'sage-shell-sagetex:run-latex-and-load-file))
 
 (defun sage-shell-sagetex:read-latex-file ()
-  (expand-file-name
-   (read-file-name
-    "LaTeX File: "
-    nil
-    (sage-shell:awhen (buffer-file-name) it)
-    nil
-    (sage-shell:awhen (buffer-file-name)
-      (file-name-nondirectory it))
-    (lambda (name)
-      (string-match (rx ".tex" eol) name)))))
+  (let ((default-file (cond
+                       ((and (boundp 'TeX-master)
+                             (stringp TeX-master)
+                             (file-exists-p TeX-master))
+                        (and (boundp 'TeX-master) ;to silence warning
+                             (file-name-nondirectory
+                              (expand-file-name TeX-master))))
+                       ((buffer-file-name) (file-name-nondirectory
+                                            (buffer-file-name))))))
+    (expand-file-name
+     (read-file-name
+      "LaTeX File: "
+      nil
+      default-file
+      nil
+      default-file
+      (lambda (name)
+        (string-match (rx ".tex" eol) name))))))
+
 
 (defun sage-shell-sagetex:insert-error (e)
   (let ((b (get-buffer-create "*SageTeX-error*")))
