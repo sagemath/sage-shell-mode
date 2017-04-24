@@ -318,7 +318,7 @@ print my_new_algorithm(100, 300)
 def my_random_number():
     return randint(100, 200)
 
-a, b = random_input(), random_input()
+a, b = my_random_number(), my_random_number()
 assert my_new_algorithm(a, b) == my_new_algorithm(b, a)
 
 #+END_SRC
