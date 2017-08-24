@@ -36,11 +36,7 @@
 
    1. GNU Emacs 24.3 (or 24.4) or later.
 
-      For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4. In that
-      case, you should set =sage-shell:use-prompt-toolkit= as explained in the
-      following section. The technical reason is that Sage 7.4 uses IPython 5,
-      where python-prompt-toolkit is used instead of GNU readline
-
+      For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4.
       For Sage 7.3 or earlier, Emacs 24.3 is sufficient.
 
    2. Local installation of [[http://www.sagemath.org/][Sage]].
@@ -58,10 +54,10 @@
      - =M-x package-refresh-contents=
      - =M-x package-install RET sage-shell-mode=.
 
-  1. If you have Sage 7.4 or later, then add the following to your Emacs init file (=~/.emacs.d/init.el=):
+  1. If you have Sage 7.3 or earlier, then add the following to your Emacs init file (=~/.emacs.d/init.el=):
 
      #+BEGIN_SRC elisp
-      (setq sage-shell:use-prompt-toolkit t)
+      (setq sage-shell:use-prompt-toolkit nil)
      #+END_SRC
 
   1. You can now run Sage inside Emacs by =M-x sage-shell:run-sage=, if Emacs
@@ -101,9 +97,6 @@
       ;; Turn on eldoc-mode in Sage terminal and in Sage source files
       (add-hook 'sage-shell-mode-hook #'eldoc-mode)
       (add-hook 'sage-shell:sage-mode-hook #'eldoc-mode)
-
-      ;; If you have Sage 7.4 or later, uncomment the following line.
-      ;; (setq sage-shell:use-prompt-toolkit t)
     #+END_SRC
 
 ** Aliases

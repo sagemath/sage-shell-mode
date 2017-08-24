@@ -192,7 +192,7 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 
 
-(defcustom sage-shell:use-prompt-toolkit nil
+(defcustom sage-shell:use-prompt-toolkit t
   "Non `nil' means the Sage process uses the new prompt of IPython 5."
   :type 'boolean
   :group 'sage-shell)
