@@ -6,6 +6,5 @@
 (depends-on "cl-lib")
 (depends-on "deferred")
 (depends-on "let-alist")
-(depends-on "sage-shell-mode")
 (development
  (depends-on "ert"))
