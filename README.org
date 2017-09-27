@@ -34,10 +34,7 @@
 
 ** Requirements
 
-   1. GNU Emacs 24.3 (or 24.4) or later.
-
-      For Sage 7.4 or later, =sage-shell-mode= requires Emacs 24.4.
-      For Sage 7.3 or earlier, Emacs 24.3 is sufficient.
+   1. GNU Emacs 24.4 later.
 
    2. Local installation of [[http://www.sagemath.org/][Sage]].
 
