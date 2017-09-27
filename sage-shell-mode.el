@@ -1500,7 +1500,7 @@ Match group 1 will be replaced with devel/sage-branch")
                          filename)
            (= it 0))
          (let* ((python-dir1
-                 (expand-file-name "local/lib/python/site-packages/"
+                 (expand-file-name "local/lib/python2.7/site-packages/"
                                    (sage-shell:sage-root)))
                 (python-dir (if (file-exists-p python-dir1)
                                 (file-truename python-dir1)))
