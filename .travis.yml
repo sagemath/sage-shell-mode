@@ -1,16 +1,12 @@
 language: generic
 sudo: false
 before_install:
-  - curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > x.sh && source ./x.sh
-  - evm install $EVM_EMACS --use --skip
-  - cask
+ - if [ ! -z "$EVM_EMACS" ]; then curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > x.sh && source ./x.sh; fi
+ - if [ ! -z "$EVM_EMACS" ]; then evm install $EVM_EMACS --use --skip; fi
 env:
-  # - EMACS=emacs EVM_EMACS=emacs-24.3-travis
-  - EMACS=emacs EVM_EMACS=emacs-24.4-travis
-  - EMACS=emacs EVM_EMACS=emacs-24.5-travis
-  - EMACS=emacs EVM_EMACS=emacs-25.1-travis
-  - EMACS=emacs EVM_EMACS=emacs-25.2-travis
-
+ - EVM_EMACS=emacs-24.4-travis
+ - EVM_EMACS=emacs-24.5-travis
+ - EVM_EMACS=emacs-25.1-travis
 script:
   - emacs --version
   - make test
