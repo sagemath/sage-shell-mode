@@ -2,7 +2,7 @@ language: generic
 sudo: false
 before_install:
   - mkdir ~/.emacs.d
-  - curl -O https://gist.githubusercontent.com/stakemori/a32d367baedd12b590888c6faceb28d9/raw/066838635c2b4ef11cacf1859d7089789d1a41f9/init.el
+  - curl -O https://gist.githubusercontent.com/stakemori/a32d367baedd12b590888c6faceb28d9/raw/066838635c2b4ef11cacf1859d7089789d1a41f9/init.el && move init.el ~/.emacs.d/init.el
   - curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > x.sh && source ./x.sh
   - evm install $EVM_EMACS --use --skip
 env:
