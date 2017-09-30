@@ -14,13 +14,6 @@ test-compile:
 test: clean test-compile
 	$(CASK) exec $(EMACS) -Q -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
 
-travis-test: clean travis-test-compile
-	$(EMACS) -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
-
-travis-test-compile:
-	$(EMACS) -eval "(progn (setq byte-compile-delete-errors nil) (setq byte-compile-error-on-warn t) (add-to-list 'load-path \"$(PWD)\"))" \
-	-batch -f batch-byte-compile sage-shell-mode.el sage-shell-blocks.el sage-shell-view.el
-
 clean:
 	rm -f *.elc
 
