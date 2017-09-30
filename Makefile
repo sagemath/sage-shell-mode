@@ -14,7 +14,7 @@ test-compile:
 test: clean test-compile
 	$(CASK) exec $(EMACS) -Q -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
 
-travis-test: clean test-compile
+travis-test: clean travis-test-compile
 	$(EMACS) -batch -L . -l test/sage-shell-mode-test.el -f ert-run-tests-batch-and-exit
 
 travis-test-compile:
