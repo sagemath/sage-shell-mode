@@ -1,5 +1,5 @@
 EMACS ?= emacs
-CASK ?= $(HOME)/.cask/bin/cask
+CASK ?= cask
 
 message:
 	@echo "\nThis make file is provided for testing purposes only using Cask."
@@ -8,7 +8,6 @@ message:
 	@echo "\n(add-to-list 'load-path \"$(PWD)\")\n(require 'sage-shell-mode)\n"
 
 test-compile:
-	$(CASK) install
 	$(CASK) exec $(EMACS) -Q -eval "(progn (setq byte-compile-delete-errors nil) (setq byte-compile-error-on-warn t) (add-to-list 'load-path \"$(PWD)\"))" \
 	-batch -f batch-byte-compile sage-shell-mode.el sage-shell-blocks.el sage-shell-view.el
 
