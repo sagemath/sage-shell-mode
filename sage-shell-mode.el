@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 - 2017 Sho Takemori.
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; URL: https://github.com/sagemath/sage-shell-mode
-;; Package-Requires: ((cl-lib "0.6.1") (emacs "24.3") (let-alist "1.0.5") (deferred "0.5.1"))
+;; Package-Requires: ((cl-lib "0.6.1") (emacs "24.4") (let-alist "1.0.5") (deferred "0.5.1"))
 ;; Keywords: Sage, math
 ;; Version: 0.3
 
