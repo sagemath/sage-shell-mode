@@ -1278,7 +1278,7 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
     (when sage-shell:use-prompt-toolkit
       (sage-shell:-adjust-window-size)
       (add-hook 'window-configuration-change-hook
-                'sage-shell:-adjust-window-size))
+                'sage-shell:-adjust-window-size nil t))
     buf))
 
 ;;;###autoload
@@ -1861,6 +1861,11 @@ Match group 1 will be replaced with devel/sage-branch")
             (proc (get-buffer-process buf)))
        (sage-shell:-adjust-window-size-each
         proc win)))))
+
+(defun sage-shell-adjust-window-size ()
+  (interactive)
+  "Tell the emacs window size of the process buffer to the Sage process"
+  (sage-shell:-adjust-window-size))
 
 (defsubst sage-shell:-convert-to-ascii-banner (string)
   (cond ((not (or sage-shell:init-finished-p
