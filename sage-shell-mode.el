@@ -1277,8 +1277,9 @@ argument. If buffer-name is non-nil, it will be the buffer name of the process b
     ;; Tell the process the window size for Ipython5's newprompt
     (when sage-shell:use-prompt-toolkit
       (sage-shell:-adjust-window-size)
-      (add-hook 'window-configuration-change-hook
-                'sage-shell:-adjust-window-size nil t))
+      ;; (add-hook 'window-configuration-change-hook
+      ;;           'sage-shell:-adjust-window-size nil t)
+      )
     buf))
 
 ;;;###autoload
