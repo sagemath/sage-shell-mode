@@ -1864,8 +1864,8 @@ Match group 1 will be replaced with devel/sage-branch")
         proc win)))))
 
 (defun sage-shell-adjust-window-size ()
-  (interactive)
   "Tell the emacs window size of the process buffer to the Sage process"
+  (interactive)
   (sage-shell:-adjust-window-size))
 
 (defsubst sage-shell:-convert-to-ascii-banner (string)
