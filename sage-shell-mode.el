@@ -5400,6 +5400,63 @@ exisiting Sage process. If TeX-master is set, this function uses its variable."
     (when sage-shell-sagetex:pop-to-error-buffer
       (pop-to-buffer b))))
 
+(defvar sage-shell-sagetex:sage-blocks
+  '("sagesilent"
+    "sageblock"))
+
+(defsubst sage-shell-sagetex:-env-regexp (beg-or-end)
+  (rx-to-string
+   `(and
+     (0+ whitespace)
+     "\\"
+     ,beg-or-end
+     (0+ whitespace)
+     "{"
+     (0+ whitespace)
+     (regexp ,(regexp-opt sage-shell-sagetex:sage-blocks))
+     (0+ whitespace)
+     "}")))
+
+(defun sage-shell-sagetex:-tex-env-region ()
+  "Return the cons of (beg. end) for the current enveironment.
+If the point is not in sageblock or sagesilent then this causes an error.
+This requires AUCTEX."
+  (let ((beg (with-no-warnings
+               (save-excursion
+                 (LaTeX-find-matching-begin)
+                 (point))))
+        (end (with-no-warnings
+               (save-excursion
+                 (LaTeX-find-matching-end)
+                 (point)))))
+    (cond ((save-excursion
+             (goto-char beg)
+             (looking-at-p (sage-shell-sagetex:-env-regexp "begin")))
+           (cons (save-excursion
+                   (goto-char beg)
+                   (re-search-forward
+                    (sage-shell-sagetex:-env-regexp "begin"))
+                   (point))
+                 (save-excursion
+                   (goto-char end)
+                   (re-search-backward (rx "\\end"))
+                   (match-beginning 0))))
+          (t (error "Not in a Sage environment.")))))
+
+(defun sage-shell-sagetex:send-environment ()
+  "If the point is in environment sagesilent or sageblock, then load the contents of environment using existing Sage process.
+This requires AUCTeX."
+  (interactive)
+  (cl-destructuring-bind (beg . end) (sage-shell-sagetex:-tex-env-region)
+    (sage-shell-edit:exec-command-base
+     :command (sage-shell-edit--send-obj-command beg end)
+     :pre-message (format "Loading the %s to the Sage process..."
+                          "current environment")
+     :post-message
+     (format "Loading the %s to the Sage process... Done."
+             "current environment")
+     :switch-p nil)))
+
 (define-derived-mode sage-shell-sagetex:error-mode special-mode "SageTeX-Error"
   "Error mode for SageTeX")
 
