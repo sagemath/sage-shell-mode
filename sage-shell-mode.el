@@ -1132,6 +1132,11 @@ When sync is nill this return a lambda function to get the result."
     (sage-shell:check-ipython-version
      " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'.")))
 
+(defcustom sage-shell:shell-command "/bin/sh"
+  "Path of a command that behaves like a shell. It should accept -c option. This variable is used only when `sage-shell:use-prompt-toolkit' is non-`nil'. Usually, you don't have to change this variable."
+  :type 'string
+  :group 'sage-shell)
+
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
   (let* ((cmdlist (split-string cmd))
          (win (selected-window))
@@ -1142,7 +1147,7 @@ When sync is nill this return a lambda function to get the result."
               (let ((win (display-buffer buffer)))
                 (sage-shell:-window-size win))))))
     (apply 'make-comint-in-buffer "Sage" buffer
-           "/bin/sh"
+           sage-shell:shell-command
            nil
            "-c"
            (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
