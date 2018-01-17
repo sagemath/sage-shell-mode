@@ -1,7 +1,7 @@
 ;;; sage-shell-view.el --- Typeset Sage output on the fly -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2008 ~ 2016  Matthias Meulien, Nick Alexander,
-;; 2016 ~ 2017 Sho Takemori <stakemorii@gmail.com>
+;; 2016 ~ 2018 Sho Takemori <stakemorii@gmail.com>
 
 ;; Author: Sho Takemori <stakemorii@gmail.com>
 ;; Keywords: sage, math, image
