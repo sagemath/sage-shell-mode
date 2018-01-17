@@ -1133,8 +1133,13 @@ When sync is nill this return a lambda function to get the result."
      " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'.")))
 
 (defcustom sage-shell:shell-command "/bin/sh"
-  "Path of a command that behaves like a shell. It should accept -c option. This variable is used only when `sage-shell:use-prompt-toolkit' is non-`nil'. Usually, you don't have to change this variable."
+  "Path of a command that behaves like a shell. It should accept -c option. This variable is used only when `sage-shell:use-prompt-toolkit' is non-`nil'."
   :type 'string
+  :group 'sage-shell)
+
+(defcustom sage-shell:shell-command-options nil
+  "Command line options for `sage-shell:shell-command'."
+  :type '(repeat string)
   :group 'sage-shell)
 
 (defun sage-shell:-start-sage-process-prompt-toolkit (cmd buffer)
@@ -1146,15 +1151,16 @@ When sync is nill this return a lambda function to get the result."
             (save-window-excursion
               (let ((win (display-buffer buffer)))
                 (sage-shell:-window-size win))))))
-    (apply 'make-comint-in-buffer "Sage" buffer
-           sage-shell:shell-command
-           nil
-           "-c"
-           (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
+    (let ((args (append
+                 sage-shell:shell-command-options
+                 (list "-c"
+                       (format "TERM=%s; stty -nl echo rows %d columns %d sane 2>/dev/null;\
 if [ $1 = .. ]; then shift; fi; exec \"$@\""
-                   sage-shell:term-name (cdr win-size) (car win-size))
-           ".."
-           (car cmdlist) (cdr cmdlist))
+                               sage-shell:term-name (cdr win-size) (car win-size))
+                       "..")
+                 cmdlist)))
+      (apply 'make-comint-in-buffer "Sage" buffer
+             sage-shell:shell-command nil args))
     (let ((proc (get-buffer-process buffer)))
       (process-put proc 'sage-shell:win-height (cdr win-size))
       (process-put proc 'sage-shell:win-width (car win-size)))))
