@@ -1247,14 +1247,21 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
                (sage-shell:-shell-buffer-name num host-name)))
         (t (sage-shell:-shell-buffer-name))))
 
+(defcustom sage-shell:ask-command-options t
+  "Non-`nil' means being asked sage command options when invoking M-x run-sage."
+  :type 'boolean
+  :group 'sage-shell)
+
 (defun sage-shell:read-command ()
   (unless (and (sage-shell:sage-executable)
                (executable-find (sage-shell:sage-executable)))
     (error sage-shell:exec-path-error-msg))
-  (let ((lst (split-string
-              (read-from-minibuffer "Run sage (like this): "
-                                    "sage" nil nil 'sage-shell:run-history
-                                    "sage") " ")))
+  (let ((lst (and
+              sage-shell:ask-command-options
+              (split-string
+               (read-from-minibuffer "Run sage (like this): "
+                                     "sage" nil nil 'sage-shell:run-history
+                                     "sage") " "))))
     (format "%s %s" (sage-shell:sage-executable)
             (mapconcat 'identity (cdr lst) " "))))
 
