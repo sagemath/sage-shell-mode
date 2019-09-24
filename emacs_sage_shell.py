@@ -27,7 +27,6 @@ from IPython.core.completerlib import module_completion
 
 import sage
 from sage.all import preparse
-from sage.misc.all import uniq
 
 try:
     ip = get_ipython()
@@ -174,7 +173,7 @@ def all_attributes(compl_dct):
         else:
             ls = _completions_attributes(preparse(varname))
             ls.extend(ip.ev('dir(%s)' % (preparse(varname),)))
-            ls = list(sorted(uniq(ls)))
+            ls = list(sorted(set(ls)))
         return ls
     except:
         return []
