@@ -53,9 +53,9 @@ class BackendEmacs(BackendIPythonCommandline):
             return ({u'text/plain': msg}, {})
 
         elif isinstance(rich_output, OutputLatex):
-            text = "BEGIN_TEXT:" + plain_text.text.get() + ":END_TEXTBEGIN_LATEX:" + \
-                   rich_output.latex.get() + ":END_LATEX"
-            return ({u'text/plain': text}, {})
+            text = "BEGIN_TEXT:" + str(plain_text.text.get(), 'utf-8') + ":END_TEXTBEGIN_LATEX:" + \
+                   str(rich_output.latex.get(), 'utf-8') + ":END_LATEX"
+            return ({'text/plain': text}, {})
         else:
             return super(BackendEmacs, self).displayhook(plain_text, rich_output)
 
