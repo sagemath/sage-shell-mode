@@ -68,7 +68,7 @@
 
 (defcustom sage-shell:sage-root nil
   "SAGE_ROOT directory. If the Sage executable in your PATH
-  and (exeutable-find \"sage\") is non-nil, then you do not have
+  and (executable-find \"sage\") is non-nil, then you do not have
   to set this variable."
   :group 'sage-shell
   :type '(choice (directory :tag "Directory")
