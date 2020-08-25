@@ -192,14 +192,20 @@ This string will be inserted to the temporary file before evaluating code."
   :group 'sage-shell)
 
 
-(defcustom sage-shell:use-prompt-toolkit t
-  "Non `nil' means the Sage process uses the new prompt of IPython 5."
+(defcustom sage-shell:use-prompt-toolkit nil
+  "Non `nil' means the Sage process uses the new prompt of IPython 5 and 6. Must be disabled for Ipython >=7, which is incompatible"
   :type 'boolean
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
-(defcustom sage-shell:check-ipython-version-on-startup nil
-  "Non `nil' means check if `sage-shell:use-prompt-toolkit' is correctly set when starting the Sage process.
+(defcustom sage-shell:use-simple-prompt t
+  "Non `nil' means the Sage process must be started with the `simple-prompt' option and use `readline' to interact with IPython >=7."
+  :type 'boolean
+  :group 'sage-shell)
+
+
+(defcustom sage-shell:check-ipython-version-on-startup t
+  "Non `nil' means check if `sage-shell:use-prompt-toolkit' and `sage-shell:simple-prompt' are correctly set when starting the Sage process.
 The checking is done asyncally."
   :type 'boolean
   :group 'sage-shell)
@@ -1262,8 +1268,12 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
                (read-from-minibuffer "Run sage (like this): "
                                      "sage" nil nil 'sage-shell:run-history
                                      "sage") " "))))
-    (format "%s %s" (sage-shell:sage-executable)
-            (mapconcat 'identity (cdr lst) " "))))
+    (format
+     (if sage-shell:use-simple-prompt
+	 "%s --simple-prompt %s"
+       "%s %s")
+     (sage-shell:sage-executable)
+     (mapconcat 'identity (cdr lst) " "))))
 
 (cl-defun sage-shell:run (cmd new &key
                               (switch-function 'switch-to-buffer)
@@ -1336,7 +1346,7 @@ function asks which process is to be restarted."
   (deferred:$
     (deferred:process
       (sage-shell:sage-executable)
-      "-c" "import IPython; print IPython.version_info[0]")
+      "-c" "from __future__ import print_function ; import IPython; print(IPython.version_info[0])")
     (deferred:nextc it
       (lambda (x)
         (message (concat
@@ -1344,16 +1354,31 @@ function asks which process is to be restarted."
                   startup-msg))
         (let ((version (string-to-number (sage-shell:trim-right x)))
               (msg nil))
-          (cond ((and (< version 5) sage-shell:use-prompt-toolkit)
+          (cond ((and (< version 5)
+		      (or sage-shell:use-prompt-toolkit
+			  not sage-shell:use-simple-prompt))
                  (setq msg
                        (concat
-                        "You should set `sage-shell:use-prompt-toolkit' to nil.\n"
-                        "Set it to nil and restart the SageMath process.")))
-                ((and (>= version 5) (null sage-shell:use-prompt-toolkit))
+                        "You should set both `sage-shell:use-prompt-toolkit'\n"
+			"and `sage-shell:use-simple-prompt' to nil.\n"
+                        "Set them to nil and restart the SageMath process.")))
+                ((and (>= version 5)
+		      (< version 7)
+		      (or sage-shell:use-simple-prompt
+			  (null sage-shell:use-prompt-toolkit)))
                  (setq msg
                        (concat
-                        "You should set `sage-shell:use-prompt-toolkit' to t.\n"
-                        "Set it to t and restart the SageMath process."))))
+                        "You should set `sage-shell:use-prompt-toolkit' to t\n"
+			"and `sage-shell:use-simple-prompt' to nil.\n"
+                        "Set or `customize' them and restart the SageMath process.")))
+		((and (>= version 7)
+		      (or (null sage-shell:use-simple-prompt)
+			  sage-shell:use-prompt-toolkit))
+                 (setq msg
+                       (concat
+                        "You should set `sage-shell:use-prompt-toolkit' to nil\n"
+			"and `sage-shell:use-simple-prompt' to t.\n"
+                        "Set or `customize' them and restart the SageMath process."))))
           (when msg
             (display-message-or-buffer msg)))))))
 
