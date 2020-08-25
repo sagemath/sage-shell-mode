@@ -210,6 +210,10 @@ The checking is done asyncally."
   :type 'boolean
   :group 'sage-shell)
 
+(defcustom sage-shell:set-ipython-version-on-startup t
+  "Non `nil' means set `sage-shell:use-prompt-toolkit' and `sage-shell:simple-prompt' according to the available IPython version.
+This (synchronous) setting can be replaced by setting variables in the init file.")
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -1134,6 +1138,9 @@ When sync is nill this return a lambda function to get the result."
     (set-process-sentinel
      proc
      (sage-shell:-process-sentinel-generator default-sentinel)))
+  (when sage-shell:set-ipython-version-on-startup
+    (sage-shell:set-ipython-version
+     " To disable this setup, set `sage-shell:set-ipython-version-on-startup' to `nil'."))
   (when sage-shell:check-ipython-version-on-startup
     (sage-shell:check-ipython-version
      " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'.")))
@@ -1339,6 +1346,34 @@ function asks which process is to be restarted."
                 t t)
       (process-send-eof proc))))
 
+(defun sage-shell:set-ipython-version (&optional startup-msg)
+  "Set `sage-shell:use-prompt-toolkit{ and `sage-shell:use-simple-prompt' according to the IPython version used by Sage."
+  (message
+   (concat
+    "Setting up sage-shell according to your Sage's IPython version... "
+    startup-msg))
+  (let ((version
+	 (string-to-number
+	  (substring
+	   (shell-command-to-string
+	    (format
+	     "%s -c 'from __future__ import print_function ; import IPython; print(IPython.version_info[0])'" (sage-shell:sage-executable)))
+	   0 -1))))
+    (cond
+     ((< version 5)
+      (custom-set-variables
+       '(sage-shell:use-prompt-toolkit nil)
+       '(sage-shell:use-simple-prompt nil)))
+     ((and (>= version 5)
+	   (< version 7))
+      (custom-set-variables
+       '(sage-shell:use-prompt-toolkit t)
+       '(sage-shell:use-simple-prompt nil)))
+     ((>= version 7)
+      (custom-set-variables
+       '(sage-shell:use-prompt-toolkit nil)
+       '(sage-shell:use-simple-prompt t))))))
+
 (defun sage-shell:check-ipython-version (&optional startup-msg)
   "Check IPython version and check if sage-shell:use-prompt-toolkit is correctly set."
   (interactive)
@@ -1356,7 +1391,7 @@ function asks which process is to be restarted."
               (msg nil))
           (cond ((and (< version 5)
 		      (or sage-shell:use-prompt-toolkit
-			  not sage-shell:use-simple-prompt))
+			  sage-shell:use-simple-prompt))
                  (setq msg
                        (concat
                         "You should set both `sage-shell:use-prompt-toolkit'\n"
