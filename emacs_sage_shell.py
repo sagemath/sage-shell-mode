@@ -236,7 +236,7 @@ def resolve_module_path(modname):
     root_mod_name = modname.split(".")[0]
     ls = [a for a in lmis
           if os.path.splitext(os.path.basename(a))[0] == root_mod_name]
-    if ls == []:
+    if not ls:
         return None
     root_path = ls[0]
     pth = os.path.join(os.path.dirname(root_path),
