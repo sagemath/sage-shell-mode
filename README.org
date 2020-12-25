@@ -47,17 +47,45 @@
   1. See http://melpa.org/#/getting-started if you do not have a
      configuration for MELPA.
 
-  1. Install =sage-shell-mode= by
+  2. Install =sage-shell-mode= by
      - =M-x package-refresh-contents=
      - =M-x package-install RET sage-shell-mode=.
 
-  1. If you have Sage 7.3 or earlier, then add the following to your Emacs init file (=~/.emacs.d/init.el=):
+     (Alternatively, you can use [[https://github.com/jwiegley/use-package][=use-package=]] (available from MELPA) for installation and setup).
 
-     #+BEGIN_SRC elisp
-      (setq sage-shell:use-prompt-toolkit nil)
-     #+END_SRC
+  # 3. If you have Sage 7.3 or earlier, then add the following to your Emacs init file (=~/.emacs.d/init.el=):
 
-  1. You can now run Sage inside Emacs by =M-x sage-shell:run-sage=, if Emacs
+  #    #+BEGIN_SRC elisp
+  #     (setq sage-shell:use-prompt-toolkit nil)
+  #    #+END_SRC
+
+  3. Configuration.
+
+     Sage internally uses ~IPython~ to manage user interaction at the console, ~Jupyter~ cell or, in our case, ~emacs~ buffer. Due to IPython evolution (governed /upstream/ Sage), this interaction has to be managed differently by =sage-shell-mode= according to the ~Ipython~ version available, itself depending on Sage's version. This configuration is governed by two customizable variables :
+
+       * =sage-shell:use-prompt-toolkit=, which must be =t= for Sage versions >= 7.4.beta0 and < 9.2.beta8, and =nil= otherwise ;
+
+       * =sage-shell:use-simple-prompt=, which must be =t= for Sage versions >= 9.2.beta9, and =nil= otherwise.
+
+       (Note : Sage 9.2.beta8 is a lost cause ; complain fiercely, then upgrade to something newer...).
+
+     The function =sage-shell:set-ipython-version= does this automatically, but takes a couple of seconds to execute at startup. Its use is controlled by the custom variable =sage-shell:set-ipython-version-on-startup= (=t= by default).
+
+     Similarly, =sage-shell:check-ipython-version= (controlled by the custom variable =sage-shell:check-ipython-version-on-startup=) checks that your options are acceptable to your IPython version, and will yell at you (in the =*Messages*= buffer) if this is not the case.
+
+      By default, both functions are enabled at startup. A (reckless) user of (say) Sage 9.2.beta10 could shave a couple seconds startup time by setting :
+
+      #+begin_src elisp
+	(custom-set-variables
+	 '(sage-shell:use-prompt-toolkit nil)
+	 '(sage-shell:use-simple-prompt t)
+	 '(sage-shell:set-ipython-version-on-startup nil)
+	 '(sage-shell:check-ipython-version-on-startup nil))
+      #+end_src
+
+      in its =init= file (or in the =:init= clause of its =sage-shell-mode= =use-package= call).
+
+  6. You can now run Sage inside Emacs by =M-x sage-shell:run-sage=, if Emacs
      can find the executable file of Sage.
 
      If Emacs cannot find the executable file, add the following line to your Emacs init file:
