@@ -63,6 +63,7 @@
 
 (require 'mouse)
 (require 'sage-shell-mode)
+(require 'deferred)
 
 (defgroup sage-shell-view nil "Typeset Sage output on the fly"
   :group 'sage-shell
