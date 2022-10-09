@@ -4383,7 +4383,7 @@ whose key is in KEYS."
          ;; if there are no processes
          ((null proc-alist)
           (when (and start-p
-                     (y-or-n-p (concat "Threre are no Sage processes. "
+                     (y-or-n-p (concat "There are no Sage processes. "
                                        "Start new process? ")))
             (let ((proc-buf
                    (sage-shell:run
