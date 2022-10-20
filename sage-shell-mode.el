@@ -39,7 +39,7 @@
 ;; you can run Sage by M-x run-sage instead of M-x sage-shell:run-sage.
 
 ;; Please visit https://github.com/sagemath/sage-shell-mode for more
-;; infomation.
+;; information.
 
 ;;; Code:
 ;; TODO
@@ -48,7 +48,7 @@
 ;; 3. Add support for simple prompt.
 ;; 4. Fix sage-shell-edit:exec-command-base when insert-command-p is non-nil.
 
-;; Requireing cl-lib when compile time is necessary in Emacs 24.1 and 24.2
+;; Requiring cl-lib when compile time is necessary in Emacs 24.1 and 24.2
 (require 'md5)
 (eval-and-compile (require 'cl-lib)
                   (require 'let-alist))
@@ -179,7 +179,7 @@ process."
 
 (defcustom sage-shell:inspect-ingnore-classes nil
   "If non-nil, this should be a list of strings.
-Each string shoud be a class of Sage. When non-nil instances or methods
+Each string should be a class of Sage. When non-nil instances or methods
 of these classes are ignored by `ac-quick-help' and `eldoc'.
 If the value is equal to '(\"\"), then it does not ignore anything."
   :group 'sage-shell
@@ -687,7 +687,7 @@ to a process buffer.")
           (t (setq sage-shell:output--buffer
                    (get-buffer-create (format " *sage-output-%s*" (buffer-name))))))))
 
-;;; Borrowed from Gallina's pyhon.el.
+;;; Borrowed from Gallina's python.el.
 (defvar sage-shell-mode-syntax-table
   (let ((table (make-syntax-table)))
     ;; Give punctuation syntax to ASCII that normally has symbol
@@ -861,7 +861,7 @@ Sends an EOF only if point is at the end of the buffer and there is no input. "
 (make-variable-buffer-local 'sage-shell:input-ring-index)
 (defun sage-shell:next-input (arg)
   "Cycles through forward input history. This command enables inserting
-succesive lines in history."
+successive lines in history."
   (interactive "*p")
   (cond
    (comint-input-ring-index (comint-next-input arg))
@@ -958,7 +958,7 @@ succesive lines in history."
                                                evaluator
                                                evaluator-key-args
                                                to-string)
-  "CELL is a string which will be sent to the proces buffer,
+  "CELL is a string which will be sent to the process buffer,
 When non-nil, CALLBACK should be a function and will be called if the
 evaluation completes. The output will be passed as its argument.
 If RAW is non-nil, CELL will be sent by process-send-string directly.
@@ -1014,10 +1014,10 @@ which is similar to emacs_sage_shell.run_cell_and_print_msg_id."
 (defun sage-shell:send-command
     (command &optional process-buffer output-buffer sync raw)
   "Send COMMAND to PROCESS-BUFFER's process.  PROCESS-BUFFER is a
-buffer where process is alive.  If OUTPUT-BUFFER is the exisiting
-bufffer then the out put is inserted to the buffer. Otherwise
+buffer where process is alive.  If OUTPUT-BUFFER is the existing
+buffer then the output is inserted to the buffer. Otherwise
 output buffer is the return value of `sage-shell:output-buffer'.
-When sync is nill this return a lambda function to get the result."
+When sync is nil this return a lambda function to get the result."
   (let* ((output nil)
          (res-func (lambda () output))
          (output-buffer (sage-shell:-make-buf-if-needed output-buffer))
@@ -1189,7 +1189,7 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
 (defvar sage-shell:check--sage-root-ok nil)
 
 (defvar sage-shell-after-prompt-hook nil
-  "Hook run after the fisrt prompt is displayed.")
+  "Hook run after the first prompt is displayed.")
 
 (defun sage-shell:after-init-function (buffer)
   "Runs after starting Sage"
@@ -1467,7 +1467,7 @@ function asks which process is to be restarted."
 
 (defun sage-shell:send-magic-cmd-base (magic-command objname &optional async)
   "If `async' is nil, return the result as string, otherwise
-returns a lamda function with no args to obtain the result."
+returns a lambda function with no args to obtain the result."
   (let* ((cmd (format "%%%s %s" magic-command objname)))
     (cond (async (sage-shell:send-command cmd)
                  (lambda ()
@@ -1637,9 +1637,9 @@ Match group 1 will be replaced with devel/sage-branch")
 
 (defun sage-shell:-in-func-call-p (&optional pt limit)
   "Returns a list s.t.
-  0: begging of funciton
-  1: end of funciton
-  2: funciton name
+  0: beginning of function
+  1: end of function
+  2: function name
   3: inside string or not"
   (with-syntax-table sage-shell:-eldoc-syntax-table
     (let* ((bd (or limit (line-beginning-position)))
@@ -3538,7 +3538,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
       (executable-find it)
     (executable-find int)))
 
-;; Executble of mathematica is math.
+;; Executable of mathematica is math.
 (sage-shell-interfaces:set "mathematica" 'executable "math")
 
 ;; set verbose message and cache-file name
@@ -3585,7 +3585,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
   '(
     ;; name of the interface (string)
     interface
-    ;; nil or the point of the beggining of completion
+    ;; nil or the point of the beginning of completion
     prefix
     ;; nil or the base name of the variable name
     var-base-name
@@ -3604,7 +3604,7 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
     ;; An element of tyjpes should be equal to one of
     ;; "interface", "attributes", "modules", "vars-in-module", "in-function-call".
 
-    ;; When "modules" in in type and module-name is nil, then candidates shoud
+    ;; When "modules" in in type and module-name is nil, then candidates should
     ;; contain top level modules in sys.path.  If module-name is non-nil, it
     ;; should contain sub-modules in module-name.
     types))
@@ -4171,7 +4171,7 @@ of current Sage process.")
        :regexp (or regexp (sage-shell-interfaces:get cur-intf 'cmd-rxp))))))
 
 (defun sage-shell-cpl:trans-sexp (sexp state)
-  "Trasnform SEXP so that the union of cdr is an appropriate list
+  "Transform SEXP so that the union of cdr is an appropriate list
  of candidates."
   (let ((types (sage-shell-cpl:get state 'types))
         (int (sage-shell-cpl:get state 'interface))
@@ -4773,7 +4773,7 @@ the end of the docstring."
 
 (defun sage-shell:-beg-end-of-docstring ()
   "Return cons of the string beg and the string end if the point is in a string.
-Othewise return nil."
+Otherwise return nil."
   (let* ((ppss (syntax-ppss))
          (in-string (nth 3 ppss))
          (string-start (nth 8 ppss))
@@ -5304,7 +5304,7 @@ If TeX-master is set, this function uses its variable."
 
 (defvar sage-shell-sagetex:latex-command-func
   'sage-shell-sagetex:post-command
-  "This varable should be a function with one argument (the file
+  "This variable should be a function with one argument (the file
 name of a LaTeX file) which returns a LaTeX command with the
 file name.")
 
@@ -5434,7 +5434,7 @@ See the documentation of
 ;;;###autoload
 (defun sage-shell-sagetex:run-latex-and-load-file (f)
   "This command runs LaTeX and loads a .sagetex.sage file to the
-exisiting Sage process. If TeX-master is set, this function uses its variable."
+existing Sage process. If TeX-master is set, this function uses its variable."
   (interactive (list (sage-shell-sagetex:read-latex-file)))
   (sage-shell-sagetex:-run-latex-and-do
    f sage-shell-sagetex:load-file))

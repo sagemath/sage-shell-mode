@@ -599,7 +599,7 @@ WARNING: this communicates with the sage process.  Only use this when sage is ru
    verbose))
 
 (defun sage-shell-view--set-inline-state (type enable-p &optional verbose)
-  "Enable/diable inline outputs/plots."
+  "Enable/disable inline outputs/plots."
   (sage-shell-edit:set-sage-proc-buf-internal nil)
   (with-current-buffer sage-shell:process-buffer
     (unless sage-shell-view-mode

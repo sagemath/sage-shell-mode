@@ -133,7 +133,7 @@ def _all_vars_in_module(module_name):
         if os.path.isdir(p):
             res = list_modules_in(p)
 
-        # Ohterwise, parse the file.
+        # Otherwise, parse the file.
         if res is None:
             res = []
             regexp = re.compile(
