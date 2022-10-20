@@ -5347,7 +5347,6 @@ file name.")
 `sage-shell-sagetex:auctex-command-name' else nil"
   (sage-shell:awhen (and (featurep 'tex)
                          sage-shell-sagetex:auctex-command-name
-                         (require 'tex-buf nil t)
                          (with-no-warnings
                            (assoc sage-shell-sagetex:auctex-command-name
                                   TeX-command-list)))
