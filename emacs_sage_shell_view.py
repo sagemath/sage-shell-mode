@@ -23,7 +23,8 @@ based on the IPython shell version.
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from emacs_sage_shell import ip
-from sage.repl.rich_output.output_basic import OutputLatex
+from sage.repl.rich_output.output_basic import OutputLatex, OutputPlainText
+from sage.repl.rich_output.output_browser import OutputHtml
 
 from sage.repl.rich_output.output_catalog import OutputImagePng
 from sage.repl.rich_output.preferences import DisplayPreferences
@@ -43,6 +44,9 @@ class BackendEmacs(BackendIPythonCommandline):
     def default_preferences(self):
         return DisplayPreferences(text=self.__text)
 
+    def supported_output(self):
+        return [OutputLatex , OutputPlainText , OutputHtml , OutputImagePng]
+
     def _repr_(self):
         return "Emacs babel"
 
@@ -52,7 +56,7 @@ class BackendEmacs(BackendIPythonCommandline):
             msg = "BEGIN_PNG:%s:END_PNG" % msg
             return ({u'text/plain': msg}, {})
 
-        elif isinstance(rich_output, OutputLatex):
+        elif isinstance(rich_output, OutputHtml):
             text = "BEGIN_TEXT:" + str(plain_text.text.get(), 'utf-8') + ":END_TEXTBEGIN_LATEX:" + \
                    str(rich_output.latex.get(), 'utf-8') + ":END_LATEX"
             return ({'text/plain': text}, {})
