@@ -207,7 +207,10 @@ computes the resolution automatically."
    sage-shell-view-latex-documentclass
    sage-shell-view-latex-preamble
    sage-shell-view-latex-math-environment
-   math-expr
+   ;; math-expr
+   (replace-regexp-in-string
+    "^\$+" ""
+    (replace-regexp-in-string "\$+$" "" math-expr))
    sage-shell-view-latex-math-environment))
 
 (defun sage-shell-view-dir-name ()
