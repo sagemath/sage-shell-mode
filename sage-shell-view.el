@@ -83,7 +83,8 @@ Otherwise, if non-nil will start both.
 Each of these can be enabled or disabled later by calling
 `sage-shell-view-enable-inline-plots', `sage-shell-view-disable-inline-plots',
 `sage-shell-view-enable-inline-output', `sage-shell-view-disable-inline-output',
-`sage-shell-view-toggle-inline-plots' or `sage-shell-view-toggle-inline-output'."
+`sage-shell-view-toggle-inline-plots' or
+`sage-shell-view-toggle-inline-output'."
   :type '(choice (const :tag "Inline Plots" plots)
                  (const :tag "Typeset Output" output)
                  (const :tag "Both" t))
@@ -535,7 +536,8 @@ Function to be inserted in `comint-output-filter-functions'."
           (sage-shell-view-output-filter-process-inline-output string))))))
 
 (defun sage-shell-view-update-modeline ()
-  "Update modeline to include information about whether sage-shell-view is enabled."
+  "Update modeline to include information about whether sage-shell-view
+is enabled."
   (when (eq major-mode 'sage-shell-mode)
     (let ((fmt (format "/%s%s"
                        (if sage-shell-view-inline-plots-enabled "p" "")
@@ -551,14 +553,17 @@ Function to be inserted in `comint-output-filter-functions'."
 
 ;;;###autoload
 (defun sage-shell-view-enable-inline-output ()
-  "Enable inline output pretty-printing, i.e. typeset output from sage in the `sage-shell-mode' buffer.
-WARNING: this communicates with the sage process.  Only use this when sage is running."
+  "Enable inline output pretty-printing, i.e. typeset output from sage in the
+`sage-shell-mode' buffer.
+WARNING: this communicates with the sage process.  Only use this when sage is
+running."
   (interactive)
   (sage-shell-view--set-inline-state
    'text t))
 
 (defun sage-shell-view-disable-inline-output ()
-  "Disable inline output pretty-printing, i.e. do not typeset output from sage in the `sage-shell-mode' buffer.
+  "Disable inline output pretty-printing, i.e. do not typeset output from sage
+in the `sage-shell-mode' buffer.
 WARNING: this communicates with the sage process.  Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
@@ -566,15 +571,19 @@ WARNING: this communicates with the sage process.  Only use this when sage is ru
 
 ;;;###autoload
 (defun sage-shell-view-enable-inline-plots ()
-  "Enable inline plotting, i.e. display plots in the `sage-shell-mode' buffer and do not spawn an external viewer.
-WARNING: this communicates with the sage process.  Only use this when sage is running."
+  "Enable inline plotting, i.e. display plots in the `sage-shell-mode' buffer
+and do not spawn an external viewer.
+WARNING: this communicates with the sage process.
+Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'plot t))
 
 (defun sage-shell-view-disable-inline-plots ()
-  "Disable inline plotting, i.e. do not display plots in the `sage-shell-mode' buffer and instead spawn an external viewer.
-WARNING: this communicates with the sage process.  Only use this when sage is running."
+  "Disable inline plotting, i.e. do not display plots in the
+`sage-shell-mode' buffer and instead spawn an external viewer.
+WARNING: this communicates with the sage process.
+Only use this when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'plot nil))

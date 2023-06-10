@@ -87,7 +87,8 @@
 
 (defcustom sage-shell:input-history-cache-file
   nil
-  "If non nil, then `comint-input-ring' is saved to this file when the Sage process exits."
+  "If non nil, then `comint-input-ring' is saved to this file
+when the Sage process exits."
   :group 'sage-shell
   :type '(choice (file :tag "file")
                  (const :tag "Off" nil)))
@@ -186,32 +187,37 @@ If the value is equal to '(\"\"), then it does not ignore anything."
   :type '(repeat string))
 
 (defcustom sage-shell-edit:temp-file-header "# -*- coding: utf-8 -*-\n"
-  "`sage-shell-edit:send-region', `sage-shell-edit:send-buffer' and related commands use a temporary file.
+  "`sage-shell-edit:send-region', `sage-shell-edit:send-buffer' and related
+commands use a temporary file.
 This string will be inserted to the temporary file before evaluating code."
   :type 'string
   :group 'sage-shell)
 
 
 (defcustom sage-shell:use-prompt-toolkit nil
-  "Non `nil' means the Sage process uses the new prompt of IPython 5 and 6. Must be disabled for Ipython >=7, which is incompatible"
+  "Non `nil' means the Sage process uses the new prompt of IPython 5 and 6.
+Must be disabled for Ipython >=7, which is incompatible"
   :type 'boolean
   :group 'sage-shell)
 ;; (make-variable-buffer-local 'sage-shell:use-prompt-toolkit)
 
 (defcustom sage-shell:use-simple-prompt t
-  "Non `nil' means the Sage process must be started with the `simple-prompt' option and use `readline' to interact with IPython >=7."
+  "Non `nil' means the Sage process must be started with the `simple-prompt'
+option and use `readline' to interact with IPython >=7."
   :type 'boolean
   :group 'sage-shell)
 
 
 (defcustom sage-shell:check-ipython-version-on-startup t
-  "Non `nil' means check if `sage-shell:use-prompt-toolkit' and `sage-shell:simple-prompt' are correctly set when starting the Sage process.
+  "Non `nil' means check if `sage-shell:use-prompt-toolkit' and
+`sage-shell:simple-prompt' are correctly set when starting the Sage process.
 The checking is done asyncally."
   :type 'boolean
   :group 'sage-shell)
 
 (defcustom sage-shell:set-ipython-version-on-startup t
-  "Non `nil' means set `sage-shell:use-prompt-toolkit' and `sage-shell:simple-prompt' according to the available IPython version.
+  "Non `nil' means set `sage-shell:use-prompt-toolkit' and
+`sage-shell:simple-prompt' according to the available IPython version.
 This (synchronous) setting can be replaced by setting variables in the init file.")
 
 (defcustom sage-shell-sagetex:pre-latex-command
@@ -1146,7 +1152,8 @@ When sync is nil this return a lambda function to get the result."
      " To disable this checking, set `sage-shell:check-ipython-version-on-startup' to `nil'.")))
 
 (defcustom sage-shell:shell-command "/bin/sh"
-  "Path of a command that behaves like a shell. It should accept -c option. This variable is used only when `sage-shell:use-prompt-toolkit' is non-`nil'."
+  "Path of a command that behaves like a shell. It should accept -c option.
+This variable is used only when `sage-shell:use-prompt-toolkit' is non-`nil'."
   :type 'string
   :group 'sage-shell)
 
@@ -1286,8 +1293,8 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
                               (switch-function 'switch-to-buffer)
                               buffer-name)
   "Running Sage function internal.
-SIWTCH-FUNCTION is 'no-switch, or a function with one
-argument. If buffer-name is non-nil, it will be the buffer name of the process buffer."
+SWITCH-FUNCTION is 'no-switch, or a function with one argument.
+If buffer-name is non-nil, it will be the buffer name of the process buffer."
   (let ((buf (get-buffer-create (if (stringp buffer-name)
                                     buffer-name
                                   (sage-shell:shell-buffer-name new))))
@@ -1347,7 +1354,8 @@ function asks which process is to be restarted."
       (process-send-eof proc))))
 
 (defun sage-shell:set-ipython-version (&optional startup-msg)
-  "Set `sage-shell:use-prompt-toolkit{ and `sage-shell:use-simple-prompt' according to the IPython version used by Sage."
+  "Set `sage-shell:use-prompt-toolkit{ and `sage-shell:use-simple-prompt'
+according to the IPython version used by Sage."
   (message
    (concat
     "Setting up sage-shell according to your Sage's IPython version... "
@@ -1375,7 +1383,8 @@ function asks which process is to be restarted."
        '(sage-shell:use-simple-prompt t))))))
 
 (defun sage-shell:check-ipython-version (&optional startup-msg)
-  "Check IPython version and check if sage-shell:use-prompt-toolkit is correctly set."
+  "Check IPython version and check if sage-shell:use-prompt-toolkit is
+correctly set."
   (interactive)
   (message "Checking IPython version...")
   (deferred:$
@@ -4105,7 +4114,8 @@ This function set the command list by using `sage-shell-cpl:set-cmd-lst'"
              (lambda (_proc _event)
                (message
                 "Scanning Magma types ... Done! (%d seconds)\n Saving cache to
-'%s' for future instant use\n.  Delete the above file to force re-creation of the cache."
+'%s' for future instant use\n.  Delete the above file to force re-creation of
+the cache."
                 (- (cadr (current-time)) time)
                 (sage-shell-interfaces:get "magma" 'cache-file))))))))))
 
@@ -4742,7 +4752,8 @@ inserted in the process buffer before executing the command."
 
 (defun sage-shell:send-doctest (arg)
   (interactive "P")
-  "If looking at a sage: prompt, send the current doctest lines to the Sage process.
+  "If looking at a sage: prompt, send the current doctest lines to the Sage
+process.
 With prefix argument, send all doctests (at sage: prompts) until
 the end of the docstring."
   (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
