@@ -38,8 +38,8 @@
 
 Note that '^' to match at the beginning of the line should not be added to
 `sage-shell-blocks:delimiter'.
-Strange behaviour might arise if `sage-shell-blocks:delimiter' matches multiple lines
-at a time."
+Strange behaviour might arise if `sage-shell-blocks:delimiter' matches
+multiple lines at a time."
   :type 'string
   :group 'sage-shell)
 
