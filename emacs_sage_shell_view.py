@@ -45,6 +45,8 @@ class BackendEmacs(BackendIPythonCommandline):
         return DisplayPreferences(text=self.__text)
 
     def supported_output(self):
+        return [OutputLatex, OutputPlainText, OutputHtml, OutputImagePng]
+        
 
     def _repr_(self):
         return "Emacs babel"

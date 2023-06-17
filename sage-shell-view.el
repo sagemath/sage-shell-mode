@@ -171,6 +171,11 @@ computes the resolution automatically."
   :group 'sage-shell-view
   :type 'string)
 
+(defcustom sage-shell-view-latex-math-environment "math"
+  "Math environment for LaTeX."
+  :group 'sage-shell-view
+  :type 'string)
+
 (defvar sage-shell-view-scale 1.0
   "Scale used when converting from PDF/PS to PNG.")
 
@@ -194,7 +199,9 @@ computes the resolution automatically."
 %s
 \\begin{document}
 \\begin{preview}
+\\begin{%s}
 %s
+\\end{%s}
 \\end{preview}
 \\end{document}
 "
