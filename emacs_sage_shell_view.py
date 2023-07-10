@@ -46,7 +46,6 @@ class BackendEmacs(BackendIPythonCommandline):
 
     def supported_output(self):
         return [OutputLatex, OutputPlainText, OutputHtml, OutputImagePng]
-        
 
     def _repr_(self):
         return "Emacs babel"
@@ -57,12 +56,12 @@ class BackendEmacs(BackendIPythonCommandline):
             msg = "BEGIN_PNG:%s:END_PNG" % msg
             return ({u'text/plain': msg}, {})
 
-        elif isinstance(rich_output, OutputHtml):
+        if isinstance(rich_output, OutputHtml):
             text = "BEGIN_TEXT:" + str(plain_text.text.get(), 'utf-8') + ":END_TEXTBEGIN_LATEX:" + \
                    str(rich_output.latex.get(), 'utf-8') + ":END_LATEX"
             return ({'text/plain': text}, {})
-        else:
-            return super(BackendEmacs, self).displayhook(plain_text, rich_output)
+
+        return super(BackendEmacs, self).displayhook(plain_text, rich_output)
 
 
 def set_backend(text=True, plot=True):
