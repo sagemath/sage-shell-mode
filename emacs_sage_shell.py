@@ -40,7 +40,7 @@ except:                         # Older versions
 try:
     if IPython.version_info[0] >= 5:
         sage.repl.interpreter.SageTerminalInteractiveShell.highlight_matching_brackets = False
-except:
+except (NameError, AttributeError):
     pass
 
 # Disable color.
