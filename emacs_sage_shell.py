@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2016 - 2018 Sho Takemori <stakemorii@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
@@ -14,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 
 import inspect
 import os
@@ -57,7 +55,7 @@ interfaces = ip.ev('interfaces')
 _sage_const_regexp = re.compile("_sage_const_")
 
 
-class Memorize(object):
+class Memorize:
 
     def __init__(self, f):
         self._f = f
@@ -77,7 +75,7 @@ memorize = Memorize
 
 def print_cpl_sexp(typs, compl_dct):
     def _to_lisp_str_ls(ls):
-        return "(%s)" % " ".join(['"%s"' % (a, ) for a in ls])
+        return "(%s)" % " ".join([f'"{a}"' for a in ls])
 
     funcs = {"interface": all_commands,
              "attributes": all_attributes,
@@ -85,7 +83,7 @@ def print_cpl_sexp(typs, compl_dct):
              "vars-in-module": all_vars_in_module,
              "in-function-call": all_keyword_args}
     alst = [(tp, funcs[tp](compl_dct)) for tp in typs]
-    conss = ['("%s" . %s)' % (tp, _to_lisp_str_ls(ls))
+    conss = [f'("{tp}" . {_to_lisp_str_ls(ls)})'
              for tp, ls in alst if ls is not None]
     print("(" + "".join(conss) + ")")
 
@@ -103,7 +101,7 @@ def _all_modules(module_name):
         return list_modules_in_syspath()
     else:
         return [a.split(".")[-1] for a in
-                module_completion("import %s." % (module_name, ))]
+                module_completion(f"import {module_name}.")]
 
 
 def all_vars_in_module(compl_dct):
@@ -128,7 +126,7 @@ def _all_vars_in_module(module_name):
         p = resolve_module_path(module_name)
         if p is None:
             # If resolving fails, use module_completion.
-            return module_completion("from %s import " % (module_name, ))
+            return module_completion(f"from {module_name} import ")
         res = None
         if os.path.isdir(p):
             res = list_modules_in(p)
@@ -157,7 +155,7 @@ def all_commands(compl_dct):
     else:
         intfc = ip.ev(interface)
         if isinstance(intfc, sage.interfaces.expect.Expect):
-            return list(sorted(_completions_attributes(interface)))
+            return sorted(_completions_attributes(interface))
         else:
             return []
 
@@ -169,18 +167,18 @@ def all_attributes(compl_dct):
         if regexp.match(varname) is None:
             return []
         if varname in interfaces:
-            ls = ip.ev('dir(%s)' % (varname,))
+            ls = ip.ev(f'dir({varname})')
         else:
             ls = _completions_attributes(preparse(varname))
-            ls.extend(ip.ev('dir(%s)' % (preparse(varname),)))
-            ls = list(sorted(set(ls)))
+            ls.extend(ip.ev(f'dir({preparse(varname)})'))
+            ls = sorted(set(ls))
         return ls
     except:
         return []
 
 
 def _completions_attributes(varname):
-    completions = ip.complete('%s.' % (varname, ))[1]
+    completions = ip.complete(f'{varname}.')[1]
     ln = len(varname) + 1
     return [a[ln:] for a in completions]
 
@@ -291,7 +289,7 @@ def current_dir(d):
 def sage_tex_load(f):
     d = os.path.dirname(os.path.expanduser(f))
     with current_dir(d):
-        ip.ev('load("{f}")'.format(f=f))
+        ip.ev(f'load("{f}")')
 
 
 def print_inputs_outputs(max_line_num, delim, reversed_ord):
@@ -326,7 +324,7 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
     else:
         def key_func(x):
             return x
-    outputs = sorted(list(outputs.items()), key=key_func)
+    outputs = sorted(outputs.items(), key=key_func)
     outputs = [(k, show_func(format_func(v))) for k, v in outputs]
     inputs = ip.ev("_ih")
     # TODO: Find a better way.
@@ -334,8 +332,8 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
         r'_emacs_sage_shell\.run_cell_and_print_msg_id\("_emacs_ob_sagemath\.run_cell_babel.+')
     for k, v in outputs:
         if regexp.match(inputs[k]) is None:
-            print("In [{k}]: {i}".format(k=k, i=inputs[k]))
-            print("Out[{k}]: {out}".format(k=k, out=v))
+            print(f"In [{k}]: {inputs[k]}")
+            print(f"Out[{k}]: {v}")
             print(delim)
 
 
@@ -345,7 +343,7 @@ def _is_safe_str(s):
 
 
 def print_info(name):
-    run_cell("%s?" % (name,))
+    run_cell(f"{name}?")
 
 
 ignore_classes = [sage.interfaces.gap.Gap, sage.misc.lazy_import.LazyImport]
@@ -359,9 +357,9 @@ def _sage_getdef(name, base_name=None):
             name_ob = ip.ev(preparse(name))
             name_ob = lazy_import_get_obj(name_ob)
             if inspect.isclass(name_ob):
-                df = ip.ev("%s(%s.__init__)" % (gd_name, name))
+                df = ip.ev(f"{gd_name}({name}.__init__)")
             else:
-                df = ip.ev("%s(%s)" % (gd_name, preparse(name)))
+                df = ip.ev(f"{gd_name}({preparse(name)})")
             return df
     except NameError:
         pass
@@ -370,7 +368,7 @@ def _sage_getdef(name, base_name=None):
 def sage_getdef(name, base_name=None):
     df = _sage_getdef(name, base_name=base_name)
     if df is not None:
-        return "%s%s" % (name, df)
+        return f"{name}{df}"
 
 
 _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
@@ -384,12 +382,12 @@ def _should_be_ignored(name, base_name, clses=None):
         clses = ignore_classes
     if isinstance(base_name, str):
         base_ob = ip.ev(preparse(base_name))
-        if any((isinstance(base_ob, cls) for cls in clses)):
+        if any(isinstance(base_ob, cls) for cls in clses):
             return None
     else:
         base_ob = None
     name_ob = ip.ev(preparse(name))
-    if any((isinstance(name_ob, cls) for cls in clses)):
+    if any(isinstance(name_ob, cls) for cls in clses):
         return None
     else:
         return True
@@ -403,7 +401,7 @@ def short_doc(name, base_name=None):
     sd_name = "sage.misc.sageinspect.sage_getdoc"
     if _is_safe_str(name) and (_should_be_ignored(name, base_name)
                                is not None):
-        dc = ip.ev("%s(%s)" % (sd_name, preparse(name)))
+        dc = ip.ev(f"{sd_name}({preparse(name)})")
         m = _doc_delim_regexp.search(dc)
         if m is not None:
             res = dc[:m.start()]
@@ -499,7 +497,7 @@ def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
 
 
 def read_file_and_run_cell(filename):
-    with open(filename, "r") as fp:
+    with open(filename) as fp:
         contents = fp.read()
     return ip.run_cell(contents)
 

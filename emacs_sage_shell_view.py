@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Emacs sage-shell-mode Backend for the Sage Rich Output System
 
@@ -34,7 +33,7 @@ from sage.repl.rich_output.backend_ipython import BackendIPythonCommandline
 class BackendEmacs(BackendIPythonCommandline):
 
     def __init__(self, text=True, plot=True):
-        super(BackendEmacs, self).__init__()
+        super().__init__()
         if text:
             self.__text = "latex"
         else:
@@ -54,7 +53,7 @@ class BackendEmacs(BackendIPythonCommandline):
         if self.__plot and isinstance(rich_output, OutputImagePng):
             msg = rich_output.png.filename(ext='png')
             msg = "BEGIN_PNG:%s:END_PNG" % msg
-            return ({u'text/plain': msg}, {})
+            return ({'text/plain': msg}, {})
 
         if isinstance(rich_output, OutputHtml):
             text = "BEGIN_TEXT:" + str(plain_text.text.get(), 'utf-8')
@@ -62,7 +61,7 @@ class BackendEmacs(BackendIPythonCommandline):
             text += str(rich_output.latex.get(), 'utf-8') + ":END_LATEX"
             return ({'text/plain': text}, {})
 
-        return super(BackendEmacs, self).displayhook(plain_text, rich_output)
+        return super().displayhook(plain_text, rich_output)
 
 
 def set_backend(text=True, plot=True):
