@@ -11,17 +11,19 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 import inspect
 import os
 import re
 import sys
+from pathlib import Path
 from contextlib import contextmanager
 
 import IPython
 from IPython.core.completerlib import module_completion
+from IPython import get_ipython
 
 import sage
 from sage.all import preparse
@@ -29,7 +31,7 @@ from sage.all import preparse
 try:
     ip = get_ipython()
     ip.autoindent = False
-except:                         # Older versions
+except (NameError, AttributeError):  # Older versions
     import IPython.ipapi
     ip = IPython.ipapi.get()
     ip.IP.shell.autoindent = False
@@ -37,7 +39,7 @@ except:                         # Older versions
 # Disable highlighting matching parentheses.
 try:
     if IPython.version_info[0] >= 5:
-        sage.repl.interpreter.SageTerminalInteractiveShell.highlight_matching_brackets = False
+        sage.repl.interpreter.SageTerminalInteractiveShell.highlight_matching_brackets = False  # noqa: E501
 except (NameError, AttributeError):
     pass
 
@@ -47,7 +49,7 @@ ip.run_line_magic('colors', 'NoColor')
 # Disable the SQLite history.
 try:
     ip.run_line_magic("config", "HistoryManager.enabled = False")
-except:
+except Exception:
     pass
 
 interfaces = ip.ev('interfaces')
@@ -57,25 +59,25 @@ _sage_const_regexp = re.compile("_sage_const_")
 
 class Memorize:
 
-    def __init__(self, f):
+    def __init__(self, f) -> None:
         self._f = f
-        self._cached = {}
+        self._cached: dict = {}
 
     def __call__(self, *args):
         if args in self._cached:
             return self._cached[args]
-        else:
-            res = self._f(*args)
-            self._cached[args] = res
-            return res
+
+        res = self._f(*args)
+        self._cached[args] = res
+        return res
 
 
 memorize = Memorize
 
 
-def print_cpl_sexp(typs, compl_dct):
+def print_cpl_sexp(typs, compl_dct) -> None:
     def _to_lisp_str_ls(ls):
-        return "(%s)" % " ".join([f'"{a}"' for a in ls])
+        return "(%s)" % " ".join(f'"{a}"' for a in ls)
 
     funcs = {"interface": all_commands,
              "attributes": all_attributes,
@@ -88,34 +90,33 @@ def print_cpl_sexp(typs, compl_dct):
     print("(" + "".join(conss) + ")")
 
 
-def all_modules(compl_dct):
+def all_modules(compl_dct: dict) -> list:
     try:
         module_name = compl_dct["module-name"]
         return _all_modules(module_name)
-    except:
+    except Exception:
         return []
 
 
-def _all_modules(module_name):
+def _all_modules(module_name) -> list[str]:
     if module_name is None:
         return list_modules_in_syspath()
-    else:
-        return [a.split(".")[-1] for a in
-                module_completion(f"import {module_name}.")]
+    return [a.split(".")[-1]
+            for a in module_completion(f"import {module_name}.")]
 
 
-def all_vars_in_module(compl_dct):
+def all_vars_in_module(compl_dct) -> list:
     try:
         module_name = compl_dct["module-name"]
         return _all_vars_in_module(module_name)
-    except:
+    except Exception:
         return []
 
 
 special_att_regexp = re.compile("__[a-zA-Z0-9_]+__")
 
 
-def _all_vars_in_module(module_name):
+def _all_vars_in_module(module_name) -> list:
     if module_name is None:
         return []
 
@@ -123,12 +124,13 @@ def _all_vars_in_module(module_name):
     if module_name in sys.modules:
         res = dir(sys.modules[module_name])
     else:
-        p = resolve_module_path(module_name)
-        if p is None:
+        try:
+            p = resolve_module_path(module_name)
+        except OSError:
             # If resolving fails, use module_completion.
             return module_completion(f"from {module_name} import ")
         res = None
-        if os.path.isdir(p):
+        if p.is_dir():
             res = list_modules_in(p)
 
         # Otherwise, parse the file.
@@ -137,30 +139,29 @@ def _all_vars_in_module(module_name):
             regexp = re.compile(
                 "^{name} *= *|^def +{name}|^class +{name}".format(
                     name="([a-zA-Z0-9_]+)"))
-            with open(p) as f:
-                for l in f:
-                    m = regexp.match(l)
+            with p.open() as f:
+                for line in f:
+                    m = regexp.match(line)
                     if m is not None:
                         res.extend([c for c in m.groups() if c is not None])
-    res = [a for a in res if special_att_regexp.match(a) is None]
-    return res
+    assert res is not None
+    return [a for a in res if special_att_regexp.match(a) is None]
 
 
-def all_commands(compl_dct):
+def all_commands(compl_dct) -> list:
     interface = compl_dct["interface"]
     if interface == 'sage':
-        l = ip.ev('dir()')
-        l = [a for a in l if _sage_const_regexp.match(a) is None]
-        return l
-    else:
-        intfc = ip.ev(interface)
-        if isinstance(intfc, sage.interfaces.expect.Expect):
-            return sorted(_completions_attributes(interface))
-        else:
-            return []
+        liste = ip.ev('dir()')
+        return [a for a in liste if _sage_const_regexp.match(a) is None]
+
+    intfc = ip.ev(interface)
+    if isinstance(intfc, sage.interfaces.expect.Expect):
+        return sorted(_completions_attributes(interface))
+
+    return []
 
 
-def all_attributes(compl_dct):
+def all_attributes(compl_dct) -> list:
     varname = compl_dct["var-base-name"]
     try:
         regexp = re.compile("^[ a-zA-Z0-9._\\[\\]]+$")
@@ -173,78 +174,80 @@ def all_attributes(compl_dct):
             ls.extend(ip.ev(f'dir({preparse(varname)})'))
             ls = sorted(set(ls))
         return ls
-    except:
+    except Exception:
         return []
 
 
-def _completions_attributes(varname):
+def _completions_attributes(varname) -> list[str]:
     completions = ip.complete(f'{varname}.')[1]
     ln = len(varname) + 1
     return [a[ln:] for a in completions]
 
 
-def list_modules_in(p):
-    res = [os.path.basename(a) for a in list_module_paths_in(p)]
-    return [os.path.splitext(a)[0] for a in res]
+def list_modules_in(p: Path) -> list[str]:
+    res = (Path(a) for a in list_module_paths_in(p))
+    return [a.stem for a in res]
 
 
-def list_module_paths_in(p):
-    if not os.path.exists(p):
+def list_module_paths_in(p: Path) -> list:
+    if not p.exists():
         return []
-    elif os.path.isdir(p):
+
+    if p.is_dir():
         res = []
-        for f in os.listdir(p):
-            a = is_module(os.path.join(p, f))
+        for f in p.iterdir():
+            a = is_module(f)
             if a:
                 res.append(a)
         return res
-    else:
-        return []
+
+    return []
 
 
 mod_regexp = re.compile("^[A-Za-z0-9_.]+$")
 
 
-def is_module(p):
-    if not re.match(mod_regexp, os.path.basename(p)):
+def is_module(p: Path):
+    if not re.match(mod_regexp, p.name):
         return False
-    elif os.path.isfile(p):
-        if p.endswith("py"):
+
+    if p.is_file():
+        if p.suffix == "py":
             return p
-    elif os.path.isdir(p):
-        if os.path.exists(os.path.join(p, "__init__.py")):
+
+    if p.is_dir():
+        if (p / "__init__.py").exists():
             return p
 
 
 @memorize
-def list_module_paths_in_syspath():
-    res = []
+def list_module_paths_in_syspath() -> list[Path]:
+    res: list[Path] = []
     for p in sys.path:
-        res.extend(list_module_paths_in(p))
+        res.extend(a for a in list_module_paths_in(Path(p)))
     return res
 
 
-def list_modules_in_syspath():
+def list_modules_in_syspath() -> list[str]:
     return module_completion("import ")
 
 
 @memorize
-def resolve_module_path(modname):
+def resolve_module_path(modname: str) -> Path:
     lmis = list_module_paths_in_syspath()
     root_mod_name = modname.split(".")[0]
-    ls = [a for a in lmis
-          if os.path.splitext(os.path.basename(a))[0] == root_mod_name]
+    ls = [a for a in lmis if a.name == root_mod_name]
     if not ls:
-        return None
+        raise OSError("could not resolve module path")
     root_path = ls[0]
-    pth = os.path.join(os.path.dirname(root_path),
-                       os.path.sep.join(modname.split(".")))
-    if os.path.isdir(pth):
+    pth = root_path.parent / Path(*modname.split("."))
+    if pth.is_dir():
         return pth
     for ext in [".py", ".pyx"]:
-        _pth = pth + ext
-        if os.path.isfile(_pth):
+        _pth = pth / ext
+        if _pth.is_file():
             return _pth
+    raise ValueError("could not resolve module name")
 
 
 def lazy_import_get_obj(obj):
@@ -261,24 +264,24 @@ def source_line(obj):
     return sage.misc.sageinspect.sage_getsourcelines(obj)[-1]
 
 
-def print_source_file_and_line_num(obj):
+def print_source_file_and_line_num(obj) -> None:
     obj = lazy_import_get_obj(obj)
     sf = sage.misc.sageinspect.sage_getfile(obj)
     sl = source_line(obj)
     print(sf, '*', sl)
 
 
-def print_source_line(obj):
+def print_source_line(obj) -> None:
     print(source_line(obj))
 
 
-def print_sage_root():
+def print_sage_root() -> None:
     print(os.environ['SAGE_ROOT'])
 
 
 @contextmanager
-def current_dir(d):
-    cwd = os.getcwd()
+def current_dir(d: Path):
+    cwd = Path.cwd()
     os.chdir(d)
     try:
         yield
@@ -286,23 +289,23 @@ def current_dir(d):
         os.chdir(cwd)
 
 
-def sage_tex_load(f):
-    d = os.path.dirname(os.path.expanduser(f))
+def sage_tex_load(f: Path) -> None:
+    d = f.expanduser().parent
     with current_dir(d):
         ip.ev(f'load("{f}")')
 
 
-def print_inputs_outputs(max_line_num, delim, reversed_ord):
+def print_inputs_outputs(max_line_num, delim, reversed_ord) -> None:
     def show_func(s):
         if max_line_num is None:
             res = s
         else:
             ss = s.split("\n")
             if len(ss) > max_line_num:
-                l = ss[:max_line_num] + ["....."]
+                liste = ss[:max_line_num] + ["....."]
             else:
-                l = ss
-            res = "\n".join(l)
+                liste = ss
+            res = "\n".join(liste)
         if '\n' in res:
             return '\n' + res
         else:
@@ -314,7 +317,7 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
                 return repr(obj)
             else:
                 return ip.display_formatter.format(obj)[0]['text/plain']
-        except:
+        except Exception:
             return repr(obj)
 
     outputs = ip.ev("_oh")
@@ -337,7 +340,7 @@ def print_inputs_outputs(max_line_num, delim, reversed_ord):
             print(delim)
 
 
-def _is_safe_str(s):
+def _is_safe_str(s) -> bool:
     _func_call_reg = re.compile("[()]")
     return _func_call_reg.search(s) is None
 
@@ -365,16 +368,17 @@ def _sage_getdef(name, base_name=None):
         pass
 
 
-def sage_getdef(name, base_name=None):
+def sage_getdef(name, base_name=None) -> str:
     df = _sage_getdef(name, base_name=base_name)
     if df is not None:
         return f"{name}{df}"
+    raise ValueError("name not found")
 
 
 _doc_delims = ["EXAMPLE", "EXAMPLES", "TESTS", "AUTHOR", "AUTHORS",
                "ALGORITHM"]
 
-_doc_delim_regexp = re.compile("|".join([_s + ":" for _s in _doc_delims]))
+_doc_delim_regexp = re.compile("|".join(_s + ":" for _s in _doc_delims))
 
 
 def _should_be_ignored(name, base_name, clses=None):
@@ -410,54 +414,54 @@ def short_doc(name, base_name=None):
         return res.strip()
 
 
-def all_keyword_args(compl_dct):
+def all_keyword_args(compl_dct) -> list:
     try:
         base_name = compl_dct["in-function-call-base-name"]
         name = compl_dct["in-function-call"]
         return keyword_args(name, base_name=base_name)
-    except:
+    except Exception:
         return []
 
 
-def keyword_args(name, base_name=None):
+def keyword_args(name, base_name=None) -> list[str]:
     gd = _sage_getdef(name, base_name=base_name)
     no_argspec_reg = re.compile(r"\[noargspec\]")
     if (not gd) or re.match(no_argspec_reg, gd):
         return []
-    else:
-        args_str = gd[1:-1]
-        reg = re.compile(r"\*+[a-zA-Z_0-9]+")
-        args = args_str.split(", ")
-        args = [a for a in args if reg.match(a) is None]
-        reg = re.compile("[a-zA-Z_0-9]+")
-        matches = [reg.match(a) for a in args]
-        return [m.group() + "=" for m in matches if m]
+
+    args_str = gd[1:-1]
+    reg = re.compile(r"\*+[a-zA-Z_0-9]+")
+    args = args_str.split(", ")
+    args = [a for a in args if reg.match(a) is None]
+    reg = re.compile("[a-zA-Z_0-9]+")
+    matches = (reg.match(a) for a in args)
+    return [m.group() + "=" for m in matches if m]
 
 
-def print_short_doc(name, base_name=None):
+def print_short_doc(name, base_name=None) -> None:
     try:
         sd = short_doc(name, base_name=base_name)
         if sd is not None:
             print(sd)
-    except:
+    except Exception:
         pass
 
 
-def print_def(name, base_name=None):
+def print_def(name, base_name=None) -> None:
     try:
         df = sage_getdef(name, base_name=base_name)
         if df is not None:
             print(df)
-    except:
+    except Exception:
         pass
 
 
-def print_short_doc_and_def(name, base_name=None):
+def print_short_doc_and_def(name, base_name=None) -> None:
     try:
         df = sage_getdef(name, base_name=base_name)
         if df is not None:
             print(df)
-    except:
+    except Exception:
         df = None
 
     try:
@@ -466,7 +470,7 @@ def print_short_doc_and_def(name, base_name=None):
             print("")
         if sd is not None:
             print(sd)
-    except:
+    except Exception:
         pass
 
 
@@ -476,7 +480,7 @@ def run_cell(code):
     return res
 
 
-def run_cell_and_print_state(code, msg_id_start, msg_id_end):
+def run_cell_and_print_state(code, msg_id_start, msg_id_end) -> None:
     print(msg_id_start)
     res = run_cell(code)
     if hasattr(res, 'success'):
@@ -490,14 +494,14 @@ def run_cell_and_print_state(code, msg_id_start, msg_id_end):
     print(msg_id_end)
 
 
-def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end):
+def run_cell_and_print_msg_id(code, msg_id_start, msg_id_end) -> None:
     print(msg_id_start)
     run_cell(code)
     print(msg_id_end)
 
 
 def read_file_and_run_cell(filename):
-    with open(filename) as fp:
+    with Path(filename).open() as fp:
         contents = fp.read()
     return ip.run_cell(contents)
 
