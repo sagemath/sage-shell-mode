@@ -4689,6 +4689,14 @@ inserted in the process buffer before executing the command."
            (sage-shell-edit:load-file bfn))
           (t (sage-shell-edit:send--buffer)))))
 
+(defun sage-shell-edit:attach-buffer ()
+  "Attach the contents of the current buffer to the Sage process."
+  (interactive)
+  (let ((bfn (buffer-file-name)))
+    (cond ((and bfn (not (buffer-modified-p)))
+           (sage-shell-edit:attach-file bfn))
+          (t (sage-shell-edit:send--buffer)))))
+
 (defun sage-shell-edit:send-buffer-and-go ()
   "Evaluate the contents of the current buffer in the Sage process."
   (interactive)
