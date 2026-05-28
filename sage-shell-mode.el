@@ -220,6 +220,11 @@ The checking is done asyncally."
 `sage-shell:simple-prompt' according to the available IPython version.
 This (synchronous) setting can be replaced by setting variables in the init file.")
 
+(defcustom sage-shell:ask-start-new-process t
+  "Non-nil means being asked to confirm whether to create a new Sage process if one doesn't already exist."
+  :type 'boolean
+  :group 'sage-shell)
+
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
   "This LaTeX command will be called by
@@ -4393,8 +4398,10 @@ whose key is in KEYS."
          ;; if there are no processes
          ((null proc-alist)
           (when (and start-p
-                     (y-or-n-p (concat "There are no Sage processes. "
-                                       "Start new process? ")))
+                     (or
+                      (null sage-shell:ask-start-new-process)
+                      (y-or-n-p (concat "There are no Sage processes. "
+                                        "Start new process? "))))
             (let ((proc-buf
                    (sage-shell:run
                     (sage-shell:read-command) nil
