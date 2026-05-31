@@ -74,6 +74,9 @@
   :type '(choice (directory :tag "Directory")
                  (const :tag "Not specified" nil)))
 
+;;;###autoload
+(defvaralias 'sage-shell:command 'sage-shell:sage-executable)
+
 (defcustom sage-shell:sage-executable nil
   "Name of the Sage executable. If the Sage executable in your
   PATH and (exeutable-find \"sage\") is non-nil, then you do not
@@ -81,9 +84,6 @@
   :group 'sage-shell
   :type '(choice (string :tag "Executable file of Sage")
                  (const :tag "Not specified" nil)))
-
-;;;###autoload
-(defvaralias 'sage-shell:command 'sage-shell:sage-executable)
 
 (defcustom sage-shell:input-history-cache-file
   nil
@@ -174,15 +174,15 @@ displayed. If non-nil, this function will be called after sending
 the contents of a buffer, a region or a file to the Sage
 process."
   :type '(choice (const :tag "default" nil)
-                 (const :tag "display-buffer" 'display-buffer)
-                 (const :tag "pop-to-buffer" 'pop-to-buffer))
+                 (const :tag "display-buffer" display-buffer)
+                 (const :tag "pop-to-buffer" pop-to-buffer))
   :group 'sage-shell)
 
 (defcustom sage-shell:inspect-ingnore-classes nil
   "If non-nil, this should be a list of strings.
 Each string should be a class of Sage. When non-nil instances or methods
 of these classes are ignored by `ac-quick-help' and `eldoc'.
-If the value is equal to '(\"\"), then it does not ignore anything."
+If the value is equal to \\='(\"\"), then it does not ignore anything."
   :group 'sage-shell
   :type '(repeat string))
 
@@ -218,7 +218,10 @@ The checking is done asyncally."
 (defcustom sage-shell:set-ipython-version-on-startup t
   "Non `nil' means set `sage-shell:use-prompt-toolkit' and
 `sage-shell:simple-prompt' according to the available IPython version.
-This (synchronous) setting can be replaced by setting variables in the init file.")
+This (synchronous) setting can be replaced by setting variables in
+the init file."
+  :type 'boolean
+  :group 'sage-shell)
 
 (defcustom sage-shell-sagetex:pre-latex-command
   "latex -interaction=nonstopmode"
@@ -250,15 +253,15 @@ will be ignored."
   :type '(choice (const :tag "Not Specified" nil)
                  (string :tag "LaTeX command")))
 
+;;;###autoload
+(defvaralias 'sage-shell:add-to-texinputs-p
+  'sage-shell-sagetex:add-to-texinputs-p)
+
 (defcustom sage-shell-sagetex:add-to-texinputs-p t
   "Non-nil means sage-shell-mode adds
 $SAGE_ROOT/local/share/texmf/tex/generic/sagetex/ to TEXINPUTS."
   :type 'boolean
   :group 'sage-shell-sagetex)
-
-;;;###autoload
-(defvaralias 'sage-shell:add-to-texinputs-p
-  'sage-shell-sagetex:add-to-texinputs-p)
 
 (defcustom sage-shell-sagetex:pop-to-error-buffer t
   "Non-nil means pop to the SageTeX error buffer."
@@ -741,12 +744,12 @@ to a process buffer.")
   (set (make-local-variable 'parse-sexp-lookup-properties) t)
   (set (make-local-variable 'font-lock-syntactic-face-function)
        (lambda (state)
-         (cond ((nth 3 state) font-lock-string-face)
+         (cond ((nth 3 state) 'font-lock-string-face)
                ((get-text-property (point) 'field) 'default)
                ((save-excursion
                   (beginning-of-line)
                   (re-search-forward "#" (line-end-position) t))
-                font-lock-comment-face)
+                'font-lock-comment-face)
                (t 'default))))
   (set (make-local-variable 'comint-use-prompt-regexp) t)
   (set (make-local-variable 'comment-start) "# ")
@@ -1293,7 +1296,7 @@ if [ $1 = .. ]; then shift; fi; exec \"$@\""
                               (switch-function 'switch-to-buffer)
                               buffer-name)
   "Running Sage function internal.
-SWITCH-FUNCTION is 'no-switch, or a function with one argument.
+SWITCH-FUNCTION is \\='no-switch, or a function with one argument.
 If buffer-name is non-nil, it will be the buffer name of the process buffer."
   (let ((buf (get-buffer-create (if (stringp buffer-name)
                                     buffer-name
@@ -2686,8 +2689,8 @@ function does not highlight the input."
         (when (or after-prompt1 after-prompt2)
           (if (string= (make-string (length line) (string-to-char " "))
                        line)
-              (delete-region (point-at-bol) (point)))
-          (delete-region (point-at-bol) (point))
+              (delete-region (line-beginning-position) (point)))
+          (delete-region (line-beginning-position) (point))
           (insert line)
           ;; If line contains triple quotes or top-level return statement, the
           ;; indent function raises an error.
@@ -2998,7 +3001,7 @@ matches last process output."
           (looking-at sage-shell:prompt2-regexp))
     (let ((indent-str nil))
       (with-current-buffer (sage-shell-indent:get-indenting-buffer)
-        (setq indent-str (buffer-substring (point-at-bol) (point))))
+        (setq indent-str (buffer-substring (line-beginning-position) (point))))
       (when (get-buffer-process sage-shell:process-buffer)
         (goto-char (process-mark (get-buffer-process (current-buffer))))
         (insert indent-str)))))
@@ -3094,7 +3097,7 @@ python-mode"
 
 (defvar sage-shell-help:symbol-not-found-regexp
   "Object `.*?` not found."
-  "Regexp that matches Sage's 'symbol not found' warning.")
+  "Regexp that matches Sage's \\='symbol not found\\=' warning.")
 
 (defun sage-shell-help:help-buffer-init (symbol)
   (let* ((case-fold-search t)
@@ -3187,11 +3190,11 @@ python-mode"
                            (goto-char (point-max))
                            (newline)
                            (cl-case sym
-                             ('forward (insert-btn "[forward]" 1))
-                             ('back (insert-btn "[back]" -1))
-                             ('both (insert-btn "[back]" -1)
-                                    (insert "  ")
-                                    (insert-btn "[forward]" 1))))))
+                             (forward (insert-btn "[forward]" 1))
+                             (back (insert-btn "[back]" -1))
+                             (both (insert-btn "[back]" -1)
+                                   (insert "  ")
+                                   (insert-btn "[forward]" 1))))))
 
       (cond
        ((eq len 1))
@@ -3645,6 +3648,10 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 ;; For old Emacs (Emacs 24.3 or older)
 (defalias 'sage-shell-cpl-state-p #'sage-shell-cpl-statep)
 
+;; Type of a completion state alist, recognized by `sage-shell-cpl-statep'.
+(cl-deftype sage-shell-cpl-state ()
+  '(satisfies sage-shell-cpl-statep))
+
 (defun sage-shell:-to-python-dict (alst)
   "nil is converted to None."
   (format "{%s}"
@@ -3694,9 +3701,9 @@ lines which match sage-shell:-prompt-regexp-no-eol are dropped from the output."
 (defun sage-shell-cpl:var-base-name-and-att-start (cur-intf)
   "Returns cons of the base name of the variable and the point of
    beginig of the attribute. For example, if there is a python
-   code 'abc.de' and the point is at 'd' or 'e' and 'abc' does
-   not call any functions, this returns cons of a string 'abc'
-   and the point at 'd', otherwise nil."
+   code \\='abc.de\\=' and the point is at \\='d\\=' or \\='e\\=' and \\='abc\\=' does
+   not call any functions, this returns cons of a string \\='abc\\='
+   and the point at \\='d\\=', otherwise nil."
   (let ((bol (line-beginning-position))
         (var-chars (sage-shell-interfaces:get cur-intf 'var-chars))
         att-beg base-end)
@@ -4751,11 +4758,11 @@ inserted in the process buffer before executing the command."
                  finally return (nreverse lines))))))
 
 (defun sage-shell:send-doctest (arg)
-  (interactive "P")
   "If looking at a sage: prompt, send the current doctest lines to the Sage
 process.
 With prefix argument, send all doctests (at sage: prompts) until
 the end of the docstring."
+  (interactive "P")
   (sage-shell-edit:set-sage-proc-buf-internal :select-p t)
   ;; Some code are copied from sage-test.el provided by sage-mode
   (unless arg
@@ -5155,8 +5162,8 @@ Otherwise return nil."
                                      "sage-shell-pdb:input-"
                                      cmd))
                         ()
+                      ,(format "Input \\='%s\\=' in the process buffer." cmd)
                       (interactive)
-                      ,(format "Input '%s' in the process buffer." cmd)
                       (sage-shell-pdb:send--command ,cmd)))))
 
 ;; Define sage-shell-pdb:input-next, etc.
@@ -5532,7 +5539,8 @@ This requires AUCTEX."
           (t (error "Not in a Sage environment.")))))
 
 (defun sage-shell-sagetex:send-environment ()
-  "If the point is in environment sagesilent or sageblock, then load the contents of environment using existing Sage process.
+  "If the point is in environment sagesilent or sageblock, then load
+the contents of environment using existing Sage process.
 This requires AUCTeX."
   (interactive)
   (cl-destructuring-bind (beg . end) (sage-shell-sagetex:-tex-env-region)

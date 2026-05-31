@@ -1,4 +1,4 @@
-;;; sage-shell-blocks.el --- Support for structuring Sage code in sheets
+;;; sage-shell-blocks.el --- Support for structuring Sage code in sheets -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2013-2018 Johan Rosenkilde
 

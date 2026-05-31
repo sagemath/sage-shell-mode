@@ -140,7 +140,7 @@ If the value is `nil', then this variable is ignored."
 
 (defcustom sage-shell-view-dvipng-options nil
   "*Options for dvipng when converting from DVI to PNG."
-  :type 'list
+  :type '(repeat string)
   :group 'sage-shell-view)
 
 (defcustom sage-shell-view-margin '(1 . 1)
@@ -562,9 +562,10 @@ running."
    'text t))
 
 (defun sage-shell-view-disable-inline-output ()
-  "Disable inline output pretty-printing, i.e. do not typeset output from sage
-in the `sage-shell-mode' buffer.
-WARNING: this communicates with the sage process.  Only use this when sage is running."
+  "Disable inline output pretty-printing, i.e. do not typeset output
+from sage in the `sage-shell-mode' buffer.
+WARNING: this communicates with the sage process.  Only use this
+when sage is running."
   (interactive)
   (sage-shell-view--set-inline-state
    'text nil))

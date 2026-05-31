@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  byte-compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - emacs_version: '24.4'
+            werror: 't'
+          - emacs_version: '30.1'
+            werror: 't'
+          - emacs_version: 'snapshot'
+            werror: 't'
+    steps:
+      - name: Set up Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          emacs -Q --batch \
+            --eval "(require 'package)" \
+            --eval "(add-to-list 'package-archives '(\"gnu\" . \"https://elpa.gnu.org/packages/\") t)" \
+            --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
+            --eval "(package-initialize)" \
+            --eval "(package-refresh-contents)" \
+            --eval "(dolist (pkg '(deferred let-alist)) (unless (package-installed-p pkg) (package-install pkg)))"
+
+      - name: Byte-compile sources (warnings as errors)
+        run: |
+          emacs -Q --batch \
+            --eval "(require 'package)" \
+            --eval "(package-initialize)" \
+            --eval "(setq byte-compile-error-on-warn ${{ matrix.werror }})" \
+            -L . \
+            -f batch-byte-compile \
+            sage-shell-mode.el sage-shell-blocks.el sage-shell-view.el
+
+      - name: Load the package
+        run: |
+          emacs -Q --batch \
+            --eval "(require 'package)" \
+            --eval "(package-initialize)" \
+            -L . \
+            --eval "(require 'sage-shell-mode)" \
+            --eval "(require 'sage-shell-blocks)" \
+            --eval "(require 'sage-shell-view)" \
+            --eval "(message \"sage-shell-mode loaded successfully\")"
